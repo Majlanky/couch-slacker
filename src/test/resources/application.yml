@@ -1,0 +1,13 @@
+spring:
+  profiles:
+    active: test
+
+---
+
+spring:
+  profiles: test
+couchdb:
+  client:
+    url: http://localhost:5984/
+    username: admin
+    password: password
