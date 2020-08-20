@@ -21,6 +21,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.opentest4j.AssertionFailedError;
 import org.springframework.data.domain.Sort;
 
 import java.io.ByteArrayInputStream;
@@ -28,6 +29,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.StreamSupport;
@@ -38,7 +40,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
-//TODO check proper serialization of requests
 @ExtendWith(MockitoExtension.class)
 class CouchDbClientTest {
 
@@ -85,8 +86,7 @@ class CouchDbClientTest {
         HttpPut put = (HttpPut) request;
         assertTrue(put.getURI().toString().startsWith("http://localhost:5984/test"), "URI must be based on base URI and database name");
         assertEquals("application/json", put.getEntity().getContentType().getValue(), "Content type must be set to json");
-        assertTrue(IOUtils.contentEquals(new ByteArrayInputStream(("{\"value\":\"test\",\"value2\":null}").getBytes()), put.getEntity().getContent()),
-                "PUT request must content serialized " + TestDocument.class);
+        assertContent("{\"value\":\"test\",\"value2\":null}", put.getEntity().getContent(), "Body of request is not properly created");
         assertEquals("unique", saved.getId(), "Saved document must be updated by new id, if generated");
         assertEquals("revision", saved.getRevision(), "Saved document must be updated by given revision");
 
@@ -118,9 +118,7 @@ class CouchDbClientTest {
         HttpPut put = (HttpPut) request;
         assertEquals("http://localhost:5984/test/" + uuid, put.getURI().toString(), "URI must be based on base URI and database name");
         assertEquals("application/json", put.getEntity().getContentType().getValue(), "Content type must be set to json");
-        assertTrue(IOUtils.contentEquals(new ByteArrayInputStream(("{\"_id\":\"" + uuid + "\",\"value\":\"test\",\"value2\":null}").getBytes()),
-                put.getEntity().getContent()),
-                "PUT request must content serialized " + TestDocument.class);
+        assertContent("{\"_id\":\"" + uuid + "\",\"value\":\"test\",\"value2\":null}", put.getEntity().getContent(), "Body of request is not properly created");
         assertEquals(uuid, saved.getId(), "If document has id set, it must not be changed");
         assertEquals("revision", saved.getRevision(), "Saved document must be updated by given revision");
 
@@ -151,7 +149,7 @@ class CouchDbClientTest {
         HttpPost post = (HttpPost) request;
         assertEquals("http://localhost:5984/test/_bulk_docs", post.getURI().toString(), "URI must be based on base URI and database name");
         assertEquals("application/json", post.getEntity().getContentType().getValue(), "Content type must be set to json");
-
+        assertContent("{\"docs\":[{\"_id\":\"a\",\"value\":\"a\",\"value2\":\"a\"},{\"_id\":\"b\",\"value\":\"b\",\"value2\":\"b\"}]}", post.getEntity().getContent(), "Body of request is not properly created");
         assertEquals(2, StreamSupport.stream(saved.spliterator(), false).count(), "Two entities were passed to save");
         assertEquals("aaa", a.getId()+a.getValue()+a.getValue2(), "Id must be updated, value must stay");
         assertEquals("rev1", a.getRevision(), "Revision must be updated");
@@ -217,6 +215,7 @@ class CouchDbClientTest {
         HttpPost post = (HttpPost) request;
         assertEquals("http://localhost:5984/test/_bulk_get" , post.getURI().toString(), "URI must be based on base URI and database name");
         assertEquals("application/json", post.getEntity().getContentType().getValue(), "Find request should declare json content");
+        assertContent("{\"docs\":[{\"id\":\"a\"},{\"id\":\"b\"}]}", post.getEntity().getContent(), "Body of request is not properly created");
         StreamSupport.stream(read.spliterator(), false).forEach(d -> {
             assertTrue("a".equals(d.getId()) || "b".equals(d.getId()), "Id was not parsed properly, see json above");
             assertTrue("revA".equals(d.getRevision()) || "revB".equals(d.getRevision()), "Revision was not parsed properly, see json above");
@@ -279,6 +278,7 @@ class CouchDbClientTest {
         HttpPost post = (HttpPost) request;
         assertEquals("http://localhost:5984/test/_find", post.getURI().toString(), "URI must be based on base URI and database name");
         assertEquals("application/json", post.getEntity().getContentType().getValue(), "Find request should declare json content");
+        assertContent("", post.getEntity().getContent(), "Body of request is not properly created");
         assertEquals(3, StreamSupport.stream(read.spliterator(), false).count(), "Based on mocked json, there are 3 documents returned");
         int i = 1;
         for(TestDocument d : read) {
@@ -414,7 +414,7 @@ class CouchDbClientTest {
         assertEquals(HttpPut.class, request.getClass(), "Find has to be done as PUT request");
         HttpPut put = (HttpPut) request;
         assertEquals("http://localhost:5984/test?q=8&n=3&partitioned=false", put.getURI().toString(), "URI must be based on base URI and database name");
-
+        assertContent("", put.getEntity().getContent(), "Body of request is not properly created");
         assertEquals(thrown, assertThrows(IOException.class, () -> testedAction.accept(client)), "CouchDb client should not alternate original " +
                 "exception");
         request = requestCaptor.getValue();
@@ -460,6 +460,16 @@ class CouchDbClientTest {
         request = requestCaptor.getValue();
         post = (HttpPost) request;
         assertTrue(post.isAborted(), "Request must be aborted when exception thrown");
+    }
+
+    private static void assertContent(String s, InputStream actual, String message) throws IOException{
+        InputStream expected = new ByteArrayInputStream(s.getBytes());
+        if(!IOUtils.contentEquals(actual, expected)){
+            actual.reset();
+            expected.reset();
+            throw new AssertionFailedError(message, IOUtils.toString(expected, StandardCharsets.UTF_8.name()), IOUtils.toString(actual,
+                    StandardCharsets.UTF_8.name()) );
+        }
     }
 
 }
