@@ -2,7 +2,6 @@ package com.groocraft.couchdb.slacker.http;
 
 import org.apache.http.conn.ssl.TrustStrategy;
 
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 /**
@@ -11,7 +10,7 @@ import java.security.cert.X509Certificate;
  * @author Majlanky
  */
 public class TrustAllStrategy implements TrustStrategy {
-    public boolean isTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+    public boolean isTrusted(X509Certificate[] x509Certificates, String s){
         return true;
     }
 }

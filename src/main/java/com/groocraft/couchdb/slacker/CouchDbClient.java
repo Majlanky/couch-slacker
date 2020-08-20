@@ -53,20 +53,21 @@ import java.util.stream.StreamSupport;
  *
  * @author Majlanky
  */
-//TODO javadoc
 //TODO add API for managing replication and users?
 //TODO integration tests with fabric8io/docker-maven-plugin
 //TODO logging everywhere
 //TODO views API
 //TODO attachments
-//TODO get rid off Iterables or Lists
 //TODO process error nodes for bulk operations somehow
+//TODO auditing
+//TODO parsers for xml config
 @Slf4j
 public class CouchDbClient {
 
     private final HttpClient httpClient;
     private final HttpHost httpHost;
     private final HttpContext httpContext;
+    @SuppressWarnings({"rawtypes"})
     private final Map<Class, EntityMetadata> entityMetadataCache;
     private final URI baseURI;
     private final ObjectMapper mapper;
@@ -106,7 +107,7 @@ public class CouchDbClient {
      * @return {@link org.springframework.data.repository.core.EntityInformation} implementation for CouchDB entities.
      */
     public <EntityT, IdT> CouchDbEntityInformation<EntityT, IdT> getEntityInformation(Class<EntityT> clazz) {
-        return new CouchDbEntityInformation(getEntityMetadata(clazz));
+        return new CouchDbEntityInformation<>(getEntityMetadata(clazz));
     }
 
     /**
@@ -114,6 +115,7 @@ public class CouchDbClient {
      * @param <T>   type of class
      * @return {@link EntityMetadata} about passed class
      */
+    @SuppressWarnings("unchecked")
     private <T> EntityMetadata<T> getEntityMetadata(Class<T> clazz) {
         return entityMetadataCache.computeIfAbsent(clazz, EntityMetadata::new);
     }
@@ -123,7 +125,7 @@ public class CouchDbClient {
      * @return Name of database for given class
      * @see EntityMetadata
      */
-    private String getDatabaseName(Class<? extends Object> clazz) {
+    private String getDatabaseName(Class<?> clazz) {
         return getEntityMetadata(clazz).getDatabaseName();
     }
 
@@ -192,7 +194,7 @@ public class CouchDbClient {
      * @param clazz     Class of entities passed to save
      * @param <EntityT> type of entities passed to save
      * @return {@link Iterable} of all passed entities with updated revisions and ids
-     * @throws IOException
+     * @throws IOException if http request is not successful or json processing fail
      */
     public <EntityT> Iterable<EntityT> saveAll(Iterable<EntityT> entities, Class<?> clazz) throws IOException {
         //TODO split to max of 10000 row in one request
@@ -206,7 +208,7 @@ public class CouchDbClient {
         List<DocumentPutResponse> responses = post(getURI(baseURI, entityMetadata.getDatabaseName(), "_bulk_docs"),
                 mapper.writeValueAsString(new BulkRequest<>(entities)), r -> mapper.readValue(r.getEntity().getContent(),
                         mapper.getTypeFactory().constructCollectionType(List.class, DocumentPutResponse.class)));
-        Map<String, DocumentPutResponse> indexed = responses.stream().collect(Collectors.toMap(r -> r.getId(), r -> r));
+        Map<String, DocumentPutResponse> indexed = responses.stream().collect(Collectors.toMap(DocumentPutResponse::getId, r -> r));
         //TODO recognized failed ones
         StreamSupport.stream(entities.spliterator(), false).forEach(e -> entityMetadata.getRevisionWriter().write(e, indexed.get(entityMetadata.getIdReader().read(e)).getRev()));
         return entities;
@@ -219,7 +221,7 @@ public class CouchDbClient {
      * @param clazz     of entity in which document will be read. Must not be {@literal null}
      * @param <EntityT> type of entity
      * @return Instance of the given class with data of document
-     * @throws IOException
+     * @throws IOException if http request is not successful or json processing fail
      * @see Document
      */
     public <EntityT> EntityT read(String id, Class<EntityT> clazz) throws IOException {
@@ -227,16 +229,25 @@ public class CouchDbClient {
         return get(getURI(baseURI, databaseName, id), r -> mapper.readValue(r.getEntity().getContent(), clazz));
     }
 
-    public <EntityT> List<EntityT> readAll(Iterable<String> ids, Class<EntityT> clazz) throws IOException {
+    /**
+     * Method for reading all documents of given ids. Read is done in a bulk request.
+     *
+     * @param ids       of wanted documents. Must not be {@literal null}
+     * @param clazz     of documents. Must not be {@literal null}
+     * @param <EntityT> type of documents. Must not be {@literal null}
+     * @return {@link Iterable} of read documents.
+     * @throws IOException if http request is not successful or json processing fail
+     */
+    public <EntityT> Iterable<EntityT> readAll(Iterable<String> ids, Class<EntityT> clazz) throws IOException {
         ObjectMapper localMapper = new ObjectMapper();
         SimpleModule module = new SimpleModule();
-        module.addSerializer(new BulkGetIdSerializer(Document.class, new EntityMetadata<>(Document.class).getIdReader()));
+        module.addSerializer(new BulkGetIdSerializer<>(Document.class, new EntityMetadata<>(Document.class).getIdReader()));
         module.addDeserializer(List.class, new BulkGetDeserializer<>(clazz));
         localMapper.registerModule(module);
         List<Document> docs = new LinkedList<>();
         ids.forEach(id -> docs.add(new Document(id, null)));
         BulkGetResponse<EntityT> response = post(getURI(baseURI, getDatabaseName(clazz), "_bulk_get"), localMapper.writeValueAsString(new BulkRequest<>(docs)),
-                r -> localMapper.readValue(r.getEntity().getContent(), BulkGetResponse.class));
+                r -> localMapper.readValue(r.getEntity().getContent(), localMapper.getTypeFactory().constructParametricType(BulkGetResponse.class, clazz)));
         return response.getDocs();
     }
 
@@ -247,12 +258,12 @@ public class CouchDbClient {
      *
      * @param clazz of wanted entity. Used to get database name {@link #getDatabaseName(Class)}. Must not be {@literal null}
      * @return Stream of {@link String} which contain id
-     * @throws IOException
+     * @throws IOException if http request is not successful or json processing fail
      * @see com.groocraft.couchdb.slacker.annotation.Database
      * @see #readAllDesign(Class)
      * @see #readAllDocs(Class, Predicate)
      */
-    public List<String> readAll(Class<?> clazz) throws IOException {
+    public Iterable<String> readAll(Class<?> clazz) throws IOException {
         return readAllDocs(clazz, Predicate.not(s -> s.startsWith("_design")));
     }
 
@@ -263,13 +274,13 @@ public class CouchDbClient {
      *
      * @param clazz of wanted entity. Used to get database name {@link #getDatabaseName(Class)}. Must not be {@literal null}
      * @return Stream of {@link String} which contain id
-     * @throws IOException
+     * @throws IOException if http request is not successful or json processing fail
      * @see com.groocraft.couchdb.slacker.annotation.Database
      * @see #readAll(Class)
      * @see #readAllDocs(Class, Predicate)
      */
     //TODO rework to _design_docs view
-    public List<String> readAllDesign(Class<?> clazz) throws IOException {
+    public Iterable<String> readAllDesign(Class<?> clazz) throws IOException {
         return readAllDocs(clazz, s -> s.startsWith("_design"));
     }
 
@@ -281,21 +292,21 @@ public class CouchDbClient {
      * @param clazz             of wanted entity. Used to get database name {@link #getDatabaseName(Class)}. Must not be {@literal null}
      * @param idFilterPredicate with filtering rule to id. Must not be {@literal null}. Use {@code s -> true} to disable filtering.
      * @return Stream of {@link String} which contain id
-     * @throws IOException
+     * @throws IOException if http request is not successful or json processing fail
      * @see #readAll(Class)
      * @see #readAllDesign(Class)
      */
-    public List<String> readAllDocs(Class<?> clazz, Predicate<String> idFilterPredicate) throws IOException {
+    public Iterable<String> readAllDocs(Class<?> clazz, Predicate<String> idFilterPredicate) throws IOException {
         String databaseName = getDatabaseName(clazz);
         return get(getURI(baseURI, databaseName, "_all_docs"),
-                r -> mapper.readValue(r.getEntity().getContent(), AllDocumentResponse.class).getRows().stream().filter(id -> idFilterPredicate.test(id)).collect(Collectors.toList()));
+                r -> mapper.readValue(r.getEntity().getContent(), AllDocumentResponse.class).getRows().stream().filter(idFilterPredicate).collect(Collectors.toList()));
     }
 
     /**
      * Deletes given entity. From entity id and revision is used.
      *
      * @param entity to delete. Must not be {@literal null}
-     * @throws IOException
+     * @throws IOException if http request is not successful or json processing fail
      * @see Document
      */
     public <EntityT> EntityT delete(EntityT entity) throws IOException {
@@ -305,20 +316,28 @@ public class CouchDbClient {
         return delete(getURI(baseURI, List.of(entityMetadata.getDatabaseName(), id), List.of(new BasicNameValuePair("rev", revision))), r -> entity);
     }
 
-    //TODO javadoc
-    public <EntityT> Iterable<EntityT> deleteAll(Class<EntityT> clazz) throws IOException{
+    /**
+     * Method to remove all documents from database. Method is implemented as read all ids and than delete by id. Both mentioned functions are bulk
+     * operations. As a consequence of the mentioned approach, DB deletes only document existing in the time of call, not documents created after the request
+     * . Name of the database in which delete is executed is read from given class.
+     *
+     * @param clazz     with {@link com.groocraft.couchdb.slacker.annotation.Database} annotation
+     * @param <EntityT> Type of entity in the database
+     * @return {@link Iterable} of deleted documents
+     * @throws IOException if http request is not successful or json processing fail
+     */
+    public <EntityT> Iterable<EntityT> deleteAll(Class<EntityT> clazz) throws IOException {
         return deleteAll(readAll(readAll(clazz), clazz), clazz);
     }
 
     /**
-     * TODO javadoc
-     * Method to bulk delete of given documents.
+     * Method to delete given documents. A bulk operation is used.
      *
-     * @param entities
-     * @param clazz
-     * @param <EntityT>
-     * @return
-     * @throws IOException
+     * @param entities  {@link Iterable} of entities to be erased
+     * @param clazz     of given entities
+     * @param <EntityT> type of entities
+     * @return {@link Iterable} of deleted entities
+     * @throws IOException if http request is not successful or json processing fail
      */
     public <EntityT> Iterable<EntityT> deleteAll(Iterable<EntityT> entities, Class<?> clazz) throws IOException {
         EntityMetadata<?> entityMetadata = getEntityMetadata(clazz);
@@ -326,6 +345,7 @@ public class CouchDbClient {
         SimpleModule module = new SimpleModule();
         module.addSerializer(new DeleteDocumentSerializer<>(clazz));
         localMapper.registerModule(module);
+        //TODO recognized failed ones
         return post(getURI(baseURI, entityMetadata.getDatabaseName(), "_bulk_docs"), localMapper.writeValueAsString(new BulkRequest<>(entities)), r -> entities);
     }
 
@@ -336,7 +356,7 @@ public class CouchDbClient {
      * @param id        of document which should be deleted
      * @param clazz     of entity to get database
      * @param <EntityT> type of entity
-     * @throws IOException
+     * @throws IOException if http request is not successful or json processing fail
      */
     public <EntityT> EntityT deleteById(String id, Class<EntityT> clazz) throws IOException {
         EntityMetadata<EntityT> entityMetadata = getEntityMetadata(clazz);
@@ -349,7 +369,7 @@ public class CouchDbClient {
      * Sending of {@link HttpDelete} to the given URI
      *
      * @param uri address where delete is send. Must not be {@literal null}
-     * @throws IOException
+     * @throws IOException if http request is not successful or json processing fail
      * @see Document
      */
     private <DataT> DataT delete(URI uri, ThrowingFunction<HttpResponse, DataT, IOException> responseProcessor) throws IOException {
@@ -369,16 +389,16 @@ public class CouchDbClient {
      * @param clazz     of entities expected as result
      * @param <EntityT> type of entity
      * @return {@link List} of instances of the given class with result of the given class
-     * @throws IOException
+     * @throws IOException if http request is not successful or json processing fail
      * @see Document
      */
-    public <EntityT> List<EntityT> find(String json, Class<EntityT> clazz) throws IOException {
+    public <EntityT> Iterable<EntityT> find(String json, Class<EntityT> clazz) throws IOException {
         ObjectMapper localMapper = new ObjectMapper();
         SimpleModule simpleModule = new SimpleModule();
-        simpleModule.addDeserializer(List.class, new FoundDocumentDeserializer(clazz));
+        simpleModule.addDeserializer(List.class, new FoundDocumentDeserializer<>(clazz));
         localMapper.registerModule(simpleModule);
         DocumentFindResponse<EntityT> response = post(getURI(baseURI, getDatabaseName(clazz), "_find"), json, r -> localMapper.readValue(r.getEntity().getContent(),
-                DocumentFindResponse.class));
+                localMapper.getTypeFactory().constructParametricType(DocumentFindResponse.class, clazz)));
         log.warn(response.getWarning());
         return response.getDocuments();
     }
@@ -389,7 +409,7 @@ public class CouchDbClient {
      * @param name        of the created index
      * @param entityClass as definition of database in which index should be created
      * @param fields      list of {@link org.springframework.data.domain.Sort.Order} which from index should be done
-     * @throws IOException
+     * @throws IOException if http request is not successful or json processing fail
      */
     public void createIndex(@NotNull String name, @NotNull Class<?> entityClass, @NotNull Sort.Order... fields) throws IOException {
         createIndex(name, entityClass, Arrays.asList(fields));
@@ -401,7 +421,7 @@ public class CouchDbClient {
      * @param name        of the created index
      * @param entityClass as definition of database in which index should be created
      * @param fields      list of {@link org.springframework.data.domain.Sort.Order} which from index should be done
-     * @throws IOException
+     * @throws IOException if http request is not successful or json processing fail
      */
     public void createIndex(@NotNull String name, @NotNull Class<?> entityClass, @NotNull Iterable<Sort.Order> fields) throws IOException {
         createIndex(name, getDatabaseName(entityClass), fields);
@@ -413,25 +433,55 @@ public class CouchDbClient {
      * @param name   of the created index
      * @param dbName in which index should be created
      * @param fields list of {@link org.springframework.data.domain.Sort.Order} which from index should be done
-     * @throws IOException
+     * @throws IOException if http request is not successful or json processing fail
      */
     public void createIndex(@NotNull String name, @NotNull String dbName, @NotNull Iterable<Sort.Order> fields) throws IOException {
         post(getURI(baseURI, dbName, "_index"), mapper.writeValueAsString(new IndexCreateRequest(name, fields)), r -> null);
     }
 
+    /**
+     * Method to create new index by the given parameters.
+     *
+     * @param clazz from which database name is resolved
+     * @throws IOException if http request is not successful or json processing fail
+     */
     public void createDatabase(Class<?> clazz) throws IOException {
         createDatabase(getDatabaseName(clazz));
     }
 
+    /**
+     * Method to create new index by the given parameters.
+     *
+     * @param clazz         from which database name is resolved. Must not be {@literal null}
+     * @param shardsCount   number of shards of the created database
+     * @param replicasCount number of replicas of the created database
+     * @param partitioned   flag if the created database should or not to be partitioned
+     * @throws IOException if http request is not successful or json processing fail
+     */
     public void createDatabase(Class<?> clazz, int shardsCount, int replicasCount, boolean partitioned) throws IOException {
         createDatabase(getDatabaseName(clazz), shardsCount, replicasCount, partitioned);
     }
 
+    /**
+     * Method to create new index by the given parameters.
+     *
+     * @param name of database
+     * @throws IOException if http request is not successful or json processing fail
+     */
     public void createDatabase(String name) throws IOException {
         //Default values get from CouchDb documentation
         createDatabase(name, 8, 3, false);
     }
 
+    /**
+     * Method to create new index by the given parameters.
+     *
+     * @param name          of database
+     * @param shardsCount   number of shards of the created database
+     * @param replicasCount number of replicas of the created database
+     * @param partitioned   flag if the created database should or not to be partitioned
+     * @throws IOException if http request is not successful or json processing fail
+     */
     public void createDatabase(String name, int shardsCount, int replicasCount, boolean partitioned) throws IOException {
         put(getURI(baseURI, List.of(name), List.of(new BasicNameValuePair("q", "" + shardsCount), new BasicNameValuePair("n", replicasCount + ""),
                 new BasicNameValuePair("partitioned", Boolean.toString(partitioned)))),
@@ -447,7 +497,7 @@ public class CouchDbClient {
      * @param responseProcessor {@link ThrowingFunction} to process response before the stream is closed
      * @param <DataT>           type of returned data which are created by {@code responseProcessor}
      * @return data created in {@code responseProcessor} based on response of PUT request with the given {@code json} on the given {@code uri}
-     * @throws IOException
+     * @throws IOException if http request is not successful or json processing fail
      */
     private <DataT> DataT put(URI uri, String json, ThrowingFunction<HttpResponse, DataT, IOException> responseProcessor) throws IOException {
         try (AutoCloseableHttpResponse response = new AutoCloseableHttpResponse()) {
@@ -469,7 +519,7 @@ public class CouchDbClient {
      * @param responseProcessor {@link ThrowingFunction} to process response before the stream is closed
      * @param <DataT>           type of returned data which are created by {@code responseProcessor}
      * @return data created in {@code responseProcessor} based on response of POST request with the given {@code json} on the given {@code uri}
-     * @throws IOException
+     * @throws IOException if http request is not successful or json processing fail
      */
     private <DataT> DataT post(URI uri, String json, ThrowingFunction<HttpResponse, DataT, IOException> responseProcessor) throws IOException {
         try (AutoCloseableHttpResponse response = new AutoCloseableHttpResponse()) {
@@ -490,7 +540,7 @@ public class CouchDbClient {
      * @param responseProcessor {@link ThrowingFunction} to process response before the stream is closed
      * @param <DataT>           type of returned data which are created by {@code responseProcessor}
      * @return data created in {@code responseProcessor} based on response of POST request with the given {@code json} on the given {@code uri}
-     * @throws IOException
+     * @throws IOException if http request is not successful or json processing fail
      */
     private <DataT> DataT get(URI uri, ThrowingFunction<HttpResponse, DataT, IOException> responseProcessor) throws IOException {
         try (AutoCloseableHttpResponse response = new AutoCloseableHttpResponse()) {
@@ -506,7 +556,7 @@ public class CouchDbClient {
      *
      * @param request which should be run
      * @return {@link HttpResponse} to the given {@code request}
-     * @throws IOException
+     * @throws IOException if http request is not successful or json processing fail
      */
     private HttpResponse execute(HttpRequestBase request) throws IOException {
         try {
@@ -519,10 +569,8 @@ public class CouchDbClient {
 
     /**
      * Method to end the connection to the endpoint.
-     *
-     * @throws IOException
      */
-    public void close() throws IOException {
+    public void close() {
         HttpClientUtils.closeQuietly(this.httpClient);
     }
 

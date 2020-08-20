@@ -1,5 +1,6 @@
-package com.groocraft.couchdb.slacker;
+package com.groocraft.couchdb.slacker.configuration;
 
+import com.groocraft.couchdb.slacker.CouchDbClient;
 import com.groocraft.couchdb.slacker.http.ThrowingInterceptor;
 import com.groocraft.couchdb.slacker.http.TrustAllStrategy;
 import org.apache.http.Consts;
@@ -90,7 +91,7 @@ public class CouchSlackerConfiguration {
         authCache.put(httpHost, new BasicScheme());
         HttpContext context = new BasicHttpContext();
         context.setAttribute(HttpClientContext.AUTH_CACHE, authCache);
-        properties.getUsername().ifPresent(u -> context.setAttribute(HttpClientContext.CREDS_PROVIDER, getCredentialProvider(u, properties.getPassword())));
+        context.setAttribute(HttpClientContext.CREDS_PROVIDER, getCredentialProvider(properties.getUsername(), properties.getPassword()));
         return context;
     }
 
@@ -103,9 +104,9 @@ public class CouchSlackerConfiguration {
      * Method to configure and get {@link Registry} of {@link ConnectionSocketFactory} for http and https. In case of https all certificated are trusted.
      *
      * @return {@link Registry}
-     * @throws KeyStoreException
-     * @throws NoSuchAlgorithmException
-     * @throws KeyManagementException
+     * @throws KeyStoreException if unable to load {@link TrustAllStrategy}
+     * @throws NoSuchAlgorithmException if unable to load {@link TrustAllStrategy}
+     * @throws KeyManagementException if unable to build {@link TrustAllStrategy}
      */
     private Registry<ConnectionSocketFactory> getRegistry() throws KeyStoreException, NoSuchAlgorithmException, KeyManagementException {
         // @formatter:off

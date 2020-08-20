@@ -21,6 +21,7 @@ public class CouchDbRepositoryFactoryBean<T extends Repository<S, ID>, S, ID ext
     /**
      * @param repositoryInterface must not be {@literal null}.
      */
+    @SuppressWarnings("SameParameterValue")
     protected CouchDbRepositoryFactoryBean(Class<? extends T> repositoryInterface, CouchDbClient client) {
         super(repositoryInterface);
         this.client = client;

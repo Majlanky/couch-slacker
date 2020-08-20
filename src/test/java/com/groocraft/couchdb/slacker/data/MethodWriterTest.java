@@ -4,7 +4,6 @@ import com.groocraft.couchdb.slacker.exception.AccessException;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 

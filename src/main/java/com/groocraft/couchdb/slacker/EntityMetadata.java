@@ -2,6 +2,7 @@ package com.groocraft.couchdb.slacker;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.groocraft.couchdb.slacker.annotation.Database;
+import com.groocraft.couchdb.slacker.configuration.CouchDbProperties;
 import com.groocraft.couchdb.slacker.data.FieldAccessor;
 import com.groocraft.couchdb.slacker.data.MethodReader;
 import com.groocraft.couchdb.slacker.data.MethodWriter;
@@ -14,7 +15,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Class providing access to attributes where to store id and revision, both mandatory for work with CouchDB documents.
@@ -29,12 +29,12 @@ import java.util.stream.Collectors;
  */
 public class EntityMetadata<DataT> {
 
-    private Class<DataT> entityClass;
-    private String databaseName;
-    private Writer<String> idWriter;
-    private Reader<String> idReader;
-    private Writer<String> revisionWriter;
-    private Reader<String> revisionReader;
+    private final Class<DataT> entityClass;
+    private final String databaseName;
+    private final Writer<String> idWriter;
+    private final Reader<String> idReader;
+    private final Writer<String> revisionWriter;
+    private final Reader<String> revisionReader;
 
     /**
      * @param entityClass of parsed document. Must not be {@literal null}
@@ -42,23 +42,12 @@ public class EntityMetadata<DataT> {
      */
     public EntityMetadata(Class<DataT> entityClass) {
         this.entityClass = entityClass;
-        resolve(this.entityClass);
-    }
-
-    /**
-     * Method parsing all fragments of metadata: database name for the pojo class (value of {@link Database} annotation or lower-cased
-     * {@link Class#getSimpleName()}), {@link Writer} for _id and _rev, {@link Reader} for _id and _rev.
-     *
-     * @param clazz of pojo class. Must not be {@literal null}
-     * @throws IllegalStateException if there is missing _id or _rev access
-     */
-    private void resolve(Class<DataT> clazz) {
-        Optional<Database> database = Optional.ofNullable(clazz.getAnnotation(Database.class));
-        databaseName = database.map(Database::value).orElse(clazz.getSimpleName().toLowerCase());
-        idWriter = getWriter(CouchDbProperties.COUCH_ID_NAME, clazz);
-        idReader = getReader(CouchDbProperties.COUCH_ID_NAME, clazz);
-        revisionWriter = getWriter(CouchDbProperties.COUCH_REVISION_NAME, clazz);
-        revisionReader = getReader(CouchDbProperties.COUCH_REVISION_NAME, clazz);
+        Optional<Database> database = Optional.ofNullable(entityClass.getAnnotation(Database.class));
+        databaseName = database.map(Database::value).orElse(entityClass.getSimpleName().toLowerCase());
+        idWriter = getWriter(CouchDbProperties.COUCH_ID_NAME, entityClass);
+        idReader = getReader(CouchDbProperties.COUCH_ID_NAME, entityClass);
+        revisionWriter = getWriter(CouchDbProperties.COUCH_REVISION_NAME, entityClass);
+        revisionReader = getReader(CouchDbProperties.COUCH_REVISION_NAME, entityClass);
     }
 
     /**
@@ -115,17 +104,16 @@ public class EntityMetadata<DataT> {
      */
     private <AccessT> AccessT getAccess(List<String> types, String annotationValue, Class<?> clazz, Function<Method, AccessT> methodAccessProducer,
                                         Function<Field, AccessT> fieldAccessProducer) {
-        Optional<AccessT> access = Optional.ofNullable(getAnnotatedMethod(types, annotationValue, clazz)).map(m -> methodAccessProducer.apply(m));
+        Optional<AccessT> access = Optional.ofNullable(getAnnotatedMethod(types, annotationValue, clazz)).map(methodAccessProducer);
         if (access.isEmpty()) {
             Optional<Field> field = Optional.ofNullable(resolveAnnotatedField(annotationValue, clazz));
-            access = field.map(f -> fieldAccessProducer.apply(f));
-            Optional<AccessT> methodReader = field.map(f -> getMethodForField(types, f, clazz)).map(m -> methodAccessProducer.apply(m));
+            access = field.map(fieldAccessProducer);
+            Optional<AccessT> methodReader = field.map(f -> getMethodForField(types, f, clazz)).map(methodAccessProducer);
             if (methodReader.isPresent()) {
                 access = methodReader;
             }
         }
-        return access.orElseThrow(() -> new IllegalStateException("Class " + clazz.getName() + " does not contain " + annotationValue + " " + types.stream().collect(Collectors.joining(" or ")) + " " +
-                "access"));
+        return access.orElseThrow(() -> new IllegalStateException("Class " + clazz.getName() + " does not contain " + annotationValue + " " + String.join(" or ", types) + " access"));
     }
 
     /**
@@ -154,16 +142,13 @@ public class EntityMetadata<DataT> {
      * @param prefixes possible prefixes of getter/setter method of attribute. Based on java naming convention it can be set/get/is. Must not be {@literal null}
      * @param field    which name is used to get name of method (with connection of one of {@code prefixes}). Must not be {@literal null}
      * @param clazz    which is processed. Must not be {@literal null}
-     * @return
+     * @return {@link Method} for accessing field if any
      */
     private Method getMethodForField(List<String> prefixes, Field field, Class<?> clazz) {
         String nameFragment = field.getName().substring(0, 1).toUpperCase() + field.getName().substring(1);
         Optional<Method> method =
-                Arrays.stream(clazz.getDeclaredMethods()).filter(m -> prefixes.stream().filter(p -> (p + nameFragment).equals(m.getName())).count() > 0).findFirst();
-        if (method.isPresent()) {
-            return method.get();
-        }
-        return clazz.getSuperclass() == null ? null : getMethodForField(prefixes, field, clazz.getSuperclass());
+                Arrays.stream(clazz.getDeclaredMethods()).filter(m -> prefixes.stream().anyMatch(p -> (p + nameFragment).equals(m.getName()))).findFirst();
+        return method.orElseGet(() -> clazz.getSuperclass() == null ? null : getMethodForField(prefixes, field, clazz.getSuperclass()));
     }
 
     /**
@@ -178,7 +163,7 @@ public class EntityMetadata<DataT> {
     private Method getAnnotatedMethod(List<String> prefixes, String annotationValue, Class<?> clazz) {
         for (Method method : clazz.getDeclaredMethods()) {
             JsonProperty jsonProperty = method.getAnnotation(JsonProperty.class);
-            if (jsonProperty != null && annotationValue.equals(jsonProperty.value()) && prefixes.stream().filter(p -> method.getName().startsWith(p)).count() > 0) {
+            if (jsonProperty != null && annotationValue.equals(jsonProperty.value()) && prefixes.stream().anyMatch(p -> method.getName().startsWith(p))) {
                 return method;
             }
         }

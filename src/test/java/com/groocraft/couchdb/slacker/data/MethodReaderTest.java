@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class MethodReaderTest {
 
     private boolean called = false;
-    private String value = "test";
+    private final String value = "test";
 
     @Test
     public void test() throws NoSuchMethodException {

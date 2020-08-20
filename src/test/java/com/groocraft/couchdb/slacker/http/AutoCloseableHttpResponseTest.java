@@ -44,7 +44,7 @@ class AutoCloseableHttpResponseTest {
         try (AutoCloseableHttpResponse autoResponse = new AutoCloseableHttpResponse()) {
             autoResponse.set(this.response);
         }
-        Mockito.verify(this.stream, Mockito.only().description("Close method must be called automatically on the wrapped isntance")).close();
+        Mockito.verify(this.stream, Mockito.only().description("Close method must be called automatically on the wrapped instance")).close();
     }
 
     @Test
@@ -54,7 +54,7 @@ class AutoCloseableHttpResponseTest {
         Mockito.doThrow(new IOException()).when(stream).close();
         AutoCloseableHttpResponse autoResponse = new AutoCloseableHttpResponse();
         autoResponse.set(this.response);
-        Assertions.assertDoesNotThrow(() -> autoResponse.close());
+        Assertions.assertDoesNotThrow(autoResponse::close);
         Mockito.verify(this.stream, Mockito.only().description("Close method must be called on the wrapped instance")).close();
     }
 

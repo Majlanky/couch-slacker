@@ -1,7 +1,6 @@
 package com.groocraft.couchdb.slacker.data;
 
 import com.groocraft.couchdb.slacker.exception.AccessException;
-import lombok.AllArgsConstructor;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

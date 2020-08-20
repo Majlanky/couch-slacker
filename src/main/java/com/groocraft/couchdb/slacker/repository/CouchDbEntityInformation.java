@@ -16,9 +16,9 @@ import org.springframework.data.repository.core.support.RepositoryFactorySupport
  */
 public class CouchDbEntityInformation<EntityT, IdT> implements EntityInformation<EntityT, IdT> {
 
-    private Class<EntityT> clazz;
-    private Reader<String> idReader;
-    private Reader<String> revisionReader;
+    private final Class<EntityT> clazz;
+    private final Reader<String> idReader;
+    private final Reader<String> revisionReader;
 
     /**
      * @param entityMetadata {@link EntityMetadata} for the entity class. Used to get {@link Reader} for revision and id. Must not be {@literal null}.
@@ -46,6 +46,7 @@ public class CouchDbEntityInformation<EntityT, IdT> implements EntityInformation
      * @return documents UUID
      */
     @Override
+    @SuppressWarnings("unchecked")
     public IdT getId(EntityT entity) {
         return (IdT) idReader.read(entity);
     }
@@ -56,6 +57,7 @@ public class CouchDbEntityInformation<EntityT, IdT> implements EntityInformation
      * @return {@link String} class, because CouchDB _id must be string
      */
     @Override
+    @SuppressWarnings("unchecked")
     public Class<IdT> getIdType() {
         return (Class<IdT>) String.class;
     }

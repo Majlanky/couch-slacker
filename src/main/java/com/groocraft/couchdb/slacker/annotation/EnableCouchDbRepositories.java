@@ -19,6 +19,7 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Import(CouchDbRepositoriesRegistrar.class)
+@SuppressWarnings("unsused")
 public @interface EnableCouchDbRepositories {
 
     String[] value() default {};

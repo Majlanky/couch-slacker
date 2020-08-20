@@ -17,7 +17,7 @@ public interface ThrowingFunction<ParameterT, ReturnedT, ExceptionT extends Exce
      *
      * @param parameter the function argument
      * @return the function result
-     * @throws ExceptionT
+     * @throws ExceptionT if internal implementation throws a {@link Exception}
      */
     ReturnedT apply(ParameterT parameter) throws ExceptionT;
 

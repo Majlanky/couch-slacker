@@ -22,14 +22,14 @@ public enum Operation {
     LESSER_THAN_OR_EQUALS(Part.Type.LESS_THAN_EQUAL, "lte"),
     REGEX(Part.Type.REGEX, "regex");
 
-    private static Map<Part.Type, String> translationMap = new HashMap<>();
+    private static final Map<Part.Type, String> translationMap = new HashMap<>();
 
     static {
         Arrays.stream(Operation.values()).forEach(o -> translationMap.put(o.getType(), o.getValue()));
     }
 
-    private String value;
-    private Part.Type type;
+    private final String value;
+    private final Part.Type type;
 
     Operation(Part.Type type, String value) {
         this.value = "$" + value;

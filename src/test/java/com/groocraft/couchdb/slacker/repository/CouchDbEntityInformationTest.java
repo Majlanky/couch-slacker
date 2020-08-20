@@ -11,15 +11,16 @@ import static org.junit.jupiter.api.Assertions.*;
 class CouchDbEntityInformationTest {
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testFind(){
         Reader<String> idReader = Mockito.mock(Reader.class);
         Reader<String> revisionReader = Mockito.mock(Reader.class);
-        EntityMetadata metadata = Mockito.mock(EntityMetadata.class);
+        EntityMetadata<TestDocument> metadata = Mockito.mock(EntityMetadata.class);
         Mockito.when(metadata.getEntityClass()).thenReturn(TestDocument.class);
         Mockito.when(metadata.getIdReader()).thenReturn(idReader);
         Mockito.when(metadata.getRevisionReader()).thenReturn(revisionReader);
 
-        CouchDbEntityInformation entityInformation = new CouchDbEntityInformation(metadata);
+        CouchDbEntityInformation<TestDocument, String> entityInformation = new CouchDbEntityInformation<>(metadata);
         assertEquals(TestDocument.class, entityInformation.getJavaType(), "Reporting wrong java type, it must match metadata information");
         Mockito.when(revisionReader.read(Mockito.any())).thenReturn("");
         assertTrue(entityInformation.isNew(new TestDocument()), "If there is no revision in the entity instance, it has to be reported as new");

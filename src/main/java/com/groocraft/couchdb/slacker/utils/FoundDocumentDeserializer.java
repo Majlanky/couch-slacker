@@ -1,7 +1,6 @@
 package com.groocraft.couchdb.slacker.utils;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -21,7 +20,7 @@ import java.util.List;
  */
 public class FoundDocumentDeserializer<EntityT> extends JsonDeserializer<List<EntityT>> {
 
-    private Class<EntityT> clazz;
+    private final Class<EntityT> clazz;
 
     public FoundDocumentDeserializer(Class<EntityT> clazz) {
         this.clazz = clazz;
@@ -31,9 +30,8 @@ public class FoundDocumentDeserializer<EntityT> extends JsonDeserializer<List<En
      * {@inheritDoc}
      */
     @Override
-    public List<EntityT> deserialize(JsonParser p, DeserializationContext ctx) throws IOException, JsonProcessingException {
+    public List<EntityT> deserialize(JsonParser p, DeserializationContext ctx) throws IOException {
         JsonNode node = p.getCodec().readTree(p);
-        List<EntityT> data = new ObjectMapper().readValue(node.toString(), ctx.getTypeFactory().constructCollectionType(List.class, clazz));
-        return data;
+        return new ObjectMapper().readValue(node.toString(), ctx.getTypeFactory().constructCollectionType(List.class, clazz));
     }
 }

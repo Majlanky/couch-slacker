@@ -1,7 +1,6 @@
 package com.groocraft.couchdb.slacker.data;
 
 import com.groocraft.couchdb.slacker.exception.AccessException;
-import lombok.AllArgsConstructor;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -20,6 +19,7 @@ public class MethodReader<DataT> implements Reader<DataT>{
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public DataT read(Object o) {
         try {
             return (DataT)method.invoke(o);

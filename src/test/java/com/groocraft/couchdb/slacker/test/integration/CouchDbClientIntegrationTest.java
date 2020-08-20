@@ -1,9 +1,8 @@
 package com.groocraft.couchdb.slacker.test.integration;
 
 import com.groocraft.couchdb.slacker.CouchDbClient;
-import com.groocraft.couchdb.slacker.CouchSlackerConfiguration;
+import com.groocraft.couchdb.slacker.configuration.CouchSlackerConfiguration;
 import com.groocraft.couchdb.slacker.annotation.EnableCouchDbRepositories;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;

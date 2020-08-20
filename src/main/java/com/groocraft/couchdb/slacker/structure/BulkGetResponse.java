@@ -2,10 +2,9 @@ package com.groocraft.couchdb.slacker.structure;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import javax.swing.text.html.parser.Entity;
 import java.util.List;
-import java.util.Set;
 
+@SuppressWarnings("unused")
 public class BulkGetResponse<EntityT> {
 
     @JsonProperty("results")

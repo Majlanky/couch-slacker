@@ -11,6 +11,7 @@ import lombok.Setter;
  * @author Majlanky
  * @see DocumentFindResponse
  */
+@SuppressWarnings("unused")
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter

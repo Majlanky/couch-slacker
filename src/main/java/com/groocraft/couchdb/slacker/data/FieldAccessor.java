@@ -19,6 +19,7 @@ public class FieldAccessor<DataT> implements Writer<DataT>, Reader<DataT> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public DataT read(Object o) {
         try {
             return (DataT)field.get(o);

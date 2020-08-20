@@ -9,7 +9,7 @@ class EntityMetadataTest {
     @Test
     public void testParsingFieldBased(){
         FieldTestDocument testDocument = new FieldTestDocument();
-        EntityMetadata entityMetadata = new EntityMetadata(testDocument.getClass());
+        EntityMetadata<FieldTestDocument> entityMetadata = new EntityMetadata<>(FieldTestDocument.class);
         assertEquals("test", entityMetadata.getDatabaseName(), "Wrongly parsed Database annotation");
 
         entityMetadata.getIdWriter().write(testDocument, "idTest");
@@ -24,7 +24,7 @@ class EntityMetadataTest {
     @Test
     public void testParsingMethodBased(){
         MethodTestDocument testDocument = new MethodTestDocument();
-        EntityMetadata entityMetadata = new EntityMetadata(testDocument.getClass());
+        EntityMetadata<MethodTestDocument> entityMetadata = new EntityMetadata<>(MethodTestDocument.class);
         assertEquals("test", entityMetadata.getDatabaseName(), "Wrongly parsed Database annotation");
 
         entityMetadata.getIdWriter().write(testDocument, "idTest");
@@ -45,7 +45,7 @@ class EntityMetadataTest {
     @Test
     public void testParsingFieldWithMethodBased(){
         FieldWithMethodTestDocument testDocument = new FieldWithMethodTestDocument();
-        EntityMetadata entityMetadata = new EntityMetadata(testDocument.getClass());
+        EntityMetadata<FieldWithMethodTestDocument> entityMetadata = new EntityMetadata<>(FieldWithMethodTestDocument.class);
         assertEquals("test", entityMetadata.getDatabaseName(), "Wrongly parsed Database annotation");
 
         entityMetadata.getIdWriter().write(testDocument, "idTest");
@@ -66,7 +66,7 @@ class EntityMetadataTest {
     @Test
     public void testParsingMixedBased(){
         MixedTestDocument testDocument = new MixedTestDocument();
-        EntityMetadata entityMetadata = new EntityMetadata(testDocument.getClass());
+        EntityMetadata<MixedTestDocument> entityMetadata = new EntityMetadata<>(MixedTestDocument.class);
         assertEquals("test", entityMetadata.getDatabaseName(), "Wrongly parsed Database annotation");
 
         entityMetadata.getIdWriter().write(testDocument, "idTest");
@@ -86,7 +86,7 @@ class EntityMetadataTest {
     @Test
     public void testParsingInheritance(){
         InheritedTestDocument testDocument = new InheritedTestDocument();
-        EntityMetadata entityMetadata = new EntityMetadata(testDocument.getClass());
+        EntityMetadata<InheritedTestDocument> entityMetadata = new EntityMetadata<>(InheritedTestDocument.class);
         assertEquals("test", entityMetadata.getDatabaseName(), "Wrongly parsed Database annotation");
 
         entityMetadata.getIdWriter().write(testDocument, "idTest");
@@ -105,12 +105,12 @@ class EntityMetadataTest {
 
     @Test()
     public void testMissingId(){
-        assertThrows(IllegalStateException.class, () -> new EntityMetadata(NoIdTestDocument.class), "Absence of _id attribute must be reported by exception");
+        assertThrows(IllegalStateException.class, () -> new EntityMetadata<>(NoIdTestDocument.class), "Absence of _id attribute must be reported by exception");
     }
 
     @Test()
     public void testMissingRevision(){
-        assertThrows(IllegalStateException.class, () -> new EntityMetadata(NoRevisionTestDocument.class), "Absence of _rev attribute must be reported by " +
+        assertThrows(IllegalStateException.class, () -> new EntityMetadata<>(NoRevisionTestDocument.class), "Absence of _rev attribute must be reported by " +
                 "exception");
     }
 
@@ -118,7 +118,7 @@ class EntityMetadataTest {
     public void testMissingDatabase(){
         assertDoesNotThrow(() -> {
             NoDatabaseTestDocument testDocument = new NoDatabaseTestDocument();
-            EntityMetadata entityMetadata = new EntityMetadata(testDocument.getClass());
+            EntityMetadata<NoDatabaseTestDocument> entityMetadata = new EntityMetadata<>(NoDatabaseTestDocument.class);
             assertEquals("nodatabasetestdocument", entityMetadata.getDatabaseName(), "Wrongly created database name based on class name");
 
             entityMetadata.getIdWriter().write(testDocument, "idTest");

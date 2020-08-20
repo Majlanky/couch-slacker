@@ -1,19 +1,13 @@
 package com.groocraft.couchdb.slacker.repository;
 
 import com.groocraft.couchdb.slacker.CouchDbClient;
-import com.groocraft.couchdb.slacker.Document;
-import com.groocraft.couchdb.slacker.exception.CouchDBBulkOperationException;
 import com.groocraft.couchdb.slacker.exception.CouchDbException;
 import com.groocraft.couchdb.slacker.exception.CouchDbRuntimeException;
-import com.groocraft.couchdb.slacker.utils.IterableStream;
-import com.groocraft.couchdb.slacker.utils.ThrowingStream;
 import org.apache.http.HttpStatus;
 import org.springframework.data.repository.CrudRepository;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 /**
@@ -24,6 +18,7 @@ import java.util.stream.StreamSupport;
  * @see CrudRepository
  * @see CouchDbClient
  */
+//TODO paging and sorting interface instead of crud one
 public class SimpleCouchDbRepository<EntityT> implements CrudRepository<EntityT, String> {
 
     private final CouchDbClient client;
@@ -97,9 +92,7 @@ public class SimpleCouchDbRepository<EntityT> implements CrudRepository<EntityT,
     @Override
     public Iterable<EntityT> findAll() {
         try {
-            return IterableStream.of(client.readAll(clazz).stream().map(id -> findById(id).orElseThrow(() -> new CouchDbRuntimeException(id +
-                    "do not exist " +
-                    "anymore"))));
+            return client.readAll(client.readAll(clazz), clazz);
         } catch (IOException e){
             throw new CouchDbRuntimeException("Unable to list all " + clazz.getSimpleName(), e);
         }
@@ -125,7 +118,7 @@ public class SimpleCouchDbRepository<EntityT> implements CrudRepository<EntityT,
     @Override
     public long count() {
         try{
-            return client.readAll(clazz).size();
+            return StreamSupport.stream(client.readAll(clazz).spliterator(), false).count();
         } catch (IOException e){
             throw new CouchDbRuntimeException("Unable to read all " + clazz.getSimpleName() + " for counting", e);
         }

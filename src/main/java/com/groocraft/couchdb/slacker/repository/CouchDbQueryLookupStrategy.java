@@ -20,7 +20,7 @@ import java.util.Optional;
  */
 public class CouchDbQueryLookupStrategy implements QueryLookupStrategy {
 
-    private CouchDbClient client;
+    private final CouchDbClient client;
 
     /**
      * @param client must not be {@literal null}.
@@ -41,7 +41,7 @@ public class CouchDbQueryLookupStrategy implements QueryLookupStrategy {
             query = Optional.of(namedQueries.getQuery(namedQueryName));
         } else {
             Optional<Query> queryAnnotation = Optional.ofNullable(method.getAnnotation(Query.class));
-            query = queryAnnotation.map(q -> q.value());
+            query = queryAnnotation.map(Query::value);
         }
         return query.map(s -> (RepositoryQuery) new CouchDbDirectQuery(s, client, queryMethod, metadata.getDomainType())).orElseGet(() -> new CouchDbParsingQuery(client,
                 method, queryMethod, metadata.getDomainType()));

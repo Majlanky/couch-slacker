@@ -1,16 +1,13 @@
 package com.groocraft.couchdb.slacker.http;
 
 import com.groocraft.couchdb.slacker.exception.CouchDbException;
-import com.groocraft.couchdb.slacker.utils.ThrowingStream;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.RequestLine;
 import org.apache.http.StatusLine;
 import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.protocol.HttpContext;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -21,10 +18,7 @@ import static org.mockito.Mockito.*;
 
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.lang.reflect.Field;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -80,9 +74,13 @@ class ThrowingInterceptorTest {
     }
 
     private static Stream<Integer> getNonOkHttpStatuses() {
-        return ThrowingStream.<Field, Integer>of(List.of(HttpStatus.class.getFields())).forEach(f -> (Integer) f.get(null))
-                .throwIfUnprocessed(m -> new RuntimeException("Poorly implemented test"))
-                .filter(i -> i > HttpStatus.SC_ACCEPTED && i != HttpStatus.SC_NOT_MODIFIED).collect(Collectors.toList()).stream();
+        return List.of(HttpStatus.class.getFields()).stream().map(f -> {
+            try {
+                return (Integer)f.get(null);
+            } catch (IllegalAccessException e) {
+                throw new IllegalStateException("We are expecting only static fields in the HttpStatus class which represents a number");
+            }
+        }).filter(i -> i > HttpStatus.SC_ACCEPTED && i != HttpStatus.SC_NOT_MODIFIED);
     }
 
 }

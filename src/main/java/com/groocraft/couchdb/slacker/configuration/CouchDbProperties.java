@@ -1,4 +1,4 @@
-package com.groocraft.couchdb.slacker;
+package com.groocraft.couchdb.slacker.configuration;
 
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -20,8 +20,8 @@ public class CouchDbProperties {
 
     private String password = "";
 
-    public Optional<String> getUsername() {
-        return Optional.ofNullable(username);
+    public String getUsername() {
+        return username;
     }
 
     public void setUsername(String username) {

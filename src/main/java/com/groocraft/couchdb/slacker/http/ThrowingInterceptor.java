@@ -1,8 +1,6 @@
 package com.groocraft.couchdb.slacker.http;
 
 import com.groocraft.couchdb.slacker.exception.CouchDbException;
-import org.apache.http.HttpException;
-import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpResponseInterceptor;
 import org.apache.http.HttpStatus;
@@ -12,10 +10,10 @@ import org.apache.http.protocol.HttpContext;
 
 import java.io.IOException;
 
-//TODO error and reason in case of find query???
 public class ThrowingInterceptor implements HttpResponseInterceptor {
+
     @Override
-    public void process(HttpResponse response, HttpContext context) throws HttpException, IOException {
+    public void process(HttpResponse response, HttpContext context) throws IOException {
         switch (response.getStatusLine().getStatusCode()) {
             case HttpStatus.SC_OK:
             case HttpStatus.SC_CREATED:

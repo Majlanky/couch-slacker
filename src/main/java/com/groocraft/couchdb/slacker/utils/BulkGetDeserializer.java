@@ -1,7 +1,6 @@
 package com.groocraft.couchdb.slacker.utils;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -13,7 +12,7 @@ import java.util.List;
 
 public class BulkGetDeserializer<EntityT> extends JsonDeserializer<List<EntityT>> {
 
-    private Class<EntityT> clazz;
+    private final Class<EntityT> clazz;
 
     public BulkGetDeserializer(Class<EntityT> clazz) {
         this.clazz = clazz;
@@ -23,7 +22,7 @@ public class BulkGetDeserializer<EntityT> extends JsonDeserializer<List<EntityT>
      * {@inheritDoc}
      */
     @Override
-    public List<EntityT> deserialize(JsonParser p, DeserializationContext ctx) throws IOException, JsonProcessingException {
+    public List<EntityT> deserialize(JsonParser p, DeserializationContext ctx) throws IOException {
         List<EntityT> data = new LinkedList<>();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = p.getCodec().readTree(p);

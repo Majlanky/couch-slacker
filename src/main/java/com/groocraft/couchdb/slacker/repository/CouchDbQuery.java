@@ -15,14 +15,14 @@ import java.io.IOException;
  * ? and : replacement are supported, but can not be mixed.
  *
  * @author Majlanky
- * @see {@link RepositoryQuery}
+ * @see RepositoryQuery
  */
 //TODO dynamic and other projection
 public abstract class CouchDbQuery implements RepositoryQuery {
 
-    private QueryMethod queryMethod;
-    private CouchDbClient client;
-    private Class<?> entityClass;
+    private final QueryMethod queryMethod;
+    private final CouchDbClient client;
+    private final Class<?> entityClass;
 
     /**
      * @param client      must not be {@literal null}.

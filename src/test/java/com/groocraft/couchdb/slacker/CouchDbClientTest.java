@@ -1,6 +1,5 @@
 package com.groocraft.couchdb.slacker;
 
-import com.groocraft.couchdb.slacker.exception.CouchDbRuntimeException;
 import com.groocraft.couchdb.slacker.repository.CouchDbEntityInformation;
 import com.groocraft.couchdb.slacker.utils.ThrowingConsumer;
 import org.apache.commons.io.IOUtils;
@@ -15,15 +14,12 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Sort;
 
@@ -32,15 +28,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
-import java.util.function.Consumer;
 import java.util.stream.StreamSupport;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -70,7 +62,7 @@ class CouchDbClientTest {
 
     @Test
     public void testGetEntityInformation() {
-        CouchDbEntityInformation information = client.getEntityInformation(TestDocument.class);
+        CouchDbEntityInformation<TestDocument, String> information = client.getEntityInformation(TestDocument.class);
         assertNotNull(information, "Returned entity information must not be null");
         assertEquals(TestDocument.class, information.getJavaType(), "Returned entity information must match to entity class");
     }
@@ -280,18 +272,20 @@ class CouchDbClientTest {
         when(response.getEntity()).thenReturn(entity);
         when(httpClient.execute(eq(httpHost), requestCaptor.capture(), eq(httpContext))).thenReturn(response).thenThrow(thrown);
 
-        List<TestDocument> read = client.find("", TestDocument.class);
+        Iterable<TestDocument> read = client.find("", TestDocument.class);
 
         HttpRequest request = requestCaptor.getValue();
         assertEquals(HttpPost.class, request.getClass(), "Find has to be done as POST request");
         HttpPost post = (HttpPost) request;
         assertEquals("http://localhost:5984/test/_find", post.getURI().toString(), "URI must be based on base URI and database name");
         assertEquals("application/json", post.getEntity().getContentType().getValue(), "Find request should declare json content");
-        assertEquals(3, read.size(), "Based on mocked json, there are 3 documents returned");
-        for (int i = 0; i < read.size(); i++) {
-            assertEquals("unique" + (i + 1), read.get(i).getId(), "Document with index " + i + " has in-properly de-serialized id");
-            assertEquals("123" + (i + 1), read.get(i).getRevision(), "Document with index " + i + " has in-properly de-serialized revision");
-            assertEquals("value" + (i + 1), read.get(i).getValue(), "Document with index " + i + " has in-properly de-serialized value");
+        assertEquals(3, StreamSupport.stream(read.spliterator(), false).count(), "Based on mocked json, there are 3 documents returned");
+        int i = 1;
+        for(TestDocument d : read) {
+            assertEquals("unique" + i, d.getId(), "Document with index " + i + " has in-properly de-serialized id");
+            assertEquals("123" + i, d.getRevision(), "Document with index " + i + " has in-properly de-serialized revision");
+            assertEquals("value" + i, d.getValue(), "Document with index " + i + " has in-properly de-serialized value");
+            i++;
         }
 
         assertEquals(thrown, assertThrows(IOException.class, () -> client.find("", TestDocument.class)), "CouchDb client should not alternate original " +
@@ -321,26 +315,30 @@ class CouchDbClientTest {
         when(entity.getContent()).thenReturn(content);
         when(response.getEntity()).thenReturn(entity);
         when(httpClient.execute(eq(httpHost), requestCaptor.capture(), eq(httpContext))).thenReturn(response, response).thenThrow(thrown);
-        List<String> all = client.readAll(TestDocument.class);
+        Iterable<String> all = client.readAll(TestDocument.class);
         HttpRequest request = requestCaptor.getValue();
         assertEquals(HttpGet.class, request.getClass(), "Find has to be done as GET request");
         HttpGet get = (HttpGet) request;
         assertEquals("http://localhost:5984/test/_all_docs", get.getURI().toString(), "URI must be based on base URI and database name");
         assertEquals("application/json", get.getFirstHeader(HttpHeaders.ACCEPT).getValue(), "Get document request should declare accepting json");
-        assertEquals(3, all.size(), "Result of find was not properly read or filtered");
-        assertEquals("1", all.get(0), "One row is missing in the result");
-        assertEquals("2", all.get(1), "One row is missing in the result");
-        assertEquals("3", all.get(2), "One row is missing in the result");
+        assertEquals(3, StreamSupport.stream(all.spliterator(), false).count(), "Result of find was not properly read or filtered");
+        int i = 1;
+        for(String id : all){
+            assertEquals(i++ + "", id, "One row is missing in the result");
+        }
         content.reset();
 
-        List<String> allDesign = client.readAllDesign(TestDocument.class);
+        Iterable<String> allDesign = client.readAllDesign(TestDocument.class);
         request = requestCaptor.getValue();
         assertEquals(HttpGet.class, request.getClass(), "Find has to be done as GET request");
         get = (HttpGet) request;
         assertEquals("http://localhost:5984/test/_all_docs", get.getURI().toString(), "URI must be based on base URI and database name");
         assertEquals("application/json", get.getFirstHeader(HttpHeaders.ACCEPT).getValue(), "Get document request should declare accepting json");
-        assertEquals(1, allDesign.size(), "Result of find was not properly read or filtered");
-        assertEquals("_design0", allDesign.get(0), "One row is missing in the result");
+        assertEquals(1, StreamSupport.stream(allDesign.spliterator(), false).count(), "Result of find was not properly read or filtered");
+        i = 0;
+        for(String id : allDesign){
+            assertEquals("_design" + i++, id, "One row is missing in the result");
+        }
 
         assertEquals(thrown, assertThrows(IOException.class, () -> client.readAll(TestDocument.class)), "CouchDb client should not alternate original " +
                 "exception");

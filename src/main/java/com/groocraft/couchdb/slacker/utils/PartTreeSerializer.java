@@ -3,12 +3,10 @@ package com.groocraft.couchdb.slacker.utils;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import com.groocraft.couchdb.slacker.annotation.Index;
 import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.repository.query.parser.PartTree;
 
 import java.io.IOException;
-import java.util.Optional;
 
 /**
  * Implementation of {@link JsonSerializer} to ease serialization of Mango query from {@link PartTree}. Because of non-standard structure of Mango query it

@@ -7,10 +7,6 @@ package com.groocraft.couchdb.slacker.exception;
  */
 public class CouchDbRuntimeException extends RuntimeException {
 
-    public CouchDbRuntimeException(String message) {
-        super(message);
-    }
-
     public CouchDbRuntimeException(String message, Throwable cause) {
         super(message, cause);
     }

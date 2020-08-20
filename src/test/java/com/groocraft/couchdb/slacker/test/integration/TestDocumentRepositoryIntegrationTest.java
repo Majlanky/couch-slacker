@@ -1,14 +1,10 @@
 package com.groocraft.couchdb.slacker.test.integration;
 
-import com.groocraft.couchdb.slacker.CouchSlackerConfiguration;
+import com.groocraft.couchdb.slacker.configuration.CouchSlackerConfiguration;
 import com.groocraft.couchdb.slacker.TestDocument;
 import com.groocraft.couchdb.slacker.annotation.EnableCouchDbRepositories;
-import com.groocraft.couchdb.slacker.exception.CouchDbException;
 import com.groocraft.couchdb.slacker.exception.CouchDbRuntimeException;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -48,7 +44,6 @@ public class TestDocumentRepositoryIntegrationTest {
 
     @Test
     public void testSaveNewAndRead(){
-        System.out.println("testSaveNewAndRead " + Thread.currentThread().getName());
         String randomValue = UUID.randomUUID().toString();
         TestDocument saved = repository.save(new TestDocument(randomValue));
         assertNotNull(saved.getId(), "Id must be present after save");
@@ -59,8 +54,21 @@ public class TestDocumentRepositoryIntegrationTest {
     }
 
     @Test
+    public void testSaveAndUpdate(){
+        String randomValue = UUID.randomUUID().toString();
+        TestDocument saved = repository.save(new TestDocument(randomValue));
+        assertNotNull(saved.getId(), "Id must be present after save");
+        assertNotNull(saved.getRevision(), "Revision must be resent after save");
+        String newRandomValue = UUID.randomUUID().toString();
+        saved.setValue(newRandomValue);
+        saved = repository.save(saved);
+        Optional<TestDocument> read = repository.findById(saved.getId());
+        assertTrue(read.isPresent(), "It must be possible to read document created few lines above");
+        assertEquals(newRandomValue, read.get().getValue(), "Values must match if the same document read");
+    }
+
+    @Test
     public void testSaveNewAndDeleteById(){
-        System.out.println("testSaveNewAndDeleteById " + Thread.currentThread().getName());
         String randomValue = UUID.randomUUID().toString();
         TestDocument saved = repository.save(new TestDocument(randomValue));
         assertNotNull(saved.getId(), "Id must be present after save");
@@ -71,7 +79,6 @@ public class TestDocumentRepositoryIntegrationTest {
 
     @Test
     public void testSaveNewAndUpdateAndRead(){
-        System.out.println("testSaveNewAndUpdateAndRead " + Thread.currentThread().getName());
         String randomValue = UUID.randomUUID().toString();
         TestDocument saved = repository.save(new TestDocument(randomValue));
         assertNotNull(saved.getId(), "Id must be present after save");
@@ -86,7 +93,6 @@ public class TestDocumentRepositoryIntegrationTest {
 
     @Test
     public void testSavingAll(){
-        System.out.println("testSavingAll " + Thread.currentThread().getName());
         List<TestDocument> all = new LinkedList<>();
         IntStream.range(1, 21).forEach(i -> all.add(new TestDocument( "value" + i, "value2" + i)));
         Iterable<TestDocument> saved = repository.saveAll(all);
@@ -99,63 +105,53 @@ public class TestDocumentRepositoryIntegrationTest {
             assertEquals("value2" + i.getAndIncrement(), s.getValue2(), "Value of entity is not matching. Order or data of entities is messed up");
         });
         assertEquals(20,
-                StreamSupport.stream(repository.findAllById(StreamSupport.stream(saved.spliterator(), false).map(d -> d.getId()).collect(Collectors.toList())).spliterator(), false).count(),
+                StreamSupport.stream(repository.findAllById(StreamSupport.stream(saved.spliterator(), false).map(TestDocument::getId).collect(Collectors.toList())).spliterator(), false).count(),
                 "One or more of passed entities was not truly saved");
     }
 
     @Test
     public void testExistsByIdNonExisting(){
-        System.out.println("testExistsByIdNonExisting " + Thread.currentThread().getName());
         assertFalse(repository.existsById("NonExisting"), "False must be returned when id does not exists");
     }
 
     @Test
     public void testFindAllById(){
-        System.out.println("testFindAllById " + Thread.currentThread().getName());
         List<TestDocument> all = new LinkedList<>();
         IntStream.range(1, 21).forEach(i -> all.add(new TestDocument( "value" + i, "value2" + i)));
         Iterable<TestDocument> saved = repository.saveAll(all);
         List<TestDocument> found = new LinkedList<>();
-        repository.findAllById(StreamSupport.stream(saved.spliterator(), false).map(d -> d.getId()).collect(Collectors.toList())).forEach(found::add);
+        repository.findAllById(StreamSupport.stream(saved.spliterator(), false).map(TestDocument::getId).collect(Collectors.toList())).forEach(found::add);
 
-        saved.forEach(s -> {
-            assertTrue(found.stream().anyMatch(s::equals), "One of saved not found");
-        });
+        saved.forEach(s -> assertTrue(found.stream().anyMatch(s::equals), "One of saved not found"));
     }
 
     @Test
     public void testFindAllByIdWithNonExisting(){
-        System.out.println("testFindAllByIdWithNonExisting " + Thread.currentThread().getName());
         List<String> all = List.of("nonExisting");
         Iterable<TestDocument> found =
-                assertDoesNotThrow(() -> repository.findAllById(StreamSupport.stream(all.spliterator(), false).collect(Collectors.toList()))
-                        , "Exception must not be thrown when one of wanted ids does not exist");
+                assertDoesNotThrow(() -> repository.findAllById(all), "Exception must not be thrown when one of wanted ids does not exist");
         assertEquals(0, StreamSupport.stream(found.spliterator(), false).count(), "For non existing id, no entity should be returned");
     }
 
     @Test
     public void testReadingNonExisting(){
-        System.out.println("testReadingNonExisting " + Thread.currentThread().getName());
         Optional<TestDocument> read = assertDoesNotThrow(() -> repository.findById("nonExisting"), "Exception must not be thrown cause of non existing id");
         assertFalse(read.isPresent(), "No entity can be present if the id not exists in the DB");
     }
 
     @Test
     public void testDeletingByIdNonExisting(){
-        System.out.println("testDeletingByIdNonExisting " + Thread.currentThread().getName());
         assertThrows(CouchDbRuntimeException.class, () -> repository.deleteById("nonExisting"), "Exception must be thrown when id does not exist");
     }
 
     @Test
     public void testDeletingNonExisting(){
-        System.out.println("testDeletingNonExisting " + Thread.currentThread().getName());
         assertThrows(CouchDbRuntimeException.class, () -> repository.delete(new TestDocument("nonExisting", "1", "empty")),
                 "Exception must be thrown when id of given entity does not exist");
     }
 
     @Test
     public void testCreateAllAndCountAndDeleteAll(){
-        System.out.println("testCreateAllAndCountAndDeleteAll " + Thread.currentThread().getName());
         repository.deleteAll();
         System.out.println("start");
         List<TestDocument> all = new LinkedList<>();
@@ -178,7 +174,6 @@ public class TestDocumentRepositoryIntegrationTest {
 
     @Test
     public void testSpecialQueries(){
-        System.out.println("testSpecialQueries " + Thread.currentThread().getName());
         PartTree tree = new PartTree("findByValueIsNotLikeAndValueIsBetween", TestDocument.class);
         for(PartTree.OrPart orPart : tree){
             for(Part part : orPart){

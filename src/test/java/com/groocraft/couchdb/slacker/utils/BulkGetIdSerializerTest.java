@@ -19,7 +19,7 @@ class BulkGetIdSerializerTest {
         EntityMetadata<TestDocument> metadata = new EntityMetadata<>(TestDocument.class);
         ObjectMapper localMapper = new ObjectMapper();
         SimpleModule module = new SimpleModule();
-        module.addSerializer(new BulkGetIdSerializer(TestDocument.class, metadata.getIdReader()));
+        module.addSerializer(new BulkGetIdSerializer<>(TestDocument.class, metadata.getIdReader()));
         localMapper.registerModule(module);
         assertEquals("{\"docs\":[{\"id\":\"a\"},{\"id\":\"b\"}]}",
                 localMapper.writeValueAsString(
