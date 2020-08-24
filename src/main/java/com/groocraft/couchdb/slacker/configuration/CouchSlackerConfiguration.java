@@ -47,6 +47,10 @@ import java.security.NoSuchAlgorithmException;
  * @author Majlanky
  */
 //TODO check how this should be done in standard way and rework/extend it
+//TODO XML configuration support
+//TODO annotation configuration support
+//TODO java based configuration support
+//TODO groovy
 @Configuration
 @EnableConfigurationProperties(CouchDbProperties.class)
 public class CouchSlackerConfiguration {
@@ -104,9 +108,9 @@ public class CouchSlackerConfiguration {
      * Method to configure and get {@link Registry} of {@link ConnectionSocketFactory} for http and https. In case of https all certificated are trusted.
      *
      * @return {@link Registry}
-     * @throws KeyStoreException if unable to load {@link TrustAllStrategy}
+     * @throws KeyStoreException        if unable to load {@link TrustAllStrategy}
      * @throws NoSuchAlgorithmException if unable to load {@link TrustAllStrategy}
-     * @throws KeyManagementException if unable to build {@link TrustAllStrategy}
+     * @throws KeyManagementException   if unable to build {@link TrustAllStrategy}
      */
     private Registry<ConnectionSocketFactory> getRegistry() throws KeyStoreException, NoSuchAlgorithmException, KeyManagementException {
         // @formatter:off

@@ -86,7 +86,8 @@ class CouchDbClientTest {
         HttpPut put = (HttpPut) request;
         assertTrue(put.getURI().toString().startsWith("http://localhost:5984/test"), "URI must be based on base URI and database name");
         assertEquals("application/json", put.getEntity().getContentType().getValue(), "Content type must be set to json");
-        assertContent("{\"value\":\"test\",\"value2\":null}", put.getEntity().getContent(), "Body of request is not properly created");
+        assertContent("{\"value\":\"test\",\"value2\":null,\"value3\":null,\"value4\":null,\"value5\":false}", put.getEntity().getContent(), "Body of save " +
+                "all request is not properly created");
         assertEquals("unique", saved.getId(), "Saved document must be updated by new id, if generated");
         assertEquals("revision", saved.getRevision(), "Saved document must be updated by given revision");
 
@@ -118,7 +119,8 @@ class CouchDbClientTest {
         HttpPut put = (HttpPut) request;
         assertEquals("http://localhost:5984/test/" + uuid, put.getURI().toString(), "URI must be based on base URI and database name");
         assertEquals("application/json", put.getEntity().getContentType().getValue(), "Content type must be set to json");
-        assertContent("{\"_id\":\"" + uuid + "\",\"value\":\"test\",\"value2\":null}", put.getEntity().getContent(), "Body of request is not properly created");
+        assertContent("{\"_id\":\"" + uuid + "\",\"value\":\"test\",\"value2\":null,\"value3\":null,\"value4\":null,\"value5\":false}",
+                put.getEntity().getContent(), "Body of save request is not properly created");
         assertEquals(uuid, saved.getId(), "If document has id set, it must not be changed");
         assertEquals("revision", saved.getRevision(), "Saved document must be updated by given revision");
 
@@ -149,7 +151,9 @@ class CouchDbClientTest {
         HttpPost post = (HttpPost) request;
         assertEquals("http://localhost:5984/test/_bulk_docs", post.getURI().toString(), "URI must be based on base URI and database name");
         assertEquals("application/json", post.getEntity().getContentType().getValue(), "Content type must be set to json");
-        assertContent("{\"docs\":[{\"_id\":\"a\",\"value\":\"a\",\"value2\":\"a\"},{\"_id\":\"b\",\"value\":\"b\",\"value2\":\"b\"}]}", post.getEntity().getContent(), "Body of request is not properly created");
+        assertContent("{\"docs\":[{\"_id\":\"a\",\"value\":\"a\",\"value2\":\"a\",\"value3\":null,\"value4\":null,\"value5\":false},{\"_id\":\"b\"," +
+                "\"value\":\"b\",\"value2\":\"b\",\"value3\":null,\"value4\":null,\"value5\":false}]}", post.getEntity().getContent(), "Body of save " +
+                "all request is not properly created");
         assertEquals(2, StreamSupport.stream(saved.spliterator(), false).count(), "Two entities were passed to save");
         assertEquals("aaa", a.getId()+a.getValue()+a.getValue2(), "Id must be updated, value must stay");
         assertEquals("rev1", a.getRevision(), "Revision must be updated");
@@ -215,7 +219,7 @@ class CouchDbClientTest {
         HttpPost post = (HttpPost) request;
         assertEquals("http://localhost:5984/test/_bulk_get" , post.getURI().toString(), "URI must be based on base URI and database name");
         assertEquals("application/json", post.getEntity().getContentType().getValue(), "Find request should declare json content");
-        assertContent("{\"docs\":[{\"id\":\"a\"},{\"id\":\"b\"}]}", post.getEntity().getContent(), "Body of request is not properly created");
+        assertContent("{\"docs\":[{\"id\":\"a\"},{\"id\":\"b\"}]}", post.getEntity().getContent(), "Body of read all by ids request is not properly created");
         StreamSupport.stream(read.spliterator(), false).forEach(d -> {
             assertTrue("a".equals(d.getId()) || "b".equals(d.getId()), "Id was not parsed properly, see json above");
             assertTrue("revA".equals(d.getRevision()) || "revB".equals(d.getRevision()), "Revision was not parsed properly, see json above");
@@ -278,7 +282,7 @@ class CouchDbClientTest {
         HttpPost post = (HttpPost) request;
         assertEquals("http://localhost:5984/test/_find", post.getURI().toString(), "URI must be based on base URI and database name");
         assertEquals("application/json", post.getEntity().getContentType().getValue(), "Find request should declare json content");
-        assertContent("", post.getEntity().getContent(), "Body of request is not properly created");
+        assertContent("", post.getEntity().getContent(), "Body of find request is not properly created");
         assertEquals(3, StreamSupport.stream(read.spliterator(), false).count(), "Based on mocked json, there are 3 documents returned");
         int i = 1;
         for(TestDocument d : read) {
@@ -414,7 +418,7 @@ class CouchDbClientTest {
         assertEquals(HttpPut.class, request.getClass(), "Find has to be done as PUT request");
         HttpPut put = (HttpPut) request;
         assertEquals("http://localhost:5984/test?q=8&n=3&partitioned=false", put.getURI().toString(), "URI must be based on base URI and database name");
-        assertContent("", put.getEntity().getContent(), "Body of request is not properly created");
+        assertContent("", put.getEntity().getContent(), "Body of create request is not properly created");
         assertEquals(thrown, assertThrows(IOException.class, () -> testedAction.accept(client)), "CouchDb client should not alternate original " +
                 "exception");
         request = requestCaptor.getValue();

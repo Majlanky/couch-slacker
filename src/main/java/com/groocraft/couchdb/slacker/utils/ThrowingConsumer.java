@@ -1,6 +1,7 @@
 package com.groocraft.couchdb.slacker.utils;
 
 @FunctionalInterface
+//TODO javadoc
 public interface ThrowingConsumer<DataT, ExceptionT extends Exception> {
 
     /**

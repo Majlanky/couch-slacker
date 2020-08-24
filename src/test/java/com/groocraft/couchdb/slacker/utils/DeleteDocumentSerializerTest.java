@@ -20,7 +20,7 @@ class DeleteDocumentSerializerTest {
         module.addSerializer(new DeleteDocumentSerializer<>(TestDocument.class));
         mapper.registerModule(module);
         BulkRequest<TestDocument> request = new BulkRequest<>(List.of(new TestDocument("id", "rev", "value", "value2")));
-        assertEquals("{\"docs\":[{\"_id\":\"id\",\"_rev\":\"rev\",\"value\":\"value\",\"value2\":\"value2\",\"_deleted\":true}]}",
+        assertEquals("{\"docs\":[{\"_id\":\"id\",\"_rev\":\"rev\",\"value\":\"value\",\"value2\":\"value2\",\"value5\":false,\"_deleted\":true}]}",
                 mapper.writeValueAsString(request), "Object should be serialized as is, only _deleted should be added");
     }
 

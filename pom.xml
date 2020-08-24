@@ -14,7 +14,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>11</java.version>
         <jackson.version>2.11.0</jackson.version>
-        <springdata.commons.version>2.4.0-SNAPSHOT</springdata.commons.version>
+        <springdata.commons.version>2.3.3.RELEASE</springdata.commons.version>
         <mockito.version>3.2.4</mockito.version>
         <jupiter.version>5.5.2</jupiter.version>
     </properties>

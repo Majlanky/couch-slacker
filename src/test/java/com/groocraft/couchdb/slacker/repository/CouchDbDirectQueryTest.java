@@ -16,6 +16,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doReturn;
 
 class CouchDbDirectQueryTest {
 
@@ -25,11 +26,12 @@ class CouchDbDirectQueryTest {
         QueryMethod queryMethod = Mockito.mock(QueryMethod.class);
         Parameter parameter = Mockito.mock(Parameter.class);
         Parameters<?, ?> parameters = Mockito.mock(Parameters.class);
-        CouchDbDirectQuery query = new CouchDbDirectQuery("{\"selector\": {\"value\": {\"$eq\": \"?0\"}}}", client, queryMethod, TestDocument.class);
+        CouchDbDirectQuery query = new CouchDbDirectQuery("{\"selector\": {\"value\": {\"$eq\": ?1}}}", client, queryMethod, TestDocument.class);
         assertEquals(queryMethod, query.getQueryMethod(), "CouchDbDirectQuery do not remember given queryMethod");
         Mockito.when(client.find(Mockito.any(), Mockito.any())).thenReturn(new ArrayList<>());
         Mockito.doReturn(Object.class).when(queryMethod).getReturnedObjectType();
         Mockito.when(parameter.getName()).thenReturn(Optional.of("value"));
+        doReturn(String.class).when(parameter).getType();
         Mockito.when(parameter.getIndex()).thenReturn(0);
         Mockito.doReturn(List.of(parameter).iterator()).when(parameters).iterator();
         Mockito.doReturn(parameters).when(queryMethod).getParameters();
@@ -38,21 +40,60 @@ class CouchDbDirectQueryTest {
     }
 
     @Test
-    public void testNamedReplacement() throws IOException {
+    public void testNamedStringReplacement() throws IOException {
         CouchDbClient client = Mockito.mock(CouchDbClient.class);
         QueryMethod queryMethod = Mockito.mock(QueryMethod.class);
         Parameter parameter = Mockito.mock(Parameter.class);
         Parameters<?, ?> parameters = Mockito.mock(Parameters.class);
-        CouchDbDirectQuery query = new CouchDbDirectQuery("{\"selector\": {\"value\": {\"$eq\": \":value\"}}}", client, queryMethod, TestDocument.class);
+        CouchDbDirectQuery query = new CouchDbDirectQuery("{\"selector\": {\"value\": {\"$eq\": :value}}}", client, queryMethod, TestDocument.class);
         assertEquals(queryMethod, query.getQueryMethod(), "CouchDbDirectQuery do not remember given queryMethod");
         Mockito.when(client.find(Mockito.any(), Mockito.any())).thenReturn(new ArrayList<>());
         Mockito.doReturn(Object.class).when(queryMethod).getReturnedObjectType();
         Mockito.when(parameter.getName()).thenReturn(Optional.of("value"));
+        doReturn(String.class).when(parameter).getType();
         Mockito.when(parameter.getIndex()).thenReturn(0);
         Mockito.doReturn(List.of(parameter).iterator()).when(parameters).iterator();
         Mockito.doReturn(parameters).when(queryMethod).getParameters();
         query.execute(new Object[]{"test"});
         Mockito.verify(client).find("{\"selector\": {\"value\": {\"$eq\": \"test\"}}}", TestDocument.class);
+    }
+
+    @Test
+    public void testNamedNonStringReplacement() throws IOException {
+        CouchDbClient client = Mockito.mock(CouchDbClient.class);
+        QueryMethod queryMethod = Mockito.mock(QueryMethod.class);
+        Parameter parameter = Mockito.mock(Parameter.class);
+        Parameters<?, ?> parameters = Mockito.mock(Parameters.class);
+        CouchDbDirectQuery query = new CouchDbDirectQuery("{\"selector\": {\"value\": {\"$eq\": :value}}}", client, queryMethod, TestDocument.class);
+        assertEquals(queryMethod, query.getQueryMethod(), "CouchDbDirectQuery do not remember given queryMethod");
+        Mockito.when(client.find(Mockito.any(), Mockito.any())).thenReturn(new ArrayList<>());
+        Mockito.doReturn(Object.class).when(queryMethod).getReturnedObjectType();
+        Mockito.when(parameter.getName()).thenReturn(Optional.of("value"));
+        doReturn(Integer.class).when(parameter).getType();
+        Mockito.when(parameter.getIndex()).thenReturn(0);
+        Mockito.doReturn(List.of(parameter).iterator()).when(parameters).iterator();
+        Mockito.doReturn(parameters).when(queryMethod).getParameters();
+        query.execute(new Object[]{1});
+        Mockito.verify(client).find("{\"selector\": {\"value\": {\"$eq\": 1}}}", TestDocument.class);
+    }
+
+    @Test
+    public void testNamedIterableReplacement() throws IOException {
+        CouchDbClient client = Mockito.mock(CouchDbClient.class);
+        QueryMethod queryMethod = Mockito.mock(QueryMethod.class);
+        Parameter parameter = Mockito.mock(Parameter.class);
+        Parameters<?, ?> parameters = Mockito.mock(Parameters.class);
+        CouchDbDirectQuery query = new CouchDbDirectQuery("{\"selector\": {\"value\": {\"$eq\": :value}}}", client, queryMethod, TestDocument.class);
+        assertEquals(queryMethod, query.getQueryMethod(), "CouchDbDirectQuery do not remember given queryMethod");
+        Mockito.when(client.find(Mockito.any(), Mockito.any())).thenReturn(new ArrayList<>());
+        Mockito.doReturn(Object.class).when(queryMethod).getReturnedObjectType();
+        Mockito.when(parameter.getName()).thenReturn(Optional.of("value"));
+        doReturn(List.class).when(parameter).getType();
+        Mockito.when(parameter.getIndex()).thenReturn(0);
+        Mockito.doReturn(List.of(parameter).iterator()).when(parameters).iterator();
+        Mockito.doReturn(parameters).when(queryMethod).getParameters();
+        query.execute(new Object[]{List.of("test", "test1")});
+        Mockito.verify(client).find("{\"selector\": {\"value\": {\"$eq\": [\"test\",\"test1\"]}}}", TestDocument.class);
     }
 
     @Test
@@ -62,11 +103,12 @@ class CouchDbDirectQueryTest {
             QueryMethod queryMethod = Mockito.mock(QueryMethod.class);
             Parameter parameter = Mockito.mock(Parameter.class);
             Parameters<?, ?> parameters = Mockito.mock(Parameters.class);
-            CouchDbDirectQuery query = new CouchDbDirectQuery("{\"selector\": {\"value\": {\"$eq\": \":value\"}}}", client, queryMethod, TestDocument.class);
+            CouchDbDirectQuery query = new CouchDbDirectQuery("{\"selector\": {\"value\": {\"$eq\": :value}}}", client, queryMethod, TestDocument.class);
             assertEquals(queryMethod, query.getQueryMethod(), "CouchDbDirectQuery do not remember given queryMethod");
             Mockito.when(client.find(Mockito.any(), Mockito.any())).thenThrow(new IOException());
             Mockito.doReturn(Object.class).when(queryMethod).getReturnedObjectType();
             Mockito.when(parameter.getName()).thenReturn(Optional.of("value"));
+            doReturn(String.class).when(parameter).getType();
             Mockito.when(parameter.getIndex()).thenReturn(0);
             Mockito.doReturn(List.of(parameter).iterator()).when(parameters).iterator();
             Mockito.doReturn(parameters).when(queryMethod).getParameters();
