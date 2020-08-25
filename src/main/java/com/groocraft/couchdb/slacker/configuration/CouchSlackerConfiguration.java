@@ -67,7 +67,6 @@ import java.security.NoSuchAlgorithmException;
 //TODO annotation configuration support
 //TODO java based configuration support
 //TODO groovy
-@Configuration
 @EnableConfigurationProperties(CouchDbProperties.class)
 public class CouchSlackerConfiguration {
 

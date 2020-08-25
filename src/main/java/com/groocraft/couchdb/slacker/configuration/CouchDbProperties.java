@@ -16,15 +16,9 @@
 
 package com.groocraft.couchdb.slacker.configuration;
 
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-import java.util.Optional;
-
 @ConfigurationProperties(prefix = "couchdb.client")
-@AllArgsConstructor
-@NoArgsConstructor
 public class CouchDbProperties {
 
     public static final String COUCH_ID_NAME = "_id";
