@@ -91,7 +91,7 @@ public class CouchDbClient {
     private final Supplier<String> uidGenerator;
 
     /**
-     * This constructor setting ID generator as {@link UUID#randomUUID()#toString()} method. If custom implementation of ID is needed, use
+     * This constructor setting ID generator as {@link UUID#randomUUID()} method. If custom implementation of ID is needed, use
      * {@link CouchDbClient#CouchDbClient(HttpClient, HttpHost, HttpContext, URI, Supplier)}
      *
      * @param httpClient  must not be {@literal null}
@@ -122,7 +122,7 @@ public class CouchDbClient {
     }
 
     /**
-     * @param clazz     of entity type about which information is needed. Must not be {@link null}
+     * @param clazz     of entity type about which information is needed. Must not be {@literal null}
      * @param <EntityT> type of entity about which information is needed
      * @param <IdT>     type of entity Id
      * @return {@link org.springframework.data.repository.core.EntityInformation} implementation for CouchDB entities.
@@ -329,6 +329,8 @@ public class CouchDbClient {
      * Deletes given entity. From entity id and revision is used.
      *
      * @param entity to delete. Must not be {@literal null}
+     * @param <EntityT> type of entity
+     * @return deleted entity
      * @throws IOException if http request is not successful or json processing fail
      * @see Document
      */
@@ -379,6 +381,7 @@ public class CouchDbClient {
      * @param id        of document which should be deleted
      * @param clazz     of entity to get database
      * @param <EntityT> type of entity
+     * @return deleted entity if any
      * @throws IOException if http request is not successful or json processing fail
      */
     public <EntityT> @NotNull EntityT deleteById(@NotNull String id, @NotNull Class<EntityT> clazz) throws IOException {

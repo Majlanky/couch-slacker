@@ -24,6 +24,7 @@ public interface ThrowingConsumer<DataT, ExceptionT extends Exception> {
      * Performs this operation on the given argument.
      *
      * @param data the input argument
+     * @throws ExceptionT if implementation inside throw exception
      */
     void accept(DataT data) throws ExceptionT;
 

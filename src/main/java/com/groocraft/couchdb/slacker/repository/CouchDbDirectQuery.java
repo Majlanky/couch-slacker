@@ -51,6 +51,7 @@ public class CouchDbDirectQuery implements RepositoryQuery {
      * @param query       Json query created or read from method. Must not be {@literal null}.
      * @param client      must not be {@literal null}.
      * @param queryMethod on which is based the query. Must not be {@literal null}.
+     * @param entityClass class of processed entities
      */
     public CouchDbDirectQuery(@NotNull String query, @NotNull CouchDbClient client, @NotNull QueryMethod queryMethod, @NotNull Class<?> entityClass) {
         this.client = client;
