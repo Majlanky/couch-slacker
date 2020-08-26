@@ -23,6 +23,7 @@ import java.lang.reflect.Method;
 
 /**
  * Class providing writing functionality by calling a method.
+ *
  * @param <DataT> Type of method parameter
  * @author Majlanky
  */

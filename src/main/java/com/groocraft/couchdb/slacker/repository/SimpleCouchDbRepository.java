@@ -80,14 +80,13 @@ public class SimpleCouchDbRepository<EntityT> implements CrudRepository<EntityT,
     public Optional<EntityT> findById(String id) {
         try {
             return Optional.ofNullable(client.read(id, clazz));
-        } catch(CouchDbException couchDbException){
-            if(couchDbException.getStatusCode() == HttpStatus.SC_NOT_FOUND){
+        } catch (CouchDbException couchDbException) {
+            if (couchDbException.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
                 return Optional.empty();
             } else {
                 throw new CouchDbRuntimeException("Unable to find " + id, couchDbException);
             }
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new CouchDbRuntimeException("Unable to find " + id, e);
         }
     }
@@ -102,21 +101,21 @@ public class SimpleCouchDbRepository<EntityT> implements CrudRepository<EntityT,
 
     /**
      * This implementation is done in lazy way. No actual request is send until somebody wants a result.
-     *
+     * <p>
      * {@inheritDoc}
      */
     @Override
     public Iterable<EntityT> findAll() {
         try {
             return client.readAll(client.readAll(clazz), clazz);
-        } catch (IOException e){
+        } catch (IOException e) {
             throw new CouchDbRuntimeException("Unable to list all " + clazz.getSimpleName(), e);
         }
     }
 
     /**
      * This implementation is done in lazy way. No actual request is send until somebody wants a result.
-     *
+     * <p>
      * {@inheritDoc}
      */
     @Override
@@ -133,9 +132,9 @@ public class SimpleCouchDbRepository<EntityT> implements CrudRepository<EntityT,
      */
     @Override
     public long count() {
-        try{
+        try {
             return StreamSupport.stream(client.readAll(clazz).spliterator(), false).count();
-        } catch (IOException e){
+        } catch (IOException e) {
             throw new CouchDbRuntimeException("Unable to read all " + clazz.getSimpleName() + " for counting", e);
         }
     }
@@ -145,9 +144,9 @@ public class SimpleCouchDbRepository<EntityT> implements CrudRepository<EntityT,
      */
     @Override
     public void deleteById(String id) {
-        try{
+        try {
             client.deleteById(id, clazz);
-        } catch (IOException e){
+        } catch (IOException e) {
             throw new CouchDbRuntimeException("Unable to delete " + id + " of " + clazz.getSimpleName(), e);
         }
     }
@@ -181,9 +180,9 @@ public class SimpleCouchDbRepository<EntityT> implements CrudRepository<EntityT,
      */
     @Override
     public void deleteAll() {
-        try{
+        try {
             client.deleteAll(clazz);
-        } catch (IOException ex){
+        } catch (IOException ex) {
             throw new CouchDbRuntimeException("Unable to delete all", ex);
         }
     }

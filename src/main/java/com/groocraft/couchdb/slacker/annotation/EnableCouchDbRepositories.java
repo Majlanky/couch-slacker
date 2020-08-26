@@ -30,6 +30,7 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation to enable CouchDB repositories. Will scan the package of the annotated configuration class for Spring Data repositories by default.
+ *
  * @author Majlanky
  */
 @Target(ElementType.TYPE)

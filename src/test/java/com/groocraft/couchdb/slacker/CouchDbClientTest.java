@@ -458,7 +458,7 @@ class CouchDbClientTest {
         HttpPost post = (HttpPost) request;
         assertEquals("http://localhost:5984/test/_index", post.getURI().toString(), "URI must be based on base URI and database name");
         assertEquals("application/json", post.getEntity().getContentType().getValue(), "Find request should declare json content");
-
+        assertContent("{\"index\":[{\"value\":\"asc\"}],\"type\":\"json\",\"name\":\"test\"}", post.getEntity().getContent(), "Create index request is serialized poorly");
         assertEquals(thrown, assertThrows(IOException.class, () -> testedAction.accept(client)), "CouchDb client should not alternate original " +
                 "exception");
         request = requestCaptor.getValue();

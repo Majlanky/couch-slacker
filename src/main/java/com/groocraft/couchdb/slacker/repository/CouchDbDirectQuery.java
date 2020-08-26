@@ -48,8 +48,8 @@ public class CouchDbDirectQuery implements RepositoryQuery {
     private final QueryMethod queryMethod;
 
     /**
-     * @param query Json query created or read from method. Must not be {@literal null}.
-     * @param client must not be {@literal null}.
+     * @param query       Json query created or read from method. Must not be {@literal null}.
+     * @param client      must not be {@literal null}.
      * @param queryMethod on which is based the query. Must not be {@literal null}.
      */
     public CouchDbDirectQuery(@NotNull String query, @NotNull CouchDbClient client, @NotNull QueryMethod queryMethod, @NotNull Class<?> entityClass) {
@@ -74,10 +74,10 @@ public class CouchDbDirectQuery implements RepositoryQuery {
             if (!parameter.isDynamicProjectionParameter() && !parameter.isSpecialParameter()) {
                 try {
                     specified = specified.replace("?" + (parameter.getIndex() + 1), mapper.writeValueAsString(parameters[parameter.getIndex()]));
-                    if(parameter.getName().isPresent()){
+                    if (parameter.getName().isPresent()) {
                         specified = specified.replace(":" + parameter.getName().get(), mapper.writeValueAsString(parameters[parameter.getIndex()]));
                     }
-                } catch (JsonProcessingException ex){
+                } catch (JsonProcessingException ex) {
                     throw new QueryException(String.format("Unable to create json representation %s. parameter", parameter.getIndex()), ex);
                 }
             }

@@ -16,11 +16,6 @@
 
 package com.groocraft.couchdb.slacker.structure;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
 /**
  * Pojo class to ease reading part of {@link DocumentFindResponse}.
  *
@@ -28,10 +23,6 @@ import lombok.Setter;
  * @see DocumentFindResponse
  */
 @SuppressWarnings("unused")
-@AllArgsConstructor
-@NoArgsConstructor
-@Getter
-@Setter
 public class ExecutionStats {
 
     private int totalKeysExamined;
@@ -40,4 +31,43 @@ public class ExecutionStats {
     private int resultsReturned;
     private int executionTimeMs;
 
+    public int getTotalKeysExamined() {
+        return totalKeysExamined;
+    }
+
+    public void setTotalKeysExamined(int totalKeysExamined) {
+        this.totalKeysExamined = totalKeysExamined;
+    }
+
+    public int getTotalDocsExamined() {
+        return totalDocsExamined;
+    }
+
+    public void setTotalDocsExamined(int totalDocsExamined) {
+        this.totalDocsExamined = totalDocsExamined;
+    }
+
+    public int getTotalQuorumDocsExamined() {
+        return totalQuorumDocsExamined;
+    }
+
+    public void setTotalQuorumDocsExamined(int totalQuorumDocsExamined) {
+        this.totalQuorumDocsExamined = totalQuorumDocsExamined;
+    }
+
+    public int getResultsReturned() {
+        return resultsReturned;
+    }
+
+    public void setResultsReturned(int resultsReturned) {
+        this.resultsReturned = resultsReturned;
+    }
+
+    public int getExecutionTimeMs() {
+        return executionTimeMs;
+    }
+
+    public void setExecutionTimeMs(int executionTimeMs) {
+        this.executionTimeMs = executionTimeMs;
+    }
 }

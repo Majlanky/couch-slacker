@@ -18,6 +18,12 @@ package com.groocraft.couchdb.slacker.configuration;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+/**
+ * Properties pojo class for Couch Slacker configuration. It is used in {@link CouchSlackerConfiguration} class
+ *
+ * @author Majlanky
+ * @see CouchSlackerConfiguration
+ */
 @ConfigurationProperties(prefix = "couchdb.client")
 public class CouchDbProperties {
 

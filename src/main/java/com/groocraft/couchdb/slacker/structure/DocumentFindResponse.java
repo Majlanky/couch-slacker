@@ -17,10 +17,6 @@
 package com.groocraft.couchdb.slacker.structure;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.util.List;
 
@@ -30,10 +26,6 @@ import java.util.List;
  * @param <EntityT> Type of result entity
  * @author Majlanky
  */
-@AllArgsConstructor
-@NoArgsConstructor
-@Getter
-@Setter
 public class DocumentFindResponse<EntityT> {
 
     @JsonProperty("docs")
@@ -54,4 +46,51 @@ public class DocumentFindResponse<EntityT> {
     @JsonProperty("reason")
     private String reason;
 
+    public List<EntityT> getDocuments() {
+        return documents;
+    }
+
+    public void setDocuments(List<EntityT> documents) {
+        this.documents = documents;
+    }
+
+    public ExecutionStats getExecutionStats() {
+        return executionStats;
+    }
+
+    public void setExecutionStats(ExecutionStats executionStats) {
+        this.executionStats = executionStats;
+    }
+
+    public String getError() {
+        return error;
+    }
+
+    public void setError(String error) {
+        this.error = error;
+    }
+
+    public String getBookmark() {
+        return bookmark;
+    }
+
+    public void setBookmark(String bookmark) {
+        this.bookmark = bookmark;
+    }
+
+    public String getWarning() {
+        return warning;
+    }
+
+    public void setWarning(String warning) {
+        this.warning = warning;
+    }
+
+    public String getReason() {
+        return reason;
+    }
+
+    public void setReason(String reason) {
+        this.reason = reason;
+    }
 }

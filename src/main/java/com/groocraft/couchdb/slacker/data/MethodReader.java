@@ -23,10 +23,11 @@ import java.lang.reflect.Method;
 
 /**
  * Class providing reading functionality by calling a method.
+ *
  * @param <DataT> Type of return from a method
  * @author Majlanky
  */
-public class MethodReader<DataT> implements Reader<DataT>{
+public class MethodReader<DataT> implements Reader<DataT> {
 
     private final Method method;
 
@@ -38,7 +39,7 @@ public class MethodReader<DataT> implements Reader<DataT>{
     @SuppressWarnings("unchecked")
     public DataT read(Object o) {
         try {
-            return (DataT)method.invoke(o);
+            return (DataT) method.invoke(o);
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new AccessException(e);
         }

@@ -28,7 +28,7 @@ public class CouchDbException extends IOException {
 
     }
 
-    public int getStatusCode(){
+    public int getStatusCode() {
         return statusCode;
     }
 

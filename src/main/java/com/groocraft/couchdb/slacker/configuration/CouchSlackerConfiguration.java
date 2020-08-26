@@ -48,7 +48,6 @@ import org.apache.http.ssl.SSLContexts;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -57,16 +56,15 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 
 /**
- * Basic configuration bean to get all necessary resources for {@link org.springframework.data.repository.Repository} implementations. Properties are read
- * automatically into {@link CouchDbProperties} used in this class.
+ * Basic class which can be used as extension of {@link org.springframework.context.annotation.Configuration} class and enable reading Couch Slacker
+ * configuration from yaml or properties configuration files.
  *
  * @author Majlanky
  */
-//TODO check how this should be done in standard way and rework/extend it
 //TODO XML configuration support
 //TODO annotation configuration support
 //TODO java based configuration support
-//TODO groovy
+//TODO groovy based configuration support
 @EnableConfigurationProperties(CouchDbProperties.class)
 public class CouchSlackerConfiguration {
 

@@ -25,6 +25,7 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation to specify query for query method in repository.
+ *
  * @author Majlanky
  */
 @Retention(RetentionPolicy.RUNTIME)

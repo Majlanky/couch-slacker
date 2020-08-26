@@ -16,18 +16,11 @@
 
 package com.groocraft.couchdb.slacker.structure;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
 /**
  * Pojo class to ease reading responses to put requests.
  *
  * @author Majlanky
  */
-@NoArgsConstructor
-@Getter
-@Setter
 public class DocumentPutResponse {
 
     private String ok;
@@ -35,4 +28,35 @@ public class DocumentPutResponse {
     private String rev;
     private String error;
 
+    public String getOk() {
+        return ok;
+    }
+
+    public void setOk(String ok) {
+        this.ok = ok;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getRev() {
+        return rev;
+    }
+
+    public void setRev(String rev) {
+        this.rev = rev;
+    }
+
+    public String getError() {
+        return error;
+    }
+
+    public void setError(String error) {
+        this.error = error;
+    }
 }

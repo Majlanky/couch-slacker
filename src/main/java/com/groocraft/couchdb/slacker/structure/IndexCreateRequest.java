@@ -35,7 +35,12 @@ public class IndexCreateRequest {
     @JsonProperty("type")
     private final String type = "json";
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty("name")
+    private final String name;
+
     public IndexCreateRequest(String name, Iterable<Sort.Order> fields) {
+        this.name = name;
         this.index = new LinkedList<>();
         fields.forEach(o -> index.add(Map.of(o.getProperty(), o.getDirection().toString().toLowerCase())));
     }
