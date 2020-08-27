@@ -1,10 +1,10 @@
 # Couch Slacker
 
-Couch slacker as project started in 2020. Basic idea and motivation was to create [Spring Data](https://spring.io/projects/spring-data) support for 
+Couch Slacker project started in 2020. Basic idea and motivation was to create [Spring Data](https://spring.io/projects/spring-data) support for 
 [CouchDB](https://couchdb.apache.org/) which is awesome and light document database. We felt in love with it because of easy clustering, nice API and good
- documentation. Spring Data is an awesome tool how to make development faster.
+ documentation. Spring Data is an awesome tool how to make development faster. Let`s join them.
 
-Couch slacker simply let you relax on the [CouchDB](https://couchdb.apache.org/) as [Spring Data](https://spring.io/projects/spring-data) works for you.
+Couch Slacker simply let you relax on the [CouchDB](https://couchdb.apache.org/) as [Spring Data](https://spring.io/projects/spring-data) works for you.
 
 ## Project Focus
 * Provide basic connectivity to CouchDB
@@ -29,6 +29,36 @@ First of all we have to add Maven dependency
   <version>${version}-RELEASE</version>
 </dependency>
 ```
+### POJO Classes
+Both the basic and repositories works above document POJO classes. Let`s create a POJO class for user.
+```java
+@Database("user")
+public class User{
+
+    @JsonProperty("_id")
+    @JsonInclude(Include.NON_NULL)
+    private String id;
+
+    @JsonProperty("_rev")
+    @JsonInclude(Include.NON_NULL)
+    private String revision;
+
+    @JsonProperty("name")
+    private String name;
+}
+```
+It looks pretty talkative is not it? Ok, do not worry, here is way to make it short.
+```java
+@Database("user")
+public class User extends Document{
+
+    @JsonProperty("name")
+    private String name;
+
+}
+```
+Yeah, it is much better. In both examples you can notice, [Jackson]() annotations are you as serialization description (if needed which is not for the name
+ actually).
 ### Spring Data Repositories
 We have to start with a configuration of connectivity.
 ```yaml
@@ -40,7 +70,7 @@ couchdb:
 ```
 ```java
 @Configuration
-@EnableCouchDbrepositories
+@EnableCouchDbRepositories
 class AppConfig extends CouchSlackerConfiguration{
 
 }
@@ -80,7 +110,7 @@ or
 ```shell script
 $ ./mwnw clean integration-test
 ```
-if you want to run integration tests (see the information bellow).
+if you want to run build with integration tests (see the information bellow).
 
 However, every build contains integration (and junit) tests which are executed against [CouchDB](https://couchdb.apache.org/) in [Docker](https://www.docker.com/). It is reason, why
 [Docker](https://www.docker.com/) must be installed on the machine. If you do not have Docker and do not want to install it, execute the first command.
