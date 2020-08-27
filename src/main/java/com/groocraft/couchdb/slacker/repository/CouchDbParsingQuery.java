@@ -159,8 +159,9 @@ public class CouchDbParsingQuery implements RepositoryQuery {
             return o -> ((List<EntityT>) o).size();
         }
         if (partTree.isDistinct()) {
-            //TODO only unique values :-O (create new index and work with it?)
-            return o -> o;
+            return o -> {
+                throw new QueryException("Distinct is not implemented yet");
+            };
         }
         if (partTree.isExistsProjection()) {
             return o -> ((List<EntityT>) o).size() > 0;

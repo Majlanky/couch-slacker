@@ -34,7 +34,6 @@ import java.util.stream.StreamSupport;
  * @see CrudRepository
  * @see CouchDbClient
  */
-//TODO paging and sorting interface instead of crud one
 public class SimpleCouchDbRepository<EntityT> implements CrudRepository<EntityT, String> {
 
     private final CouchDbClient client;

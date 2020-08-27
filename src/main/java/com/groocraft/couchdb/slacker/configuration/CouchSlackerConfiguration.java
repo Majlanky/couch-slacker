@@ -63,10 +63,6 @@ import java.util.UUID;
  *
  * @author Majlanky
  */
-//TODO XML configuration support
-//TODO annotation configuration support
-//TODO java based configuration support
-//TODO groovy based configuration support
 @EnableConfigurationProperties(CouchDbProperties.class)
 public class CouchSlackerConfiguration {
 

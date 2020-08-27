@@ -16,8 +16,14 @@
 
 package com.groocraft.couchdb.slacker.utils;
 
+/**
+ * Class providing consumer functionality for two values
+ *
+ * @param <DataT>      Type of the parameter consumed
+ * @param <ExceptionT> Type of {@link Exception} which can be thrown during consummation
+ * @author Majlanky
+ */
 @FunctionalInterface
-//TODO javadoc
 public interface ThrowingConsumer<DataT, ExceptionT extends Exception> {
 
     /**

@@ -67,8 +67,6 @@ public class DocumentFindRequest {
      *                      in all other cases. Must not be {@literal null}
      */
     public DocumentFindRequest(PartTreeWithParameters partTree, Index index, Pageable pageable, Sort sortParameter) {
-        //TODO paging of native couch pageable implementation as possibility to use view without skipping
-        //TODO what about filtering by sub-attributes? findByAddressZipCode where zipcode is part of address structure inside the entity?
         this.partTree = partTree;
         if (index != null) {
             useIndex = index.value();

@@ -36,7 +36,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
         initializers = ConfigFileApplicationContextInitializer.class)
 @ActiveProfiles("test")
 @EnableCouchDbRepositories
-//TODO Parametrize bulk operation test to some huge numbers
 public class TestDocumentRepositoryIntegrationTest {
 
     @Autowired

@@ -69,14 +69,11 @@ import java.util.stream.StreamSupport;
  *
  * @author Majlanky
  */
-//TODO add API for managing replication and users?
 //TODO integration tests with fabric8io/docker-maven-plugin
 //TODO logging everywhere
 //TODO views API
-//TODO attachments
+//TODO attachments API
 //TODO process error nodes for bulk operations somehow
-//TODO auditing
-//TODO parsers for xml config
 @Slf4j
 public class CouchDbClient {
 
