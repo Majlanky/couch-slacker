@@ -45,6 +45,7 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLContexts;
+import org.jetbrains.annotations.NotNull;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -75,7 +76,7 @@ public class CouchDbClientBuilder {
      * @param properties initialized instance of {@link CouchDbProperties}. Must not be {@literal null}
      * @return {@link CouchDbClientBuilder}
      */
-    public CouchDbClientBuilder properties(CouchDbProperties properties) {
+    public @NotNull CouchDbClientBuilder properties(@NotNull CouchDbProperties properties) {
         this.properties.copy(properties);
         return this;
     }
@@ -86,7 +87,7 @@ public class CouchDbClientBuilder {
      * @param url must be valid by URI rules. Must not be {@literal null}
      * @return {@link CouchDbClientBuilder}
      */
-    public CouchDbClientBuilder url(String url) {
+    public @NotNull CouchDbClientBuilder url(@NotNull String url) {
         this.properties.setUrl(url);
         return this;
     }
@@ -97,7 +98,7 @@ public class CouchDbClientBuilder {
      * @param username Must not be {@literal null}
      * @return {@link CouchDbClientBuilder}
      */
-    public CouchDbClientBuilder username(String username) {
+    public @NotNull CouchDbClientBuilder username(@NotNull String username) {
         this.properties.setUsername(username);
         return this;
     }
@@ -108,7 +109,7 @@ public class CouchDbClientBuilder {
      * @param password Must not be {@literal null}
      * @return {@link CouchDbClientBuilder}
      */
-    public CouchDbClientBuilder password(String password) {
+    public @NotNull CouchDbClientBuilder password(@NotNull String password) {
         this.properties.setUsername(password);
         return this;
     }
@@ -119,7 +120,7 @@ public class CouchDbClientBuilder {
      * @param uidGenerator Must not be {@literal null}
      * @return {@link CouchDbClientBuilder}
      */
-    public CouchDbClientBuilder uidGenerator(Supplier<String> uidGenerator) {
+    public @NotNull CouchDbClientBuilder uidGenerator(@NotNull Supplier<String> uidGenerator) {
         this.uidGenerator = uidGenerator;
         return this;
     }
@@ -129,7 +130,7 @@ public class CouchDbClientBuilder {
      *
      * @return {@link CouchDbClient}
      */
-    public CouchDbClient build() {
+    public @NotNull CouchDbClient build() {
         try {
             URI uri = new URI(properties.getUrl());
             HttpHost host = new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme());
@@ -148,7 +149,7 @@ public class CouchDbClientBuilder {
      * @param host Must not be {@literal null}
      * @return {@link HttpContext}
      */
-    private HttpContext getHttpContext(HttpHost host) {
+    private @NotNull HttpContext getHttpContext(@NotNull HttpHost host) {
         AuthCache authCache = new BasicAuthCache();
         authCache.put(host, new BasicScheme());
         HttpContext context = new BasicHttpContext();
@@ -164,7 +165,7 @@ public class CouchDbClientBuilder {
      * @return {@link HttpClient}
      * @see ThrowingInterceptor
      */
-    public HttpClient getHttpClient() {
+    public @NotNull HttpClient getHttpClient() {
         try {
             PoolingHttpClientConnectionManager ccm = new PoolingHttpClientConnectionManager(getRegistry());
             HttpClientBuilder clientBuilder = HttpClients.custom()
@@ -204,7 +205,7 @@ public class CouchDbClientBuilder {
      * @param password of a valid CouchDB user which is used to authenticate during every request
      * @return prepared {@link CredentialsProvider}
      */
-    private CredentialsProvider getCredentialProvider(String username, String password) {
+    private @NotNull CredentialsProvider getCredentialProvider(@NotNull String username, @NotNull String password) {
         CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
         credentialsProvider.setCredentials(new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT),
                 new UsernamePasswordCredentials(username, password));
