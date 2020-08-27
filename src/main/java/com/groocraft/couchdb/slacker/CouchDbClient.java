@@ -87,21 +87,7 @@ public class CouchDbClient {
     private final Map<Class, EntityMetadata> entityMetadataCache;
     private final URI baseURI;
     private final ObjectMapper mapper;
-    //TODO rework it to function and provide saved entity
     private final Supplier<String> uidGenerator;
-
-    /**
-     * This constructor setting ID generator as {@link UUID#randomUUID()} method. If custom implementation of ID is needed, use
-     * {@link CouchDbClient#CouchDbClient(HttpClient, HttpHost, HttpContext, URI, Supplier)}
-     *
-     * @param httpClient  must not be {@literal null}
-     * @param httpHost    must not be {@literal null}
-     * @param httpContext must not be {@literal null}
-     * @param baseURI     where CouchDB is accessible without database specification. Must not be {@literal null}
-     */
-    public CouchDbClient(@NotNull HttpClient httpClient, @NotNull HttpHost httpHost, @NotNull HttpContext httpContext, @NotNull URI baseURI) {
-        this(httpClient, httpHost, httpContext, baseURI, () -> UUID.randomUUID().toString());
-    }
 
     /**
      * @param httpClient   must not be {@literal null}
@@ -110,7 +96,7 @@ public class CouchDbClient {
      * @param baseURI      where CouchDB is accessible without database specification. Must not be {@literal null}
      * @param uidGenerator {@link Supplier} for getting UID used for saving new entities
      */
-    public CouchDbClient(@NotNull HttpClient httpClient, @NotNull HttpHost httpHost, @NotNull HttpContext httpContext, @NotNull URI baseURI,
+    CouchDbClient(@NotNull HttpClient httpClient, @NotNull HttpHost httpHost, @NotNull HttpContext httpContext, @NotNull URI baseURI,
                          @NotNull Supplier<String> uidGenerator) {
         this.httpClient = httpClient;
         this.baseURI = baseURI;
@@ -119,6 +105,14 @@ public class CouchDbClient {
         entityMetadataCache = new HashMap<>();
         this.mapper = new ObjectMapper();
         this.uidGenerator = uidGenerator;
+    }
+
+    /**
+     * Returns new instance of {@link CouchDbClientBuilder} which is able to build {@link CouchDbClient}
+     * @return {@link CouchDbClientBuilder}
+     */
+    public static CouchDbClientBuilder builder(){
+        return new CouchDbClientBuilder();
     }
 
     /**

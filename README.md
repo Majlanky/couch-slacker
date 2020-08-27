@@ -29,10 +29,6 @@ First of all we have to add Maven dependency
   <version>${version}-RELEASE</version>
 </dependency>
 ```
-
-### Basic Access API
-TODO
-
 ### Spring Data Repositories
 We have to start with a configuration of connectivity.
 ```yaml
@@ -55,21 +51,36 @@ class UserRepository extends CrudRepository<User, String>{
 
 }
 ```
+### Basic Access API
+The basic repository is very easy to use. Everything is based on CouchDbClient class. First of all lets show the way completely without 
+[Spring](https://spring.io/) framework.
+```java
+CouchDbProperties properties = new CouchDbProperties("http://localhost:5984/", "user", "password");
+CouchDbClient client = CouchDbClient.builder().properties(properties).build();
+``` 
+
+## Limitation
+The project is still in its infancy, so there are limitations. There is a list of known limitations:
+* Missing API for attachments and views.
+* Projections are not tested and probably not working
+* Query by example is not tested and probably not working
+* Some operations are done very ineffectively (paging for example is done without view and startKey)
+* Missing auditing feature
+
+See [issues](https://github.com/Majlanky/couch-slacker/issues) what is known and when it is planned to solve it. If you need something faster than planned, **let us know**.
+
 ## Building from Source
 Despite the fact you can use Couch Slacker as dependency of your project as it is available on maven central, you can build the 
 project by you own. Couch Slacker is a maven project with prepared maven wrapper. Everything you need to do is call 
 the following command in the root of the project.
 ```shell script
-$ ./mwnw clean verify
+$ ./mwnw clean install
 ```
-However, every build contains integration (and junit) tests which are executed against [CouchDB](https://couchdb.apache.org/) in [Docker](https://www.docker.com/). It is reason, why
-[Docker](https://www.docker.com/) must be installed on the machine. If you do not have Docker and do not want to install it, execute the following 
-command instead of the previous one.
+or
 ```shell script
-$ ./mwnw clean package
-``` 
+$ ./mwnw clean integration-test
+```
+if you want to run integration tests (see the information bellow).
 
-## Examples
-
-## Troubles solving
- 
+However, every build contains integration (and junit) tests which are executed against [CouchDB](https://couchdb.apache.org/) in [Docker](https://www.docker.com/). It is reason, why
+[Docker](https://www.docker.com/) must be installed on the machine. If you do not have Docker and do not want to install it, execute the first command.

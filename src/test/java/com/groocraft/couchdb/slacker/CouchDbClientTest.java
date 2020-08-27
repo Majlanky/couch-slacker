@@ -58,7 +58,7 @@ class CouchDbClientTest {
     @BeforeEach
     public void setUp() throws URISyntaxException {
         baseURI = new URI("http://localhost:5984/");
-        client = new CouchDbClient(httpClient, httpHost, httpContext, baseURI);
+        client = new CouchDbClient(httpClient, httpHost, httpContext, baseURI, () -> UUID.randomUUID().toString());
     }
 
     @Test
@@ -302,7 +302,7 @@ class CouchDbClientTest {
     @Test
     public void testClose() throws IOException {
         CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
-        client = new CouchDbClient(httpClient, httpHost, httpContext, baseURI);
+        client = new CouchDbClient(httpClient, httpHost, httpContext, baseURI, () -> UUID.randomUUID().toString());
         client.close();
         verify(httpClient, only().description("Http client must be closed")).close();
     }

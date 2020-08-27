@@ -30,6 +30,15 @@ public class CouchDbProperties {
     public static final String COUCH_ID_NAME = "_id";
     public static final String COUCH_REVISION_NAME = "_rev";
 
+    public CouchDbProperties() {
+    }
+
+    public CouchDbProperties(String url, String username, String password) {
+        this.url = url;
+        this.username = username;
+        this.password = password;
+    }
+
     private String url;
 
     private String username;
@@ -58,5 +67,11 @@ public class CouchDbProperties {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    public void copy(CouchDbProperties properties){
+        setPassword(properties.getPassword());
+        setUsername(properties.getUsername());
+        setUrl(properties.url);
     }
 }
