@@ -305,10 +305,10 @@
                         <image>
                             <alias>database</alias>
                             <name>majlanky/couch-slacker-test-db:1.0</name>
-                            <ports>
-                                <port>5984:5984</port>
-                            </ports>
                             <run>
+                                <ports>
+                                    <port>5984:5984</port>
+                                </ports>
                                 <wait>
                                     <time>1000</time>
                                 </wait>
