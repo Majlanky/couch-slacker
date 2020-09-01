@@ -1,9 +1,11 @@
 package com.groocraft.couchdb.slacker.test.integration;
 
+import com.groocraft.couchdb.slacker.CouchDbClient;
 import com.groocraft.couchdb.slacker.TestDocument;
 import com.groocraft.couchdb.slacker.annotation.EnableCouchDbRepositories;
 import com.groocraft.couchdb.slacker.configuration.CouchSlackerConfiguration;
 import com.groocraft.couchdb.slacker.exception.CouchDbRuntimeException;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -14,6 +16,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -29,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith(SpringExtension.class)
@@ -39,10 +43,24 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class TestDocumentRepositoryIntegrationTest {
 
     @Autowired
+    CouchDbClient client;
+
+    @Autowired
     TestDocumentRepository repository;
 
+    @BeforeAll
+    public void setUp(){
+        try {
+            client.createDatabase("_users");
+            client.createDatabase("_replicator");
+            client.createDatabase("test");
+        } catch (IOException ex){
+            fail("Unable to initialize database", ex);
+        }
+    }
+
     @BeforeEach
-    public void setUp() {
+    public void clear() {
         repository.deleteAll();
     }
 
