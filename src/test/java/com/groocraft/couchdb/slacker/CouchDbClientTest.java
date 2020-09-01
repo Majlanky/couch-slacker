@@ -336,13 +336,9 @@ class CouchDbClientTest {
         request = requestCaptor.getValue();
         assertEquals(HttpGet.class, request.getClass(), "Find has to be done as GET request");
         get = (HttpGet) request;
-        assertEquals("http://localhost:5984/test/_all_docs", get.getURI().toString(), "URI must be based on base URI and database name");
+        assertEquals("http://localhost:5984/test/_design_docs", get.getURI().toString(), "URI must be based on base URI and database name");
         assertEquals("application/json", get.getFirstHeader(HttpHeaders.ACCEPT).getValue(), "Get document request should declare accepting json");
-        assertEquals(1, StreamSupport.stream(allDesign.spliterator(), false).count(), "Result of find was not properly read or filtered");
-        i = 0;
-        for(String id : allDesign){
-            assertEquals("_design" + i++, id, "One row is missing in the result");
-        }
+        assertEquals(4, StreamSupport.stream(allDesign.spliterator(), false).count(), "Result of find was not properly read or filtered");
 
         assertEquals(thrown, assertThrows(IOException.class, () -> client.readAll(TestDocument.class)), "CouchDb client should not alternate original " +
                 "exception");

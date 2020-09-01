@@ -61,9 +61,10 @@ import java.util.function.Supplier;
  *
  * @author Majlanky
  */
+//TODO tests
 public class CouchDbClientBuilder {
 
-    private CouchDbProperties properties;
+    private final CouchDbProperties properties;
     private Supplier<String> uidGenerator = () -> UUID.randomUUID().toString();
 
     CouchDbClientBuilder() {

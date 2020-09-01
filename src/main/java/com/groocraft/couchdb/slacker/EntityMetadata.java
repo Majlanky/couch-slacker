@@ -24,6 +24,7 @@ import com.groocraft.couchdb.slacker.data.MethodReader;
 import com.groocraft.couchdb.slacker.data.MethodWriter;
 import com.groocraft.couchdb.slacker.data.Reader;
 import com.groocraft.couchdb.slacker.data.Writer;
+import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -43,6 +44,7 @@ import java.util.function.Function;
  *
  * @author Majlanky
  */
+@Slf4j
 public class EntityMetadata<DataT> {
 
     private final Class<DataT> entityClass;
@@ -59,7 +61,8 @@ public class EntityMetadata<DataT> {
     public EntityMetadata(Class<DataT> entityClass) {
         this.entityClass = entityClass;
         Optional<Database> database = Optional.ofNullable(entityClass.getAnnotation(Database.class));
-        databaseName = database.map(Database::value).orElse(entityClass.getSimpleName().toLowerCase());
+        databaseName = database.map(Database::value).orElseGet(() -> entityClass.getSimpleName().toLowerCase());
+        log.debug("Database with name {} will be used for all documents of class {}", databaseName, entityClass.getName());
         idWriter = getWriter(CouchDbProperties.COUCH_ID_NAME, entityClass);
         idReader = getReader(CouchDbProperties.COUCH_ID_NAME, entityClass);
         revisionWriter = getWriter(CouchDbProperties.COUCH_REVISION_NAME, entityClass);
@@ -122,10 +125,13 @@ public class EntityMetadata<DataT> {
                                         Function<Field, AccessT> fieldAccessProducer) {
         Optional<AccessT> access = Optional.ofNullable(getAnnotatedMethod(types, annotationValue, clazz)).map(methodAccessProducer);
         if (access.isEmpty()) {
+            log.debug("CLass {} does not contain JsonProperty annotated methods for {}, trying find field", clazz.getName(), annotationValue);
             Optional<Field> field = Optional.ofNullable(resolveAnnotatedField(annotationValue, clazz));
             access = field.map(fieldAccessProducer);
+            field.ifPresent(f -> log.debug("JsonProperty annotated field for {} found, trying find methods to accessing it", annotationValue));
             Optional<AccessT> methodReader = field.map(f -> getMethodForField(types, f, clazz)).map(methodAccessProducer);
             if (methodReader.isPresent()) {
+                log.debug("Methods for accessing JsonProperty annotated field for {} found and will be used to getting value", annotationValue);
                 access = methodReader;
             }
         }

@@ -30,6 +30,7 @@ import com.groocraft.couchdb.slacker.utils.BulkGetDeserializer;
 import com.groocraft.couchdb.slacker.utils.BulkGetIdSerializer;
 import com.groocraft.couchdb.slacker.utils.DeleteDocumentSerializer;
 import com.groocraft.couchdb.slacker.utils.FoundDocumentDeserializer;
+import com.groocraft.couchdb.slacker.utils.LazyLog;
 import com.groocraft.couchdb.slacker.utils.ThrowingFunction;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpHeaders;
@@ -70,10 +71,6 @@ import java.util.stream.StreamSupport;
  * @author Majlanky
  */
 //TODO integration tests with fabric8io/docker-maven-plugin
-//TODO logging everywhere
-//TODO views API
-//TODO attachments API
-//TODO process error nodes for bulk operations somehow
 @Slf4j
 public class CouchDbClient {
 
@@ -94,7 +91,7 @@ public class CouchDbClient {
      * @param uidGenerator {@link Supplier} for getting UID used for saving new entities
      */
     CouchDbClient(@NotNull HttpClient httpClient, @NotNull HttpHost httpHost, @NotNull HttpContext httpContext, @NotNull URI baseURI,
-                         @NotNull Supplier<String> uidGenerator) {
+                  @NotNull Supplier<String> uidGenerator) {
         this.httpClient = httpClient;
         this.baseURI = baseURI;
         this.httpHost = httpHost;
@@ -106,9 +103,10 @@ public class CouchDbClient {
 
     /**
      * Returns new instance of {@link CouchDbClientBuilder} which is able to build {@link CouchDbClient}
+     *
      * @return {@link CouchDbClientBuilder}
      */
-    public static CouchDbClientBuilder builder(){
+    public static CouchDbClientBuilder builder() {
         return new CouchDbClientBuilder();
     }
 
@@ -188,19 +186,25 @@ public class CouchDbClient {
     public <EntityT> @NotNull EntityT save(@NotNull EntityT entity) throws IOException {
         EntityMetadata<?> entityMetadata = getEntityMetadata(entity.getClass());
         String id = entityMetadata.getIdReader().read(entity);
+        log.debug("Saving document {} with id {} and revision {} to database {}", entity, id,
+                LazyLog.of(() -> entityMetadata.getRevisionReader().read(entity)), entityMetadata.getDatabaseName());
         if ("".equals(id) || id == null) {
             id = uidGenerator.get();
+            log.debug("New ID {} generated for saved document", id);
         }
         DocumentPutResponse response = put(getURI(baseURI, entityMetadata.getDatabaseName(), id), mapper.writeValueAsString(entity), r -> mapper.readValue(r.getEntity().getContent(),
                 DocumentPutResponse.class));
         entityMetadata.getRevisionWriter().write(entity, response.getRev());
         entityMetadata.getIdWriter().write(entity, response.getId());
+        log.debug("Saved document {} with id {} and revision {}", entity, response.getId(), response.getRev());
         return entity;
     }
 
     /**
      * Saving all given entities in one POST request. If there is no ID for given instance, {@link UUID#randomUUID()} is used to create unique id (creates
-     * new document in DB)
+     * new document in DB). Spring data documentation says, the same list as passed must be returned. Because some updates can fail, it is very unfortunate.
+     * The only way to solve this is to check revision and id of returned document to find out, what was saved/updated and what not. The failed documents are
+     * logged on warn level.
      *
      * @param entities  {@link Iterable} of entities to save. Must not be {@literal null}
      * @param clazz     Class of entities passed to save. Must not be {@literal null}
@@ -208,21 +212,33 @@ public class CouchDbClient {
      * @return {@link Iterable} of all passed entities with updated revisions and ids. Can not be {@literal null}
      * @throws IOException if http request is not successful or json processing fail
      */
+    @SuppressWarnings("DuplicatedCode")
     public <EntityT> @NotNull Iterable<EntityT> saveAll(@NotNull Iterable<EntityT> entities, @NotNull Class<?> clazz) throws IOException {
-        //TODO split to max of 10000 row in one request. Or better make it configurable
         EntityMetadata<?> entityMetadata = getEntityMetadata(clazz);
-        StreamSupport.stream(entities.spliterator(), false).forEach(e -> {
+        log.debug("Bulk save of {} documents to database {}", LazyLog.of(() -> StreamSupport.stream(entities.spliterator(), false).count()),
+                entityMetadata.getDatabaseName());
+        for (EntityT e : entities) {
             String id = entityMetadata.getIdReader().read(e);
             if ("".equals(id) || id == null) {
-                entityMetadata.getIdWriter().write(e, uidGenerator.get());
+                id = uidGenerator.get();
+                entityMetadata.getIdWriter().write(e, id);
+                log.debug("New ID {} generated for bulk saved document", id);
             }
-        });
+        }
         List<DocumentPutResponse> responses = post(getURI(baseURI, entityMetadata.getDatabaseName(), "_bulk_docs"),
                 mapper.writeValueAsString(new BulkRequest<>(entities)), r -> mapper.readValue(r.getEntity().getContent(),
                         mapper.getTypeFactory().constructCollectionType(List.class, DocumentPutResponse.class)));
         Map<String, DocumentPutResponse> indexed = responses.stream().collect(Collectors.toMap(DocumentPutResponse::getId, r -> r));
-        //TODO recognized failed ones
-        StreamSupport.stream(entities.spliterator(), false).forEach(e -> entityMetadata.getRevisionWriter().write(e, indexed.get(entityMetadata.getIdReader().read(e)).getRev()));
+        for (EntityT e : entities) {
+            DocumentPutResponse response = indexed.get(entityMetadata.getIdReader().read(e));
+            if ("true".equals(response.getOk())) {
+                entityMetadata.getRevisionWriter().write(e, response.getRev());
+                entityMetadata.getIdWriter().write(e, response.getId());
+            } else {
+                log.warn("Document {} with id: {} and rev: {} saving failed with reason {}", e, response.getId(), response.getRev(), response.getError());
+            }
+
+        }
         return entities;
     }
 
@@ -236,15 +252,15 @@ public class CouchDbClient {
      * @throws IOException if http request is not successful or json processing fail
      * @see Document
      */
-    //TODO if document do not exists, 404 is thrown. Fix
-    //TODO rework for Optional?
     public <EntityT> EntityT read(@NotNull String id, @NotNull Class<EntityT> clazz) throws IOException {
         String databaseName = getDatabaseName(clazz);
+        log.debug("Read of document with ID {} from database {}", id, databaseName);
         return get(getURI(baseURI, databaseName, id), r -> mapper.readValue(r.getEntity().getContent(), clazz));
     }
 
     /**
-     * Method for reading all documents of given ids. Read is done in a bulk request.
+     * Method for reading all documents of given ids. Read is done in a bulk request. If a id is not found, not entity is returned for the id. Count of ids
+     * might not match with count of returned entities.
      *
      * @param ids       of wanted documents. Must not be {@literal null}
      * @param clazz     of documents. Must not be {@literal null}
@@ -260,8 +276,14 @@ public class CouchDbClient {
         localMapper.registerModule(module);
         List<Document> docs = new LinkedList<>();
         ids.forEach(id -> docs.add(new Document(id, null)));
+        log.debug("Bulk read of {} document from database {} with the following IDs: {}",
+                LazyLog.of(() -> StreamSupport.stream(ids.spliterator(), false).count()),
+                getDatabaseName(clazz),
+                LazyLog.of(() -> String.join(", ", ids)));
         BulkGetResponse<EntityT> response = post(getURI(baseURI, getDatabaseName(clazz), "_bulk_get"), localMapper.writeValueAsString(new BulkRequest<>(docs)),
                 r -> localMapper.readValue(r.getEntity().getContent(), localMapper.getTypeFactory().constructParametricType(BulkGetResponse.class, clazz)));
+        log.info("Bulk read of {} ids result contains {} documents", LazyLog.of(() -> StreamSupport.stream(ids.spliterator(), false).count()),
+                response.getDocs().size());
         return response.getDocs();
     }
 
@@ -278,11 +300,12 @@ public class CouchDbClient {
      * @see #readAllDocs(Class, Predicate)
      */
     public @NotNull Iterable<String> readAll(@NotNull Class<?> clazz) throws IOException {
+        log.debug("Read of all non design documents from database {}", getDatabaseName(clazz));
         return readAllDocs(clazz, Predicate.not(s -> s.startsWith("_design")));
     }
 
     /**
-     * Method to get result of _all_docs filtering only design documents (If you need non-design documents use {@link #readAll(Class)} or
+     * Method to get result of _design_docs which contains only design documents (If you need non-design documents use {@link #readAll(Class)} or
      * {@link #readAllDocs(Class, Predicate)} if you want both) to the database specified by {@link com.groocraft.couchdb.slacker.annotation.Database} from
      * the passed entity class. Result is returned as Stream of documents ids, no full data.
      *
@@ -293,9 +316,11 @@ public class CouchDbClient {
      * @see #readAll(Class)
      * @see #readAllDocs(Class, Predicate)
      */
-    //TODO rework to _design_docs view
     public @NotNull Iterable<String> readAllDesign(@NotNull Class<?> clazz) throws IOException {
-        return readAllDocs(clazz, s -> s.startsWith("_design"));
+        String databaseName = getDatabaseName(clazz);
+        log.debug("Read of all design documents from database {}", databaseName);
+        return get(getURI(baseURI, databaseName, "_design_docs"),
+                r -> mapper.readValue(r.getEntity().getContent(), AllDocumentResponse.class).getRows());
     }
 
     /**
@@ -319,7 +344,7 @@ public class CouchDbClient {
     /**
      * Deletes given entity. From entity id and revision is used.
      *
-     * @param entity to delete. Must not be {@literal null}
+     * @param entity    to delete. Must not be {@literal null}
      * @param <EntityT> type of entity
      * @return deleted entity
      * @throws IOException if http request is not successful or json processing fail
@@ -329,6 +354,7 @@ public class CouchDbClient {
         EntityMetadata<?> entityMetadata = getEntityMetadata(entity.getClass());
         String id = entityMetadata.getIdReader().read(entity);
         String revision = entityMetadata.getRevisionReader().read(entity);
+        log.debug("Delete of document with id {} and revision {} from database {}", id, revision, entityMetadata.getDatabaseName());
         return delete(getURI(baseURI, List.of(entityMetadata.getDatabaseName(), id), List.of(new BasicNameValuePair("rev", revision))), r -> entity);
     }
 
@@ -343,6 +369,7 @@ public class CouchDbClient {
      * @throws IOException if http request is not successful or json processing fail
      */
     public <EntityT> @NotNull Iterable<EntityT> deleteAll(@NotNull Class<EntityT> clazz) throws IOException {
+        log.debug("Delete of all documents from database {}", getDatabaseName(clazz));
         return deleteAll(readAll(readAll(clazz), clazz), clazz);
     }
 
@@ -355,14 +382,31 @@ public class CouchDbClient {
      * @return {@link Iterable} of deleted entities
      * @throws IOException if http request is not successful or json processing fail
      */
+    @SuppressWarnings("DuplicatedCode")
     public <EntityT> @NotNull Iterable<EntityT> deleteAll(@NotNull Iterable<EntityT> entities, @NotNull Class<?> clazz) throws IOException {
         EntityMetadata<?> entityMetadata = getEntityMetadata(clazz);
+        log.debug("Bulk delete of {} documents from database {}", LazyLog.of(() -> StreamSupport.stream(entities.spliterator(), false).count()),
+                entityMetadata.getDatabaseName());
         ObjectMapper localMapper = new ObjectMapper();
         SimpleModule module = new SimpleModule();
         module.addSerializer(new DeleteDocumentSerializer<>(clazz));
         localMapper.registerModule(module);
-        //TODO recognized failed ones
-        return post(getURI(baseURI, entityMetadata.getDatabaseName(), "_bulk_docs"), localMapper.writeValueAsString(new BulkRequest<>(entities)), r -> entities);
+        List<DocumentPutResponse> responses = post(getURI(baseURI, entityMetadata.getDatabaseName(), "_bulk_docs"),
+                localMapper.writeValueAsString(new BulkRequest<>(entities)), r -> mapper.readValue(r.getEntity().getContent(),
+                        mapper.getTypeFactory().constructCollectionType(List.class, DocumentPutResponse.class)));
+        Map<String, DocumentPutResponse> indexed = responses.stream().collect(Collectors.toMap(DocumentPutResponse::getId, r -> r));
+        List<EntityT> deleted = new LinkedList<>();
+        for (EntityT e : entities) {
+            DocumentPutResponse response = indexed.get(entityMetadata.getIdReader().read(e));
+            if ("true".equals(response.getOk())) {
+                entityMetadata.getRevisionWriter().write(e, response.getRev());
+                deleted.add(e);
+            } else {
+                log.warn("Document {} with id: {} and rev: {} deleting failed with reason {}", e, response.getId(), response.getRev(), response.getError());
+            }
+
+        }
+        return deleted;
     }
 
     /**
@@ -378,6 +422,8 @@ public class CouchDbClient {
     public <EntityT> @NotNull EntityT deleteById(@NotNull String id, @NotNull Class<EntityT> clazz) throws IOException {
         EntityMetadata<EntityT> entityMetadata = getEntityMetadata(clazz);
         EntityT entity = read(id, clazz);
+        log.debug("Delete of document with id {} and revision {} from database {}", id, LazyLog.of(() -> entityMetadata.getRevisionReader().read(entity)),
+                entityMetadata.getDatabaseName() );
         return delete(getURI(baseURI, List.of(entityMetadata.getDatabaseName(), id), List.of(new BasicNameValuePair("rev", entityMetadata.getRevisionReader()
                 .read(entity)))), r -> entity);
     }
@@ -397,9 +443,11 @@ public class CouchDbClient {
         ObjectMapper localMapper = new ObjectMapper();
         SimpleModule simpleModule = new SimpleModule();
         simpleModule.addDeserializer(List.class, new FoundDocumentDeserializer<>(clazz));
+        log.debug("Executing Mango query {}", json);
         localMapper.registerModule(simpleModule);
         DocumentFindResponse<EntityT> response = post(getURI(baseURI, getDatabaseName(clazz), "_find"), json, r -> localMapper.readValue(r.getEntity().getContent(),
                 localMapper.getTypeFactory().constructParametricType(DocumentFindResponse.class, clazz)));
+        log.debug("Mango query executed with result of {} documents", response.getDocuments().size());
         log.warn(response.getWarning());
         return response.getDocuments();
     }
@@ -437,6 +485,8 @@ public class CouchDbClient {
      * @throws IOException if http request is not successful or json processing fail
      */
     public void createIndex(@NotNull String name, @NotNull String dbName, @NotNull Iterable<Sort.Order> fields) throws IOException {
+        log.debug("Creating index with name {} in database {} and ordering {}", name, dbName,
+                LazyLog.of(() -> StreamSupport.stream(fields.spliterator(), false).map(Sort.Order::toString).collect(Collectors.joining(", "))));
         post(getURI(baseURI, dbName, "_index"), mapper.writeValueAsString(new IndexCreateRequest(name, fields)), r -> null);
     }
 
@@ -484,6 +534,8 @@ public class CouchDbClient {
      * @throws IOException if http request is not successful or json processing fail
      */
     public void createDatabase(@NotNull String name, int shardsCount, int replicasCount, boolean partitioned) throws IOException {
+        log.debug("Creating {} database with name {}, {} shards, {} replicas", LazyLog.of(() -> partitioned ? "portioned" : "non-portioned"), name,
+                shardsCount, replicasCount);
         put(getURI(baseURI, List.of(name), List.of(new BasicNameValuePair("q", "" + shardsCount), new BasicNameValuePair("n", replicasCount + ""),
                 new BasicNameValuePair("partitioned", Boolean.toString(partitioned)))),
                 "", r -> null);

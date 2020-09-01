@@ -99,8 +99,6 @@ public class SimpleCouchDbRepository<EntityT> implements CrudRepository<EntityT,
     }
 
     /**
-     * This implementation is done in lazy way. No actual request is send until somebody wants a result.
-     * <p>
      * {@inheritDoc}
      */
     @Override
@@ -113,8 +111,6 @@ public class SimpleCouchDbRepository<EntityT> implements CrudRepository<EntityT,
     }
 
     /**
-     * This implementation is done in lazy way. No actual request is send until somebody wants a result.
-     * <p>
      * {@inheritDoc}
      */
     @Override

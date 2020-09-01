@@ -96,6 +96,10 @@ The project is still in its infancy, so there are limitations. There is a list o
 * Query by example is not tested and probably not working
 * Some operations are done very ineffectively (paging for example is done without view and startKey)
 * Missing auditing feature
+* Not following operations are not implemented for query method
+  * Between
+  * Near
+  * Within
 
 See [issues](https://github.com/Majlanky/couch-slacker/issues) what is known and when it is planned to solve it. If you need something faster than planned, **let us know**.
 
