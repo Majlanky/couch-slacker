@@ -46,6 +46,7 @@ import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLContexts;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.util.Assert;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -61,7 +62,6 @@ import java.util.function.Supplier;
  *
  * @author Majlanky
  */
-//TODO tests
 public class CouchDbClientBuilder {
 
     private final CouchDbProperties properties;
@@ -133,14 +133,31 @@ public class CouchDbClientBuilder {
      */
     public @NotNull CouchDbClient build() {
         try {
-            URI uri = new URI(properties.getUrl());
+            URI uri = new URI(ifNotNull(properties.getUrl(), "Url must be configured (can not be null)"));
             HttpHost host = new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme());
-            HttpContext context = getHttpContext(host);
+            HttpContext context = getHttpContext(
+                    host,
+                    ifNotNull(properties.getUsername(), "User must be configured, (can not be null)"),
+                    ifNotNull(properties.getPassword(), "Password must be configured, (can not be null)"));
             HttpClient client = getHttpClient();
             return new CouchDbClient(client, host, context, uri, uidGenerator);
         } catch (URISyntaxException e) {
-            throw new IllegalArgumentException("Invalid url", e);
+            throw new IllegalArgumentException("Url " + properties.getUrl() + " is not valid", e);
         }
+    }
+
+    /**
+     * Method for fluent check and get of the given object. If object is null, exception with the given message is thrown.
+     * @param o object which will be tested
+     * @param message which would be wrapped in thrown exception if the given object is null
+     * @param <DataT> type of tested object
+     * @return object which is not {@literal null}
+     */
+    private <DataT> DataT ifNotNull(DataT o, String message){
+        if(o == null){
+            throw new IllegalArgumentException(message);
+        }
+        return o;
     }
 
     /**
@@ -148,14 +165,16 @@ public class CouchDbClientBuilder {
      * {@link CouchDbProperties#getUsername()} nad {@link CouchDbProperties#getPassword()} as credentials.
      *
      * @param host Must not be {@literal null}
+     * @param username Must not be {@literal null}
+     * @param password Must not be {@literal null}
      * @return {@link HttpContext}
      */
-    private @NotNull HttpContext getHttpContext(@NotNull HttpHost host) {
+    private @NotNull HttpContext getHttpContext(@NotNull HttpHost host, @NotNull String username, @NotNull String password) {
         AuthCache authCache = new BasicAuthCache();
         authCache.put(host, new BasicScheme());
         HttpContext context = new BasicHttpContext();
         context.setAttribute(HttpClientContext.AUTH_CACHE, authCache);
-        context.setAttribute(HttpClientContext.CREDS_PROVIDER, getCredentialProvider(properties.getUsername(), properties.getPassword()));
+        context.setAttribute(HttpClientContext.CREDS_PROVIDER, getCredentialProvider(username, password));
         return context;
     }
 

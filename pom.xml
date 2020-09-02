@@ -16,7 +16,7 @@
     <developers>
         <developer>
             <id>Majlanky</id>
-            <name>Majlanky Coding Enma</name>
+            <name>Majlanky The Coding Enma</name>
             <email>majlanky@groocraft.cz</email>
             <organization>Groo craft s.r.o</organization>
             <roles>
@@ -261,6 +261,13 @@
                     <execution>
                         <id>report</id>
                         <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report-it</id>
+                        <phase>integration-test</phase>
                         <goals>
                             <goal>report</goal>
                         </goals>

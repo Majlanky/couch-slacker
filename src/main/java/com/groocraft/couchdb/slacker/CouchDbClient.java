@@ -70,7 +70,6 @@ import java.util.stream.StreamSupport;
  *
  * @author Majlanky
  */
-//TODO integration tests with fabric8io/docker-maven-plugin
 @Slf4j
 public class CouchDbClient {
 
