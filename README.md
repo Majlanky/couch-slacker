@@ -108,13 +108,12 @@ Despite the fact you can use Couch Slacker as dependency of your project as it i
 project by you own. Couch Slacker is a maven project with prepared maven wrapper. Everything you need to do is call 
 the following command in the root of the project.
 ```shell script
+$ ./mwnw clean install -DskipITs
+```
+the previous command skips integration tests. For build with integration tests use (and read the information bellow):
+```shell script
 $ ./mwnw clean install
 ```
-or
-```shell script
-$ ./mwnw clean integration-test
-```
-if you want to run build with integration tests (see the information bellow).
 
 However, every build contains integration (and junit) tests which are executed against [CouchDB](https://couchdb.apache.org/) in [Docker](https://www.docker.com/). It is reason, why
 [Docker](https://www.docker.com/) must be installed on the machine. If you do not have Docker and do not want to install it, execute the first command.
