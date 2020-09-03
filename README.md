@@ -2,23 +2,23 @@
 
 Couch Slacker project started in 2020. Basic idea and motivation was to create [Spring Data](https://spring.io/projects/spring-data) support for 
 [CouchDB](https://couchdb.apache.org/) which is awesome and light document database. We felt in love with it because of easy clustering, nice API and good
- documentation. Spring Data is an awesome tool how to make development faster. Let`s join them.
+ documentation. [Spring Data](https://spring.io/projects/spring-data) is an awesome tool how to make development faster. So we decided to join them.
 
-Couch Slacker simply let you relax on the [CouchDB](https://couchdb.apache.org/) as [Spring Data](https://spring.io/projects/spring-data) works for you.
+Simply said Couch Slacker let you relax on the [CouchDB](https://couchdb.apache.org/) as [Spring Data](https://spring.io/projects/spring-data) works for
+ you.
 
 ## Project Focus
-* Provide basic connectivity to CouchDB
-* Provide Spring data features for CouchDB
+* Provide a basic client for [CouchDB](https://couchdb.apache.org/)
+* Provide Spring data implementation for [CouchDB](https://couchdb.apache.org/)
 
-### Basic Features
-* API for managing documents
-* API for managing indexes
+### Basic Client Features
+* Management of documents
+* Management of indexes
 
 ### Spring Data Features
-* Spring data repositories for CouchDB
+* Spring data repositories for [CouchDB](https://couchdb.apache.org/)
+* Query methods
 * Native queries triggered by query methods
-* Dynamic query generation from query method names
-* Implementation of CRUD methods for CouchDB documents
 
 ## Getting Started 
 First of all we have to add Maven dependency
@@ -26,11 +26,11 @@ First of all we have to add Maven dependency
 <dependency>
    <groupId>com.groocraft.dev-ops</groupId>
    <artifactId>couch-slacker</artifactId>
-  <version>${version}-RELEASE</version>
+  <version>${version}</version>
 </dependency>
 ```
 ### POJO Classes
-Both the basic and repositories works above document POJO classes. Let`s create a POJO class for user.
+Both the basic client and repositories works above document POJO classes. Let`s create a POJO class for user.
 ```java
 @Database("user")
 public class User{
@@ -47,7 +47,7 @@ public class User{
     private String name;
 }
 ```
-It looks pretty talkative is not it? Ok, do not worry, here is way to make it short.
+It looks pretty talkative does not it? Ok, do not worry, here is way to make it shorter:
 ```java
 @Database("user")
 public class User extends Document{
@@ -57,10 +57,11 @@ public class User extends Document{
 
 }
 ```
-Yeah, it is much better. In both examples you can notice, [Jackson]() annotations are you as serialization description (if needed which is not for the name
- actually).
+It is much better. In both examples you can notice [Jackson](https://github.com/FasterXML/jackson) is used. (in the case of name, no annotation is really
+ needed, and it is present only as example). If database annotation is missing, lower-cased name of class is used as database name.
 ### Spring Data Repositories
-We have to start with a configuration of connectivity.
+We have to start with a configuration of connectivity. URL must contain a port. Scheme can be elided, default value is HTTP. Username and password are
+ mandatory. 
 ```yaml
 couchdb:
   client:
@@ -75,7 +76,8 @@ class AppConfig extends CouchSlackerConfiguration{
 
 }
 ```
-Now we are ready to use Spring Data repositories for CouchDB
+Now we are ready to use Spring Data repositories for [CouchDB](https://couchdb.apache.org/). Please notice, that [CouchDB](https://couchdb.apache.org
+/) supports only String IDs.
 ```java
 class UserRepository extends CrudRepository<User, String>{
 
@@ -117,3 +119,9 @@ $ ./mwnw clean install
 
 However, every build contains integration (and junit) tests which are executed against [CouchDB](https://couchdb.apache.org/) in [Docker](https://www.docker.com/). It is reason, why
 [Docker](https://www.docker.com/) must be installed on the machine. If you do not have Docker and do not want to install it, execute the first command.
+
+## Backward Compatibility
+Couch Slacker project follows [Apache versioning](https://apr.apache.org/versioning.html)
+
+##Licence
+Couch Slacker project is licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
