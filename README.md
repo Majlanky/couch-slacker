@@ -1,4 +1,5 @@
-# Couch Slacker
+# Couch Slacker 
+[![Build Status](https://travis-ci.com/Majlanky/couch-slacker.svg?branch=master)](https://travis-ci.com/Majlanky/couch-slacker) [![codecov](https://codecov.io/gh/Majlanky/couch-slacker/branch/master/graph/badge.svg)](https://codecov.io/gh/Majlanky/couch-slacker)
 
 Couch Slacker project started in 2020. Basic idea and motivation was to create [Spring Data](https://spring.io/projects/spring-data) support for 
 [CouchDB](https://couchdb.apache.org/) which is awesome and light document database. We felt in love with it because of easy clustering, nice API and good
