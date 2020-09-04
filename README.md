@@ -144,5 +144,5 @@ However, every build contains integration (and junit) tests which are executed a
 ## Backward Compatibility
 Couch Slacker project follows [Apache versioning](https://apr.apache.org/versioning.html)
 
-##Licence
+## Licence
 Couch Slacker project is licensed under the [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
