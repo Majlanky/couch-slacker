@@ -21,15 +21,25 @@ import java.io.IOException;
 public class CouchDbException extends IOException {
 
     private final int statusCode;
+    private final String uri;
+    private final String reason;
 
     public CouchDbException(int statusCode, String method, String uri, String reason) {
         super(String.format("%s when trying %s on %s with reason %s", statusCode, method, uri, reason));
         this.statusCode = statusCode;
-
+        this.uri = uri;
+        this.reason = reason;
     }
 
     public int getStatusCode() {
         return statusCode;
     }
 
+    public String getUri() {
+        return uri;
+    }
+
+    public String getReason() {
+        return reason;
+    }
 }

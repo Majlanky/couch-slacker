@@ -71,23 +71,43 @@ couchdb:
 ```
 ```java
 @Configuration
-@EnableCouchDbRepositories
 class AppConfig extends CouchSlackerConfiguration{
 
 }
 ```
-Now we are ready to use Spring Data repositories for [CouchDB](https://couchdb.apache.org/). Please notice, that [CouchDB](https://couchdb.apache.org
+Now we are ready to define Spring Data repository for [CouchDB](https://couchdb.apache.org/). Please notice, that [CouchDB](https://couchdb.apache.org
 /) supports only String IDs.
 ```java
 class UserRepository extends CrudRepository<User, String>{
 
 }
 ```
+The final step is to use the defined repository in your application.
+```java
+@SpringBootApplication
+@EnableCouchDbRepositories
+public class CouchSlackerDemoApplication {
+
+	@Autowired
+	UserRepository userRepository;
+
+	public static void main(String[] args) {
+		SpringApplication.run(CouchSlackerDemoApplication.class, args);
+	}
+
+	@Bean
+	public CommandLineRunner runner(){
+		return args -> userRepository.save(new User("Majlanky"));
+	}
+
+}
+```
+
 ### Basic Access API
 The basic repository is very easy to use. Everything is based on CouchDbClient class. First of all lets show the way completely without 
 [Spring](https://spring.io/) framework.
 ```java
-CouchDbProperties properties = new CouchDbProperties("http://localhost:5984/", "user", "password");
+CouchDbProperties properties = new CouchDbProperties("http://localhost:5984/", "admin", "password");
 CouchDbClient client = CouchDbClient.builder().properties(properties).build();
 ``` 
 
