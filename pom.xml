@@ -7,7 +7,7 @@
     <artifactId>couch-slacker</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <name>Couch Slacker</name>
-    <description>Connector for CouchDB</description>
+    <description>Connector and Spring Data implementation for CouchDB</description>
 
     <organization>
         <name>Groo craft s.r.o</name>
@@ -60,11 +60,19 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>11</java.version>
         <jackson.version>2.11.0</jackson.version>
-        <springdata.commons.version>2.3.3.RELEASE</springdata.commons.version>
+        <spring.data.commons.version>2.3.3.RELEASE</spring.data.commons.version>
         <mockito.version>3.2.4</mockito.version>
         <jupiter.version>5.5.2</jupiter.version>
         <spring.version>5.2.6.RELEASE</spring.version>
         <spring.boot.version>2.3.0.RELEASE</spring.boot.version>
+        <lombok.version>1.18.12</lombok.version>
+        <http.client.version>4.5.12</http.client.version>
+        <common.io.version>2.7</common.io.version>
+        <logback.version>1.2.3</logback.version>
+        <snake.yaml.version>1.26</snake.yaml.version>
+        <jmh.version>1.21</jmh.version>
+        <find.bug.version>3.0.0</find.bug.version>
+        <jetbrain.annoration.version>19.0.0</jetbrain.annoration.version>
     </properties>
 
     <dependencies>
@@ -93,17 +101,17 @@
         <dependency>
             <groupId>org.springframework.data</groupId>
             <artifactId>spring-data-commons</artifactId>
-            <version>${springdata.commons.version}</version>
+            <version>${spring.data.commons.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>4.5.12</version>
+            <version>${http.client.version}</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.12</version>
+            <version>${lombok.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -144,29 +152,31 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.7</version>
+            <version>${common.io.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-test</artifactId>
             <version>${spring.boot.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-test</artifactId>
             <version>${spring.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.2.3</version>
+            <version>${logback.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
-            <version>1.26</version>
+            <version>${snake.yaml.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -175,14 +185,14 @@
         <dependency>
             <groupId>org.openjdk.jmh</groupId>
             <artifactId>jmh-core</artifactId>
-            <version>1.21</version>
+            <version>${jmh.version}</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.openjdk.jmh</groupId>
             <artifactId>jmh-generator-annprocess</artifactId>
-            <version>1.21</version>
+            <version>${jmh.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -191,7 +201,7 @@
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>annotations</artifactId>
-            <version>3.0.0</version>
+            <version>${find.bug.version}</version>
             <scope>compile</scope>
         </dependency>
 
@@ -205,7 +215,7 @@
         <dependency>
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
-            <version>19.0.0</version>
+            <version>${jetbrain.annoration.version}</version>
         </dependency>
 
     </dependencies>
