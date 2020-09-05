@@ -7,7 +7,7 @@ language: java
 jdk: oraclejdk11
 
 install: true
-script: chmod 777 mvnw && ./mvnw clean install
+script: chmod 777 mvnw && ./mvnw clean install -Dgpg.skip=true
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)

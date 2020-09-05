@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.groocraft</groupId>
@@ -7,6 +8,7 @@
     <version>1.0.0</version>
     <name>Couch Slacker</name>
     <description>Connector and Spring Data implementation for CouchDB</description>
+    <url>https://github.com/majlanky/couch-slacker/tree/master</url>
 
     <organization>
         <name>Groo craft s.r.o</name>
@@ -28,9 +30,9 @@
     <scm>
         <connection>scm:git:git://github.com/majlanky/couch-slacker.git</connection>
         <developerConnection>scm:git:ssh://github.com:majlanky/couch-slacker.git</developerConnection>
-        <url>http://github.com/majlanky/couch-slacker/tree/master</url>
-      <tag>v1.0.0</tag>
-  </scm>
+        <url>https://github.com/majlanky/couch-slacker/tree/master</url>
+        <tag>v1.0.0</tag>
+    </scm>
 
     <licenses>
         <license>
