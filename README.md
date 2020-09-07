@@ -7,6 +7,13 @@ Couch Slacker project started in 2020. Basic idea and motivation was to create [
 
 Simply said Couch Slacker let you relax on the [CouchDB](https://couchdb.apache.org/) as [Spring Data](https://spring.io/projects/spring-data) works for
  you.
+ 
+Artifacts releases are available on maven central (and on pages indexing central):
+* [central](https://repo1.maven.org/maven2/com/groocraft/couch-slacker/)
+* [mvnRepository](https://mvnrepository.com/artifact/com.groocraft/couch-slacker)
+
+## Wiki
+This README contains only basic information about project. For more or detailed information visit [wiki](https://github.com/Majlanky/couch-slacker/wiki) 
 
 ## Project Focus
 * Provide a basic client for [CouchDB](https://couchdb.apache.org/)
@@ -131,11 +138,11 @@ Despite the fact you can use Couch Slacker as dependency of your project as it i
 project by you own. Couch Slacker is a maven project with prepared maven wrapper. Everything you need to do is call 
 the following command in the root of the project.
 ```shell script
-$ ./mwnw clean install -DskipITs
-```
-the previous command skips integration tests. For build with integration tests use (and read the information bellow):
-```shell script
 $ ./mwnw clean install
+```
+the previous command skips integration tests. For build with integration tests use (and check wiki for integration tests information):
+```shell script
+$ ./mwnw clean install -P ITs
 ```
 
 However, every build contains integration (and junit) tests which are executed against [CouchDB](https://couchdb.apache.org/) in [Docker](https://www.docker.com/). It is reason, why

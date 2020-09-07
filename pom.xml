@@ -403,4 +403,34 @@
         </repository>
     </distributionManagement>
 
+    <profiles>
+        <profile>
+            <id>dev</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <gpg.skip>true</gpg.skip>
+                <skipITs>true</skipITs>
+                <skipTests>false</skipTests>
+            </properties>
+        </profile>
+        <profile>
+            <id>ITs</id>
+            <properties>
+                <gpg.skip>true</gpg.skip>
+                <skipITs>false</skipITs>
+                <skipTests>false</skipTests>
+            </properties>
+        </profile>
+        <profile>
+            <id>full</id>
+            <properties>
+                <gpg.skip>false</gpg.skip>
+                <skipITs>false</skipITs>
+                <skipTests>false</skipTests>
+            </properties>
+        </profile>
+    </profiles>
+
 </project>
