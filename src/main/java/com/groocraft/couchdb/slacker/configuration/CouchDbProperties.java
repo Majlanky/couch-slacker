@@ -16,7 +16,11 @@
 
 package com.groocraft.couchdb.slacker.configuration;
 
+import org.hibernate.validator.constraints.URL;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.validation.annotation.Validated;
+
+import javax.validation.constraints.NotEmpty;
 
 /**
  * Properties pojo class for Couch Slacker configuration. It is used in {@link CouchSlackerConfiguration} class
@@ -24,17 +28,21 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @author Majlanky
  * @see CouchSlackerConfiguration
  */
+@Validated
 @ConfigurationProperties(prefix = "couchdb.client")
 public class CouchDbProperties {
 
     public static final String COUCH_ID_NAME = "_id";
     public static final String COUCH_REVISION_NAME = "_rev";
 
+    @URL(regexp = "^(http:\\/\\/|https:\\/\\/|).*:(6553[0-5]|655[0-2][0-9]|65[0-4][0-9][0-9]|6[0-4][0-9][0-9][0-9][0-9]|[1-5](\\d){4}|[1-9](\\d){0,3})$")
     private String url;
 
+    @NotEmpty
     private String username;
 
-    private String password = "";
+    @NotEmpty
+    private String password;
 
     public CouchDbProperties() {
     }

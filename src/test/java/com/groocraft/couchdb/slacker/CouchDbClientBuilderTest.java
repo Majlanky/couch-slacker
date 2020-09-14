@@ -29,7 +29,9 @@ class CouchDbClientBuilderTest {
         builder.url("http://localhost:5984");
         assertThrows(IllegalArgumentException.class, builder::build, "Non-configured username must be reported");
         builder.username("admin");
-        assertDoesNotThrow(builder::build, "URL and username are configured, the rest of configuration has default values");
+        assertThrows(IllegalArgumentException.class, builder::build, "Non-configured password must be reposted");
+        builder.password("password");
+        assertDoesNotThrow(builder::build, "URL, username, password are configured, the rest of configuration has default values");
     }
 
 }

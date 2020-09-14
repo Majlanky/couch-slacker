@@ -25,6 +25,8 @@ import com.groocraft.couchdb.slacker.data.MethodWriter;
 import com.groocraft.couchdb.slacker.data.Reader;
 import com.groocraft.couchdb.slacker.data.Writer;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.util.Assert;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -58,7 +60,8 @@ public class EntityMetadata<DataT> {
      * @param entityClass of parsed document. Must not be {@literal null}
      * @throws IllegalStateException if there is missing _id or _rev access
      */
-    public EntityMetadata(Class<DataT> entityClass) {
+    public EntityMetadata(@NotNull Class<DataT> entityClass) {
+        Assert.notNull(entityClass, "EntityClass must not be null.");
         this.entityClass = entityClass;
         Optional<Database> database = Optional.ofNullable(entityClass.getAnnotation(Database.class));
         databaseName = database.map(Database::value).orElseGet(() -> entityClass.getSimpleName().toLowerCase());

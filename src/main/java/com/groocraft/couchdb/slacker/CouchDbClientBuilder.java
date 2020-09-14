@@ -78,6 +78,7 @@ public class CouchDbClientBuilder {
      * @return {@link CouchDbClientBuilder}
      */
     public @NotNull CouchDbClientBuilder properties(@NotNull CouchDbProperties properties) {
+        Assert.notNull(properties, "Properties must not be null.");
         this.properties.copy(properties);
         return this;
     }
@@ -89,6 +90,7 @@ public class CouchDbClientBuilder {
      * @return {@link CouchDbClientBuilder}
      */
     public @NotNull CouchDbClientBuilder url(@NotNull String url) {
+        Assert.hasText(url, "Url must not be null nor empty.");
         this.properties.setUrl(url);
         return this;
     }
@@ -100,6 +102,7 @@ public class CouchDbClientBuilder {
      * @return {@link CouchDbClientBuilder}
      */
     public @NotNull CouchDbClientBuilder username(@NotNull String username) {
+        Assert.hasText(username, "Username must not be null nor empty.");
         this.properties.setUsername(username);
         return this;
     }
@@ -111,7 +114,8 @@ public class CouchDbClientBuilder {
      * @return {@link CouchDbClientBuilder}
      */
     public @NotNull CouchDbClientBuilder password(@NotNull String password) {
-        this.properties.setUsername(password);
+        Assert.hasText(password, "Password must not be null nor empty.");
+        this.properties.setPassword(password);
         return this;
     }
 
@@ -122,6 +126,7 @@ public class CouchDbClientBuilder {
      * @return {@link CouchDbClientBuilder}
      */
     public @NotNull CouchDbClientBuilder uidGenerator(@NotNull Supplier<String> uidGenerator) {
+        Assert.notNull(uidGenerator, "UidGenerator must not be null.");
         this.uidGenerator = uidGenerator;
         return this;
     }
@@ -154,9 +159,7 @@ public class CouchDbClientBuilder {
      * @return object which is not {@literal null}
      */
     private <DataT> DataT ifNotNull(DataT o, String message){
-        if(o == null){
-            throw new IllegalArgumentException(message);
-        }
+        Assert.notNull(o, message);
         return o;
     }
 
@@ -185,7 +188,7 @@ public class CouchDbClientBuilder {
      * @return {@link HttpClient}
      * @see ThrowingInterceptor
      */
-    public @NotNull HttpClient getHttpClient() {
+    private @NotNull HttpClient getHttpClient() {
         try {
             PoolingHttpClientConnectionManager ccm = new PoolingHttpClientConnectionManager(getRegistry());
             HttpClientBuilder clientBuilder = HttpClients.custom()

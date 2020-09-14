@@ -50,6 +50,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HttpContext;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Sort;
+import org.springframework.util.Assert;
 
 import java.io.IOException;
 import java.net.URI;
@@ -91,6 +92,11 @@ public class CouchDbClient {
      */
     CouchDbClient(@NotNull HttpClient httpClient, @NotNull HttpHost httpHost, @NotNull HttpContext httpContext, @NotNull URI baseURI,
                   @NotNull Supplier<String> uidGenerator) {
+        Assert.notNull(httpClient, "HttpClient must not be null.");
+        Assert.notNull(httpHost, "HttpHost must not be null.");
+        Assert.notNull(httpContext, "HttpContext must not be null.");
+        Assert.notNull(baseURI, "BaseURI must not be null.");
+        Assert.notNull(uidGenerator, "UidGenerator must not be null.");
         this.httpClient = httpClient;
         this.baseURI = baseURI;
         this.httpHost = httpHost;

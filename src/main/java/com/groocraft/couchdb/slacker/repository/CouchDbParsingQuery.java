@@ -31,6 +31,7 @@ import org.springframework.data.repository.query.Parameters;
 import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.data.repository.query.RepositoryQuery;
 import org.springframework.data.repository.query.parser.PartTree;
+import org.springframework.util.Assert;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -66,6 +67,10 @@ public class CouchDbParsingQuery implements RepositoryQuery {
      * @param entityClass repository domain class. Must not be {@literal null}.
      */
     public CouchDbParsingQuery(@NotNull CouchDbClient client, @NotNull Method method, @NotNull QueryMethod queryMethod, @NotNull Class<?> entityClass) {
+        Assert.notNull(client, "Client must not be null.");
+        Assert.notNull(method, "Method must not be null.");
+        Assert.notNull(queryMethod, "QueryMethod must not be null.");
+        Assert.notNull(entityClass, "EntityClass must not be null.");
         this.client = client;
         this.queryMethod = queryMethod;
         this.entityClass = entityClass;

@@ -18,8 +18,10 @@ package com.groocraft.couchdb.slacker.repository;
 
 import com.groocraft.couchdb.slacker.EntityMetadata;
 import com.groocraft.couchdb.slacker.data.Reader;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.repository.core.EntityInformation;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
+import org.springframework.util.Assert;
 
 /**
  * Implementation of {@link EntityInformation} for resolving CouchDB {@link com.groocraft.couchdb.slacker.Document} and other properly annotated objects
@@ -39,7 +41,8 @@ public class CouchDbEntityInformation<EntityT, IdT> implements EntityInformation
     /**
      * @param entityMetadata {@link EntityMetadata} for the entity class. Used to get {@link Reader} for revision and id. Must not be {@literal null}.
      */
-    public CouchDbEntityInformation(EntityMetadata<EntityT> entityMetadata) {
+    public CouchDbEntityInformation(@NotNull EntityMetadata<EntityT> entityMetadata) {
+        Assert.notNull(entityMetadata, "EntityMetadata must not be null.");
         this.clazz = entityMetadata.getEntityClass();
         idReader = entityMetadata.getIdReader();
         revisionReader = entityMetadata.getRevisionReader();

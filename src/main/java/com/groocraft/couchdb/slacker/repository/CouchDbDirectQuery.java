@@ -26,6 +26,7 @@ import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.Parameters;
 import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.data.repository.query.RepositoryQuery;
+import org.springframework.util.Assert;
 
 import java.io.IOException;
 
@@ -54,6 +55,10 @@ public class CouchDbDirectQuery implements RepositoryQuery {
      * @param entityClass class of processed entities
      */
     public CouchDbDirectQuery(@NotNull String query, @NotNull CouchDbClient client, @NotNull QueryMethod queryMethod, @NotNull Class<?> entityClass) {
+        Assert.hasText(query, "Query must not be null nor empty.");
+        Assert.notNull(client, "Client must not be null.");
+        Assert.notNull(queryMethod, "QueryMethod must not be null");
+        Assert.notNull(entityClass, "EntityClass must not be null.");
         this.client = client;
         this.queryMethod = queryMethod;
         this.entityClass = entityClass;

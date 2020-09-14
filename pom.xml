@@ -11,7 +11,7 @@
     <url>https://github.com/majlanky/couch-slacker/tree/master</url>
 
     <organization>
-        <name>Groo craft s.r.o</name>
+        <name>Groo craft s.r.o.</name>
     </organization>
 
     <developers>
@@ -19,7 +19,7 @@
             <id>Majlanky</id>
             <name>Majlanky The Coding Enma</name>
             <email>majlanky@groocraft.cz</email>
-            <organization>Groo craft s.r.o</organization>
+            <organization>Groo craft s.r.o.</organization>
             <roles>
                 <role>Project lead</role>
             </roles>
@@ -75,6 +75,7 @@
         <jmh.version>1.21</jmh.version>
         <find.bug.version>3.0.0</find.bug.version>
         <jetbrain.annoration.version>19.0.0</jetbrain.annoration.version>
+        <hibernate.validator>6.1.5.Final</hibernate.validator>
     </properties>
 
     <dependencies>
@@ -129,6 +130,12 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate.validator</groupId>
+            <artifactId>hibernate-validator</artifactId>
+            <version>${hibernate.validator}</version>
+            <scope>compile</scope>
         </dependency>
 
         <!-- TEST -->

@@ -18,12 +18,14 @@ package com.groocraft.couchdb.slacker.repository;
 
 import com.groocraft.couchdb.slacker.CouchDbClient;
 import com.groocraft.couchdb.slacker.annotation.Query;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.query.QueryLookupStrategy;
 import org.springframework.data.repository.query.QueryMethod;
 import org.springframework.data.repository.query.RepositoryQuery;
+import org.springframework.util.Assert;
 
 import java.lang.reflect.Method;
 import java.util.Optional;
@@ -41,7 +43,8 @@ public class CouchDbQueryLookupStrategy implements QueryLookupStrategy {
     /**
      * @param client must not be {@literal null}.
      */
-    public CouchDbQueryLookupStrategy(CouchDbClient client) {
+    public CouchDbQueryLookupStrategy(@NotNull CouchDbClient client) {
+        Assert.notNull(client, "Client must not be null.");
         this.client = client;
     }
 

@@ -19,6 +19,7 @@ package com.groocraft.couchdb.slacker.configuration;
 import com.groocraft.couchdb.slacker.CouchDbClient;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.util.Assert;
 
 /**
  * Basic class which can be used as extension of {@link org.springframework.context.annotation.Configuration} class and enable reading Couch Slacker
@@ -31,6 +32,7 @@ public class CouchSlackerConfiguration {
 
     @Bean(destroyMethod = "close")
     public CouchDbClient dbClient(CouchDbProperties properties) {
+        Assert.notNull(properties, "Properties must not be null.");
         return CouchDbClient.builder().properties(properties).build();
     }
 

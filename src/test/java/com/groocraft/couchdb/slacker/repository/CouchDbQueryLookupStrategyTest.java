@@ -61,7 +61,7 @@ class CouchDbQueryLookupStrategyTest {
         return Collections.emptyList();
     }
 
-    @Query()
+    @Query("{\"selector\": {\"value\": {\"$eq\": ?1}}}")
     private List<TestDocument> queryAnnotated(@Param("value") String value) {
         return Collections.emptyList();
     }
