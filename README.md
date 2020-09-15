@@ -5,6 +5,13 @@ Couch Slacker project started in 2020. Basic idea and motivation was to create [
 [CouchDB](https://couchdb.apache.org/) which is awesome and light document database. We felt in love with it because of easy clustering, nice API and good
  documentation. [Spring Data](https://spring.io/projects/spring-data) is an awesome tool how to make development faster. So we decided to join them.
 
+#### Why to use Couch Slacker?
+Differently from other projects, Couch Slacker not only Spring Data like library. It is true [Spring Data](https://spring.io/projects/spring-data) 
+implementation [CouchDB](https://couchdb.apache.org/) which makes Couch Slacker very powerful. You can start you project with Spring on 
+[CouchDB](https://couchdb.apache.org/) with Couch Slacker and switch to MongoDB or other database engine by simple change of dependency (and probably 
+some little changes in entity/POJO classes). *No massive refactorings needed.* The other reason is that developer does not need to know Couch Slacker well. 
+Knowledge of [Spring Data](https://spring.io/projects/spring-data) is enough.
+
 Simply said Couch Slacker let you relax on the [CouchDB](https://couchdb.apache.org/) as [Spring Data](https://spring.io/projects/spring-data) works for
  you.
  
