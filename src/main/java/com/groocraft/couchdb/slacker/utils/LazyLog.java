@@ -17,6 +17,7 @@
 package com.groocraft.couchdb.slacker.utils;
 
 import org.jetbrains.annotations.NotNull;
+import org.springframework.util.Assert;
 
 import java.util.function.Supplier;
 
@@ -31,20 +32,28 @@ public class LazyLog {
 
     private final Supplier<Object> supplier;
 
-    private LazyLog(Supplier<Object> supplier){
+    /**
+     * @param supplier of data, which should be logged when needed. Must not be {@literal null}
+     */
+    private LazyLog(Supplier<Object> supplier) {
+        Assert.notNull(supplier, "Supplier must not be null.");
         this.supplier = supplier;
     }
 
     /**
      * More fluent way to create instance of the class.
+     *
      * @param supplier providing log parameter as result of a computation with which {@link String#valueOf(Object)} is called to provide textual version of
      *                 the parameter. Must not be {@literal null}
      * @return instance of {@link LazyLog} prepared to provide textual version of computed parameter if requested thru {@link #toString()}
      */
-    public static @NotNull LazyLog of(@NotNull Supplier<Object> supplier){
+    public static @NotNull LazyLog of(@NotNull Supplier<Object> supplier) {
         return new LazyLog(supplier);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String toString() {
         return String.valueOf(supplier.get());

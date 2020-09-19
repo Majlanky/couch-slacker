@@ -11,3 +11,5 @@ couchdb:
     url: http://localhost:5984/
     username: admin
     password: password
+    bulk-max-size: 50
+    find-execution-stats: true

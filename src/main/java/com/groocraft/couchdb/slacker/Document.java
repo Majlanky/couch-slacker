@@ -20,6 +20,7 @@ package com.groocraft.couchdb.slacker;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -42,7 +43,11 @@ public class Document {
     public Document() {
     }
 
-    public Document(String id, String revision) {
+    /**
+     * @param id       of document. It can be null which means new document
+     * @param revision of document. It can be null which means new document
+     */
+    public Document(@Nullable String id, @Nullable String revision) {
         this.id = id;
         this.revision = revision;
     }

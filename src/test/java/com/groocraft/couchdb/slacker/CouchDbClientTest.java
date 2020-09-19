@@ -38,7 +38,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.only;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class CouchDbClientTest {
@@ -454,7 +458,9 @@ class CouchDbClientTest {
         HttpPost post = (HttpPost) request;
         assertEquals("http://localhost:5984/test/_index", post.getURI().toString(), "URI must be based on base URI and database name");
         assertEquals("application/json", post.getEntity().getContentType().getValue(), "Find request should declare json content");
-        assertContent("{\"index\":[{\"value\":\"asc\"}],\"type\":\"json\",\"name\":\"test\"}", post.getEntity().getContent(), "Create index request is serialized poorly");
+        assertContent("{\"index\":{\"fields\":[{\"value\":\"asc\"}]},\"type\":\"json\",\"name\":\"test\"}", post.getEntity().getContent(), "Create index " +
+                "request " +
+                "is serialized poorly");
         assertEquals(thrown, assertThrows(IOException.class, () -> testedAction.accept(client)), "CouchDb client should not alternate original " +
                 "exception");
         request = requestCaptor.getValue();

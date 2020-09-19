@@ -18,6 +18,7 @@ package com.groocraft.couchdb.slacker.repository;
 
 import com.groocraft.couchdb.slacker.CouchDbClient;
 import com.groocraft.couchdb.slacker.annotation.Query;
+import com.groocraft.couchdb.slacker.configuration.CouchDbProperties;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.repository.core.NamedQueries;
@@ -39,13 +40,17 @@ import java.util.Optional;
 public class CouchDbQueryLookupStrategy implements QueryLookupStrategy {
 
     private final CouchDbClient client;
+    private final CouchDbProperties properties;
 
     /**
-     * @param client must not be {@literal null}.
+     * @param client     must not be {@literal null}.
+     * @param properties must not be {@literal null}.
      */
-    public CouchDbQueryLookupStrategy(@NotNull CouchDbClient client) {
+    public CouchDbQueryLookupStrategy(@NotNull CouchDbClient client, @NotNull CouchDbProperties properties) {
         Assert.notNull(client, "Client must not be null.");
+        Assert.notNull(properties, "Properties must not be null");
         this.client = client;
+        this.properties = properties;
     }
 
     /**
@@ -62,7 +67,8 @@ public class CouchDbQueryLookupStrategy implements QueryLookupStrategy {
             Optional<Query> queryAnnotation = Optional.ofNullable(method.getAnnotation(Query.class));
             query = queryAnnotation.map(Query::value);
         }
-        return query.map(s -> (RepositoryQuery) new CouchDbDirectQuery(s, client, queryMethod, metadata.getDomainType())).orElseGet(() -> new CouchDbParsingQuery(client,
-                method, queryMethod, metadata.getDomainType()));
+        return query.map(s -> (RepositoryQuery) new CouchDbDirectQuery(s, client, queryMethod, metadata.getDomainType()))
+                .orElseGet(() -> new CouchDbParsingQuery<>(client, properties.getBulkMaxSize(), properties.isFindExecutionStats(), method, queryMethod,
+                        metadata.getDomainType()));
     }
 }

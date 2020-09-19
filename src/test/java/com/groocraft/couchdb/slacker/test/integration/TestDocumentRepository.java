@@ -2,6 +2,9 @@ package com.groocraft.couchdb.slacker.test.integration;
 
 import com.groocraft.couchdb.slacker.TestDocument;
 import com.groocraft.couchdb.slacker.annotation.Query;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -68,5 +71,11 @@ public interface TestDocumentRepository extends CrudRepository<TestDocument, Str
     List<TestDocument> findByValue5True();
 
     List<TestDocument> findByValue5False();
+
+    Page<TestDocument> findByValue(@Param("value") String value, Pageable pageable);
+
+    Slice<TestDocument> findByValue2(@Param("value2") String value2, Pageable pageable);
+
+    List<TestDocument> findTop80ByValue(@Param("value") String value);
 
 }

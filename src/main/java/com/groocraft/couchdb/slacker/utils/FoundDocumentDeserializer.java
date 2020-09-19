@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.util.Assert;
 
 import java.io.IOException;
 import java.util.List;
@@ -38,7 +39,11 @@ public class FoundDocumentDeserializer<EntityT> extends JsonDeserializer<List<En
 
     private final Class<EntityT> clazz;
 
+    /**
+     * @param clazz must not be {@literal null}
+     */
     public FoundDocumentDeserializer(Class<EntityT> clazz) {
+        Assert.notNull(clazz, "Clazz must not be null");
         this.clazz = clazz;
     }
 

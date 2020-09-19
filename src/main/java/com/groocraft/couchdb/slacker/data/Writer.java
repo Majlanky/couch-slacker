@@ -16,6 +16,9 @@
 
 package com.groocraft.couchdb.slacker.data;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 /**
  * Interface providing writing functionality
  *
@@ -27,9 +30,9 @@ public interface Writer<DataT> {
     /**
      * Method which writes data to the given destination.
      *
-     * @param o    Object which data should be written to. The object can not be null.
+     * @param o    Object which data should be written to. Must not be {@literal null}
      * @param data Data which will be written in to the given destination
      */
-    void write(Object o, DataT data);
+    void write(@NotNull Object o, @Nullable DataT data);
 
 }

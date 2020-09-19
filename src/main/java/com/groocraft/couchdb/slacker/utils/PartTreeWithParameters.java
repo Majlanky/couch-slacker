@@ -18,6 +18,7 @@ package com.groocraft.couchdb.slacker.utils;
 
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.repository.query.parser.PartTree;
+import org.springframework.util.Assert;
 
 import java.util.Map;
 
@@ -35,7 +36,13 @@ public class PartTreeWithParameters {
     private final PartTree partTree;
     private final Map<String, Object> parameters;
 
+    /**
+     * @param partTree   must not be {@literal null}
+     * @param parameters must not be {@literal null}
+     */
     public PartTreeWithParameters(@NotNull PartTree partTree, @NotNull Map<String, Object> parameters) {
+        Assert.notNull(partTree, "PartTree must not be null");
+        Assert.notNull(parameters, "Parameters must not be null");
         this.partTree = partTree;
         this.parameters = parameters;
     }

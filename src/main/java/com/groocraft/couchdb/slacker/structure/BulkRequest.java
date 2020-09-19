@@ -16,7 +16,6 @@
 
 package com.groocraft.couchdb.slacker.structure;
 
-@SuppressWarnings("unused")
 public class BulkRequest<EntityT> {
 
     private Iterable<EntityT> docs;

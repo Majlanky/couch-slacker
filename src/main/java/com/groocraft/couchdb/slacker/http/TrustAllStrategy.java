@@ -26,7 +26,12 @@ import java.security.cert.X509Certificate;
  * @author Majlanky
  */
 public class TrustAllStrategy implements TrustStrategy {
+
+    /**
+     * {@inheritDoc}
+     */
     public boolean isTrusted(X509Certificate[] x509Certificates, String s) {
         return true;
     }
+
 }

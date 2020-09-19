@@ -17,6 +17,9 @@
 package com.groocraft.couchdb.slacker.data;
 
 import com.groocraft.couchdb.slacker.exception.AccessException;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.springframework.util.Assert;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -31,12 +34,20 @@ public class MethodWriter<DataT> implements Writer<DataT> {
 
     private final Method method;
 
-    public MethodWriter(Method method) {
+    /**
+     * @param method which is called with the data
+     */
+    public MethodWriter(@NotNull Method method) {
+        Assert.notNull(method, "Method must not be null");
         this.method = method;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public void write(Object o, DataT data) {
+    public void write(@NotNull Object o, @Nullable DataT data) {
+        Assert.notNull(o, "Object must not be null");
         try {
             method.invoke(o, data);
         } catch (IllegalAccessException | InvocationTargetException e) {

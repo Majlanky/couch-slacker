@@ -17,6 +17,7 @@
 package com.groocraft.couchdb.slacker.repository;
 
 import com.groocraft.couchdb.slacker.CouchDbClient;
+import com.groocraft.couchdb.slacker.configuration.CouchDbProperties;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.core.support.RepositoryFactoryBeanSupport;
@@ -35,16 +36,20 @@ public class CouchDbRepositoryFactoryBean<T extends Repository<S, ID>, S, ID ext
         extends RepositoryFactoryBeanSupport<T, S, ID> {
 
     private final CouchDbClient client;
+    private final CouchDbProperties properties;
 
     /**
      * @param repositoryInterface must not be {@literal null}.
      * @param client              must not be {@literal null}.
+     * @param properties          must not be {@literal null}.
      */
     @SuppressWarnings("SameParameterValue")
-    protected CouchDbRepositoryFactoryBean(@NotNull Class<? extends T> repositoryInterface, @NotNull CouchDbClient client) {
+    protected CouchDbRepositoryFactoryBean(@NotNull Class<? extends T> repositoryInterface, @NotNull CouchDbClient client, @NotNull CouchDbProperties properties) {
         super(repositoryInterface);
         Assert.notNull(client, "Client must not be null.");
+        Assert.notNull(properties, "Properties must not be null.");
         this.client = client;
+        this.properties = properties;
     }
 
     /**
@@ -52,6 +57,6 @@ public class CouchDbRepositoryFactoryBean<T extends Repository<S, ID>, S, ID ext
      */
     @Override
     protected RepositoryFactorySupport createRepositoryFactory() {
-        return new CouchDbRepositoryFactory(client);
+        return new CouchDbRepositoryFactory(client, properties);
     }
 }

@@ -2,8 +2,8 @@ package com.groocraft.couchdb.slacker.repository;
 
 import com.groocraft.couchdb.slacker.CouchDbClient;
 import com.groocraft.couchdb.slacker.TestDocument;
+import com.groocraft.couchdb.slacker.configuration.CouchDbProperties;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.data.repository.core.RepositoryInformation;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.query.QueryLookupStrategy;
@@ -11,19 +11,24 @@ import org.springframework.data.repository.query.QueryMethodEvaluationContextPro
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class CouchDbRepositoryFactoryTest {
 
     @Test
     public void test() {
-        CouchDbClient client = Mockito.mock(CouchDbClient.class);
-        RepositoryMetadata repositoryMetadata = Mockito.mock(RepositoryMetadata.class);
-        QueryLookupStrategy.Key key = Mockito.mock(QueryLookupStrategy.Key.class);
-        QueryMethodEvaluationContextProvider evaluationContextProvider = Mockito.mock(QueryMethodEvaluationContextProvider.class);
-        RepositoryInformation information = Mockito.mock(RepositoryInformation.class);
-        Mockito.doReturn(SimpleCouchDbRepository.class).when(information).getRepositoryBaseClass();
-        Mockito.doReturn(TestDocument.class).when(information).getDomainType();
-        CouchDbRepositoryFactory factory = new CouchDbRepositoryFactory(client);
+        CouchDbClient client = mock(CouchDbClient.class);
+        RepositoryMetadata repositoryMetadata = mock(RepositoryMetadata.class);
+        QueryLookupStrategy.Key key = mock(QueryLookupStrategy.Key.class);
+        QueryMethodEvaluationContextProvider evaluationContextProvider = mock(QueryMethodEvaluationContextProvider.class);
+        RepositoryInformation information = mock(RepositoryInformation.class);
+        CouchDbProperties properties = mock(CouchDbProperties.class);
+        doReturn(SimpleCouchDbRepository.class).when(information).getRepositoryBaseClass();
+        doReturn(TestDocument.class).when(information).getDomainType();
+        when(properties.getBulkMaxSize()).thenReturn(100);
+        CouchDbRepositoryFactory factory = new CouchDbRepositoryFactory(client, properties);
         factory.getEntityInformation(TestDocument.class);
         assertEquals(SimpleCouchDbRepository.class, factory.getRepositoryBaseClass(repositoryMetadata),
                 "Factory must report " + SimpleCouchDbRepository.class +

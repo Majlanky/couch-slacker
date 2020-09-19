@@ -21,16 +21,25 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.util.Assert;
 
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
+/**
+ * @author Majlanky
+ */
 public class BulkGetDeserializer<EntityT> extends JsonDeserializer<List<EntityT>> {
 
     private final Class<EntityT> clazz;
 
-    public BulkGetDeserializer(Class<EntityT> clazz) {
+    /**
+     * @param clazz of entities in bulk get. Must not be {@literal null}
+     */
+    public BulkGetDeserializer(@NotNull Class<EntityT> clazz) {
+        Assert.notNull(clazz, "Clazz must not be null");
         this.clazz = clazz;
     }
 
@@ -42,9 +51,9 @@ public class BulkGetDeserializer<EntityT> extends JsonDeserializer<List<EntityT>
         List<EntityT> data = new LinkedList<>();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = p.getCodec().readTree(p);
-        for(int i = 0; i < root.size(); i++){
+        for (int i = 0; i < root.size(); i++) {
             JsonNode object = root.get(i).get("docs").get(0).get("ok");
-            if(object != null){
+            if (object != null) {
                 data.add(mapper.readValue(object.toString(), clazz));
             }
         }

@@ -20,24 +20,42 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.groocraft.couchdb.slacker.data.Reader;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.util.Assert;
 
 import java.io.IOException;
 
+/**
+ * @param <EntityT> Type of processed entity, from which id is read.
+ * @author Majlanky
+ */
 public class BulkGetIdSerializer<EntityT> extends JsonSerializer<EntityT> {
 
     private final Class<EntityT> clazz;
     private final Reader<String> idReader;
 
-    public BulkGetIdSerializer(Class<EntityT> clazz, Reader<String> idReader) {
+    /**
+     * @param clazz of entity. Must not be {@literal null}
+     * @param idReader reader of entity for obtaining id. Must not be {@literal null}
+     */
+    public BulkGetIdSerializer(@NotNull Class<EntityT> clazz, @NotNull Reader<String> idReader) {
+        Assert.notNull(clazz, "Clazz must not be null");
+        Assert.notNull(idReader, "IdReader must not be null");
         this.clazz = clazz;
         this.idReader = idReader;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Class<EntityT> handledType() {
         return clazz;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void serialize(EntityT value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
         gen.writeStartObject();

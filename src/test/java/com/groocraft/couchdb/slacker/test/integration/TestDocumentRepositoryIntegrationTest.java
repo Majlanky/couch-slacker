@@ -12,6 +12,11 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.ConfigFileApplicationContextInitializer;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -19,6 +24,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -49,12 +55,12 @@ public class TestDocumentRepositoryIntegrationTest {
     TestDocumentRepository repository;
 
     @BeforeAll
-    public void setUp(){
+    public void setUp() {
         try {
             client.createDatabase("_users");
             client.createDatabase("_replicator");
             client.createDatabase("test");
-        } catch (IOException ex){
+        } catch (IOException ex) {
             fail("Unable to initialize database", ex);
         }
     }
@@ -466,6 +472,56 @@ public class TestDocumentRepositoryIntegrationTest {
         for (TestDocument d : read) {
             assertFalse(d.isValue5(), "We requested only document with value5 set to false");
         }
+    }
+
+    @Test
+    public void testFindOverflowing() {
+        IntStream.range(1, 501).forEach(i -> repository.save(new TestDocument("value" + i, "value2" + i)));
+        List<TestDocument> read = repository.findByValue2NotNull();
+        assertEquals(500, read.size(), "500 documents with non null value2 are stored in db");
+        Map<String, TestDocument> mapped = read.stream().collect(Collectors.toMap(TestDocument::getValue, t -> t));
+        IntStream.range(1, 501).forEach(i -> assertTrue(mapped.containsKey("value" + i), "Result does not contain all documents"));
+    }
+
+    @Test
+    public void testPagedFindWithPagination() throws IOException {
+        client.createIndex("value2-sort-index", TestDocument.class, Sort.Order.asc("value2"));
+        IntStream.range(1, 501).forEach(i -> repository.save(new TestDocument("value", "value" + i)));
+        List<TestDocument> merged = new LinkedList<>();
+        Pageable pageable = PageRequest.of(0, 25, Sort.by(Sort.Order.asc("value2")));
+        for (int i = 0; i < 20; i++) {
+            Page<TestDocument> read = repository.findByValue("value", pageable);
+            int size = merged.size();
+            read.stream().forEach(merged::add);
+            assertEquals(25, merged.size() - size, "25 document in a page was requested");
+            pageable = read.nextPageable();
+        }
+        Map<String, TestDocument> mapped = merged.stream().collect(Collectors.toMap(TestDocument::getValue2, t -> t));
+        IntStream.range(1, 501).forEach(i -> assertTrue(mapped.containsKey("value" + i), "Result does not contain document with value2 = value" + i));
+    }
+
+    @Test
+    public void testSlicedFindWithPagination() throws IOException {
+        client.createIndex("value-sort-index", TestDocument.class, Sort.Order.asc("value"));
+        IntStream.range(1, 501).forEach(i -> repository.save(new TestDocument("value" + i, "value")));
+        List<TestDocument> merged = new LinkedList<>();
+        Pageable pageable = PageRequest.of(0, 25, Sort.by(Sort.Order.asc("value")));
+        for (int i = 0; i < 20; i++) {
+            Slice<TestDocument> read = repository.findByValue2("value", pageable);
+            int size = merged.size();
+            read.stream().forEach(merged::add);
+            assertEquals(25, merged.size() - size, "25 document in a page was requested");
+            pageable = read.nextPageable();
+        }
+        Map<String, TestDocument> mapped = merged.stream().collect(Collectors.toMap(TestDocument::getValue, t -> t));
+        IntStream.range(1, 501).forEach(i -> assertTrue(mapped.containsKey("value" + i), "Result does not contain document with value = value" + i));
+    }
+
+    @Test
+    public void testTopped() {
+        IntStream.range(1, 100).forEach(i -> repository.save(new TestDocument("value", "value" + 1)));
+        List<TestDocument> read = repository.findTop80ByValue("value");
+        assertEquals(80, read.size(), "There is 100 document and 80 was requested, 80 should be returned");
     }
 
 }

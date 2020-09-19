@@ -20,6 +20,8 @@ import org.hibernate.validator.constraints.URL;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotEmpty;
 
 /**
@@ -35,22 +37,47 @@ public class CouchDbProperties {
     public static final String COUCH_ID_NAME = "_id";
     public static final String COUCH_REVISION_NAME = "_rev";
 
-    @URL(regexp = "^(http:\\/\\/|https:\\/\\/|).*:(6553[0-5]|655[0-2][0-9]|65[0-4][0-9][0-9]|6[0-4][0-9][0-9][0-9][0-9]|[1-5](\\d){4}|[1-9](\\d){0,3})$")
+    /**
+     * Must be valid URL.
+     * Port is mandatory.
+     * Scheme can be http or https.
+     * Scheme is not mandatory, http is used if not present.
+     */
+    @URL
     private String url;
 
+    /**
+     * Name of user used for authentication to CouchDB.
+     * Must not be empty.
+     */
     @NotEmpty
     private String username;
 
+    /**
+     * Password for name used for authentication to CouchDB.
+     * Must not be empty.
+     */
     @NotEmpty
     private String password;
 
-    public CouchDbProperties() {
-    }
+    /**
+     * If bulk operation (findAll, deleteAll, etc.) is executed, this is the limit of document number processed in one batch.
+     * Operation requesting operation with more documents than limit is processed in more batches.
+     * Minimum is 10, maximum is 10000.
+     * Default value is 1000;
+     */
+    @Min(10)
+    @Max(10000)
+    private int bulkMaxSize = 1000;
 
-    public CouchDbProperties(String url, String username, String password) {
-        this.url = url;
-        this.username = username;
-        this.password = password;
+    /**
+     * Flag which can turn on/off execution stats in the _find query result.
+     * The stats are logged if turned on.
+     * Default value is false
+     */
+    private boolean findExecutionStats = false;
+
+    public CouchDbProperties() {
     }
 
     public String getUsername() {
@@ -77,9 +104,27 @@ public class CouchDbProperties {
         this.url = url;
     }
 
+    public int getBulkMaxSize() {
+        return bulkMaxSize;
+    }
+
+    public void setBulkMaxSize(int bulkMaxSize) {
+        this.bulkMaxSize = bulkMaxSize;
+    }
+
+    public boolean isFindExecutionStats() {
+        return findExecutionStats;
+    }
+
+    public void setFindExecutionStats(boolean findExecutionStats) {
+        this.findExecutionStats = findExecutionStats;
+    }
+
     public void copy(CouchDbProperties properties) {
         setPassword(properties.getPassword());
         setUsername(properties.getUsername());
         setUrl(properties.url);
+        setBulkMaxSize(properties.getBulkMaxSize());
+        setFindExecutionStats(properties.isFindExecutionStats());
     }
 }

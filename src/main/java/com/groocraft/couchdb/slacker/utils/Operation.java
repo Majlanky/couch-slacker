@@ -19,6 +19,7 @@ package com.groocraft.couchdb.slacker.utils;
 import com.fasterxml.jackson.core.JsonGenerator;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.repository.query.parser.Part;
+import org.springframework.util.Assert;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -79,7 +80,13 @@ public enum Operation {
     private final Part.Type type;
     private final ThrowingBiConsumer<JsonGenerator, Object, IOException> ruleWriter;
 
+    /**
+     * @param type       {@link Part.Type} of operation. Must not be {@literal null}
+     * @param ruleWriter {@link ThrowingBiConsumer} which do serialization of operation to given {@link JsonGenerator}. Must not be {@literal null}
+     */
     Operation(@NotNull Part.Type type, @NotNull ThrowingBiConsumer<JsonGenerator, Object, IOException> ruleWriter) {
+        Assert.notNull(type, "Type must not be null.");
+        Assert.notNull(ruleWriter, "RuleWriter must not be null");
         this.type = type;
         this.ruleWriter = ruleWriter;
     }

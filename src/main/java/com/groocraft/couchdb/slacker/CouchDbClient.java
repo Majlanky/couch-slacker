@@ -428,7 +428,7 @@ public class CouchDbClient {
         EntityMetadata<EntityT> entityMetadata = getEntityMetadata(clazz);
         EntityT entity = read(id, clazz);
         log.debug("Delete of document with id {} and revision {} from database {}", id, LazyLog.of(() -> entityMetadata.getRevisionReader().read(entity)),
-                entityMetadata.getDatabaseName() );
+                entityMetadata.getDatabaseName());
         return delete(getURI(baseURI, List.of(entityMetadata.getDatabaseName(), id), List.of(new BasicNameValuePair("rev", entityMetadata.getRevisionReader()
                 .read(entity)))), r -> entity);
     }
@@ -444,7 +444,7 @@ public class CouchDbClient {
      * @throws IOException if http request is not successful or json processing fail
      * @see Document
      */
-    public <EntityT> @NotNull Iterable<EntityT> find(@NotNull String json, @NotNull Class<EntityT> clazz) throws IOException {
+    public <EntityT> @NotNull List<EntityT> find(@NotNull String json, @NotNull Class<EntityT> clazz) throws IOException {
         ObjectMapper localMapper = new ObjectMapper();
         SimpleModule simpleModule = new SimpleModule();
         simpleModule.addDeserializer(List.class, new FoundDocumentDeserializer<>(clazz));
@@ -453,7 +453,8 @@ public class CouchDbClient {
         DocumentFindResponse<EntityT> response = post(getURI(baseURI, getDatabaseName(clazz), "_find"), json, r -> localMapper.readValue(r.getEntity().getContent(),
                 localMapper.getTypeFactory().constructParametricType(DocumentFindResponse.class, clazz)));
         log.debug("Mango query executed with result of {} documents", response.getDocuments().size());
-        log.warn(response.getWarning());
+        response.getWarning().ifPresent(w -> log.info("{} for query {}", w, json));
+        response.getExecutionStats().ifPresent(s -> log.info("{} for query {}", s, json));
         return response.getDocuments();
     }
 

@@ -17,6 +17,8 @@
 package com.groocraft.couchdb.slacker.data;
 
 import com.groocraft.couchdb.slacker.exception.AccessException;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.util.Assert;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -31,13 +33,21 @@ public class MethodReader<DataT> implements Reader<DataT> {
 
     private final Method method;
 
-    public MethodReader(Method method) {
+    /**
+     * @param method which is invoked to read the data. Must not be {@literal null}
+     */
+    public MethodReader(@NotNull Method method) {
+        Assert.notNull(method, "Method must not be null");
         this.method = method;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @SuppressWarnings("unchecked")
-    public DataT read(Object o) {
+    public DataT read(@NotNull Object o) {
+        Assert.notNull(o, "Object must not be null");
         try {
             return (DataT) method.invoke(o);
         } catch (IllegalAccessException | InvocationTargetException e) {
