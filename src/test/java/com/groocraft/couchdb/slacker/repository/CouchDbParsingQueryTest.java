@@ -343,4 +343,44 @@ class CouchDbParsingQueryTest {
         assertEquals("error", ex.getCause().getMessage(), "Repository must pass original cause of exceptional state");
     }
 
+    @Test
+    @SuppressWarnings({"unchecked", "ResultOfMethodCallIgnored", "null"})
+    public void testNoProjectionWithStringSubAttributeParameter() throws IOException {
+        CouchDbClient client = mock(CouchDbClient.class);
+        QueryMethod queryMethod = mock(QueryMethod.class);
+        ResultProcessor resultProcessor = mock(ResultProcessor.class);
+        ReturnedType returnedType = mock(ReturnedType.class);
+        Method method = mock(Method.class);
+        Parameter parameter = mock(Parameter.class);
+        Parameters<?, ?> parameters = mock(Parameters.class);
+
+        when(queryMethod.getName()).thenReturn("findByAddressStreet");
+        when(client.find(any(), any())).thenReturn(new ArrayList<>());
+        doReturn(TestDocument.class).when(queryMethod).getReturnedObjectType();
+        when(queryMethod.getResultProcessor()).thenReturn(resultProcessor);
+        when(resultProcessor.getReturnedType()).thenReturn(returnedType);
+        doReturn(TestDocument.class).when(returnedType).getDomainType();
+        when(method.getAnnotation(Index.class)).thenReturn(null);
+        when(parameter.getName()).thenReturn(Optional.of("street"));
+        when(parameter.getIndex()).thenReturn(0);
+        doReturn(String.class).when(parameter).getType();
+        doReturn(List.of(parameter).iterator()).when(parameters).iterator();
+        doReturn(parameters).when(queryMethod).getParameters();
+        when(parameters.getSortIndex()).thenReturn(-1);
+        when(parameters.getPageableIndex()).thenReturn(-1);
+        TestDocument result = new TestDocument();
+        when(client.find(any(), eq(TestDocument.class))).thenReturn(List.of(result)).thenThrow(new IOException("error"));
+
+        CouchDbParsingQuery<TestDocument> query = new CouchDbParsingQuery<>(client, 10, false, method, queryMethod, TestDocument.class);
+        assertEquals(queryMethod, query.getQueryMethod(), "CouchDbDirectQuery do not remember given queryMethod");
+        Object o = query.execute(new Object[]{"test"});
+        verify(client).find("{\"limit\":10,\"selector\":{\"$or\":[{\"address.street\":{\"$eq\":\"test\"}}]}}", TestDocument.class);
+        assertDoesNotThrow(() -> (List<TestDocument>) o, "Result must be list of documents");
+        assertNotNull(o, "Returned list must not be null");
+        assertEquals(1, ((List<TestDocument>) o).size(), "Query should not alternate result in this case");
+        assertEquals(result, ((List<TestDocument>) o).get(0), "Query should not alternate result in this case");
+        CouchDbRuntimeException ex = assertThrows(CouchDbRuntimeException.class, () -> query.execute(new Object[]{"test"}), "Every thrown exception must be reported");
+        assertEquals("error", ex.getCause().getMessage(), "Repository must pass original cause of exceptional state");
+    }
+
 }

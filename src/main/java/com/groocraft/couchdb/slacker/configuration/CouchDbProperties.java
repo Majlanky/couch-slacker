@@ -63,17 +63,17 @@ public class CouchDbProperties {
     /**
      * If bulk operation (findAll, deleteAll, etc.) is executed, this is the limit of document number processed in one batch.
      * Operation requesting operation with more documents than limit is processed in more batches.
-     * Minimum is 10, maximum is 10000.
-     * Default value is 1000;
+     * Minimum is 10, maximum is 100000.
+     * Default value is 10000.
      */
     @Min(10)
-    @Max(10000)
-    private int bulkMaxSize = 1000;
+    @Max(100000)
+    private int bulkMaxSize = 10000;
 
     /**
      * Flag which can turn on/off execution stats in the _find query result.
      * The stats are logged if turned on.
-     * Default value is false
+     * Default value is false.
      */
     private boolean findExecutionStats = false;
 

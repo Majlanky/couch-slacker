@@ -78,4 +78,6 @@ public interface TestDocumentRepository extends CrudRepository<TestDocument, Str
 
     List<TestDocument> findTop80ByValue(@Param("value") String value);
 
+    List<TestDocument> findByAddressStreet(@Param("street") String street);
+
 }

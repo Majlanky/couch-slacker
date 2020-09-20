@@ -1,5 +1,6 @@
 package com.groocraft.couchdb.slacker;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.groocraft.couchdb.slacker.annotation.Database;
 
@@ -23,14 +24,22 @@ public class TestDocument extends Document {
     @JsonProperty("value5")
     boolean value5;
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty("address")
+    TestDocumentAddress address;
+
     public TestDocument() {
+    }
+
+    public TestDocument(TestDocumentAddress address) {
+        this.address = address;
     }
 
     public TestDocument(String value) {
         this.value = value;
     }
 
-    public TestDocument(String value, String value2){
+    public TestDocument(String value, String value2) {
         this.value = value;
         this.value2 = value2;
     }
@@ -45,15 +54,15 @@ public class TestDocument extends Document {
         this.value2 = value2;
     }
 
-    public TestDocument(int value3){
+    public TestDocument(int value3) {
         this.value3 = value3;
     }
 
-    public TestDocument(List<String> value4){
+    public TestDocument(List<String> value4) {
         this.value4 = value4;
     }
 
-    public TestDocument(boolean value5){
+    public TestDocument(boolean value5) {
         this.value5 = value5;
     }
 
@@ -95,5 +104,13 @@ public class TestDocument extends Document {
 
     public void setValue5(boolean value5) {
         this.value5 = value5;
+    }
+
+    public TestDocumentAddress getAddress() {
+        return address;
+    }
+
+    public void setAddress(TestDocumentAddress address) {
+        this.address = address;
     }
 }

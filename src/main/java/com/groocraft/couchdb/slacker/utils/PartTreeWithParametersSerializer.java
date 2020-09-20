@@ -84,8 +84,8 @@ public class PartTreeWithParametersSerializer extends JsonSerializer<PartTreeWit
      */
     private void write(@NotNull JsonGenerator generator, @NotNull Part part, @NotNull Map<String, Object> parameters) throws IOException {
         generator.writeStartObject();
-        generator.writeObjectFieldStart(part.getProperty().getSegment());
-        Operation.of(part.getType()).write(parameters.get(part.getProperty().getSegment()), generator);
+        generator.writeObjectFieldStart(part.getProperty().toDotPath());
+        Operation.of(part.getType()).write(parameters.get(part.getProperty().getLeafProperty().getSegment()), generator);
         generator.writeEndObject();
         generator.writeEndObject();
     }
