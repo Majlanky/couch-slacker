@@ -90,8 +90,7 @@ class AppConfig extends CouchSlackerConfiguration{
 
 }
 ```
-Now we are ready to define Spring Data repository for [CouchDB](https://couchdb.apache.org/). Please notice, that [CouchDB](https://couchdb.apache.org
-/) supports only String IDs.
+Now we are ready to define Spring Data repository for [CouchDB](https://couchdb.apache.org/). Please notice, that [CouchDB](https://couchdb.apache.org/) supports only String IDs.
 ```java
 class UserRepository extends CrudRepository<User, String>{
 
