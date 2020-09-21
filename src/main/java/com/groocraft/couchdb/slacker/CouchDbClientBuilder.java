@@ -46,6 +46,7 @@ import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLContexts;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.util.Assert;
 
 import java.net.URI;
@@ -53,8 +54,8 @@ import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.util.UUID;
-import java.util.function.Supplier;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Builder for {@link CouchDbClient}. The client can be builder manually thru {@link #url(String)}, {@link #username(String)} and {@link #password(String)}
@@ -65,10 +66,11 @@ import java.util.function.Supplier;
 public class CouchDbClientBuilder {
 
     private final CouchDbProperties properties;
-    private Supplier<String> uidGenerator = () -> UUID.randomUUID().toString();
+    private final List<IdGenerator<?>> idGenerators;
 
     CouchDbClientBuilder() {
         properties = new CouchDbProperties();
+        idGenerators = new LinkedList<>();
     }
 
     /**
@@ -120,14 +122,15 @@ public class CouchDbClientBuilder {
     }
 
     /**
-     * Method to set generator of UID for documents in DB.
+     * Method to set all known instances of {@link IdGenerator} class.
      *
-     * @param uidGenerator Must not be {@literal null}
+     * @param idGenerators must not be {@literal null}
      * @return {@link CouchDbClientBuilder}
      */
-    public @NotNull CouchDbClientBuilder uidGenerator(@NotNull Supplier<String> uidGenerator) {
-        Assert.notNull(uidGenerator, "UidGenerator must not be null.");
-        this.uidGenerator = uidGenerator;
+    public @NotNull CouchDbClientBuilder idGenerators(@Nullable List<IdGenerator<?>> idGenerators) {
+        if (idGenerators != null) {
+            this.idGenerators.addAll(idGenerators);
+        }
         return this;
     }
 
@@ -145,7 +148,7 @@ public class CouchDbClientBuilder {
                     ifNotNull(properties.getUsername(), "User must be configured, (can not be null)"),
                     ifNotNull(properties.getPassword(), "Password must be configured, (can not be null)"));
             HttpClient client = getHttpClient();
-            return new CouchDbClient(client, host, context, uri, uidGenerator);
+            return new CouchDbClient(client, host, context, uri, idGenerators);
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException("Url " + properties.getUrl() + " is not valid", e);
         }
@@ -153,12 +156,13 @@ public class CouchDbClientBuilder {
 
     /**
      * Method for fluent check and get of the given object. If object is null, exception with the given message is thrown.
-     * @param o object which will be tested
+     *
+     * @param o       object which will be tested
      * @param message which would be wrapped in thrown exception if the given object is null
      * @param <DataT> type of tested object
      * @return object which is not {@literal null}
      */
-    private <DataT> DataT ifNotNull(DataT o, String message){
+    private <DataT> DataT ifNotNull(DataT o, String message) {
         Assert.notNull(o, message);
         return o;
     }
@@ -167,7 +171,7 @@ public class CouchDbClientBuilder {
      * Method to create basic context with given {@link HttpContext} with basic authentication and cache. Authentication using
      * {@link CouchDbProperties#getUsername()} nad {@link CouchDbProperties#getPassword()} as credentials.
      *
-     * @param host Must not be {@literal null}
+     * @param host     Must not be {@literal null}
      * @param username Must not be {@literal null}
      * @param password Must not be {@literal null}
      * @return {@link HttpContext}

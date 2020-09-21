@@ -14,22 +14,24 @@
  * limitations under the License.
  */
 
-package com.groocraft.couchdb.slacker.annotation;
+package com.groocraft.couchdb.slacker.test.integration;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import com.groocraft.couchdb.slacker.IdGenerator;
+import org.jetbrains.annotations.NotNull;
 
-/**
- * Annotation to specify a database name for entity. If the annotation is not present for entity, lower-cased {@link Class#getSimpleName()} is used.
- *
- * @author Majlanky
- */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-public @interface Database {
+import java.util.concurrent.atomic.AtomicInteger;
 
-    String value();
+public class TestIdGenerator implements IdGenerator<SpringTestDocument> {
 
+    private final AtomicInteger counter = new AtomicInteger(0);
+
+    @Override
+    public @NotNull String generate(@NotNull SpringTestDocument e) {
+        return "test" + counter.incrementAndGet();
+    }
+
+    @Override
+    public @NotNull Class<SpringTestDocument> getEntityClass() {
+        return SpringTestDocument.class;
+    }
 }

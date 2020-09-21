@@ -60,9 +60,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -81,29 +79,34 @@ public class CouchDbClient {
     private final Map<Class, EntityMetadata> entityMetadataCache;
     private final URI baseURI;
     private final ObjectMapper mapper;
-    private final Supplier<String> uidGenerator;
+    @SuppressWarnings({"rawtypes"})
+    private final Map<Class, IdGenerator> idGenerators;
+    private final IdGenerator<?> defaultIdGenerator;
 
     /**
      * @param httpClient   must not be {@literal null}
      * @param httpHost     must not be {@literal null}
      * @param httpContext  must not be {@literal null}
      * @param baseURI      where CouchDB is accessible without database specification. Must not be {@literal null}
-     * @param uidGenerator {@link Supplier} for getting UID used for saving new entities
+     * @param idGenerators {@link Iterable} of available {@link IdGenerator}. If empty, default generator {@link IdGeneratorUUID} is used. Must not be {@literal
+     *                     null}
      */
     CouchDbClient(@NotNull HttpClient httpClient, @NotNull HttpHost httpHost, @NotNull HttpContext httpContext, @NotNull URI baseURI,
-                  @NotNull Supplier<String> uidGenerator) {
+                  @NotNull Iterable<IdGenerator<?>> idGenerators) {
         Assert.notNull(httpClient, "HttpClient must not be null.");
         Assert.notNull(httpHost, "HttpHost must not be null.");
         Assert.notNull(httpContext, "HttpContext must not be null.");
         Assert.notNull(baseURI, "BaseURI must not be null.");
-        Assert.notNull(uidGenerator, "UidGenerator must not be null.");
+        Assert.notNull(idGenerators, "IdGenerators must not be null.");
         this.httpClient = httpClient;
         this.baseURI = baseURI;
         this.httpHost = httpHost;
         this.httpContext = httpContext;
         entityMetadataCache = new HashMap<>();
         this.mapper = new ObjectMapper();
-        this.uidGenerator = uidGenerator;
+        this.idGenerators = new HashMap<>();
+        this.defaultIdGenerator = new IdGeneratorUUID();
+        idGenerators.forEach(g -> this.idGenerators.put(g.getEntityClass(), g));
     }
 
     /**
@@ -133,6 +136,21 @@ public class CouchDbClient {
     @SuppressWarnings("unchecked")
     private <T> @NotNull EntityMetadata<T> getEntityMetadata(@NotNull Class<T> clazz) {
         return entityMetadataCache.computeIfAbsent(clazz, EntityMetadata::new);
+    }
+
+    /**
+     * Method to obtain new generated id with a relevant {@link IdGenerator}. There is a default generator which is used by default for all document if a
+     * document is not annotated with {@link com.groocraft.couchdb.slacker.annotation.CustomIdGeneration}
+     *
+     * @param entity    new entity for which the ID needs to be generated
+     * @param clazz     Class of the given entity
+     * @param <EntityT> Entity type
+     * @return Generated ID for the given entity. Can not be {@literal null}
+     * @see #CouchDbClient(HttpClient, HttpHost, HttpContext, URI, Iterable)
+     */
+    @SuppressWarnings("unchecked")
+    private <EntityT> @NotNull String generateId(@NotNull EntityT entity, Class<EntityT> clazz) {
+        return idGenerators.computeIfAbsent(clazz, c -> defaultIdGenerator).generate(entity);
     }
 
     /**
@@ -180,7 +198,7 @@ public class CouchDbClient {
     }
 
     /**
-     * Saving given entity. If there is no ID for given instance, {@link UUID#randomUUID()} is used to create unique id (creates new document in DB).
+     * Saving given entity. If there is no ID for given instance, a relevant {@link IdGenerator} is used to generate new ID.
      *
      * @param entity    instance to save. Must not be {@literal null}
      * @param <EntityT> type of entity
@@ -194,7 +212,7 @@ public class CouchDbClient {
         log.debug("Saving document {} with id {} and revision {} to database {}", entity, id,
                 LazyLog.of(() -> entityMetadata.getRevisionReader().read(entity)), entityMetadata.getDatabaseName());
         if ("".equals(id) || id == null) {
-            id = uidGenerator.get();
+            id = generateId(entity, (Class<EntityT>) entity.getClass());
             log.debug("New ID {} generated for saved document", id);
         }
         DocumentPutResponse response = put(getURI(baseURI, entityMetadata.getDatabaseName(), id), mapper.writeValueAsString(entity), r -> mapper.readValue(r.getEntity().getContent(),
@@ -206,8 +224,8 @@ public class CouchDbClient {
     }
 
     /**
-     * Saving all given entities in one POST request. If there is no ID for given instance, {@link UUID#randomUUID()} is used to create unique id (creates
-     * new document in DB). Spring data documentation says, the same list as passed must be returned. Because some updates can fail, it is very unfortunate.
+     * Saving all given entities in one POST request. If there is no ID for given instance, a relevant {@link IdGenerator} is used to generate new ID.
+     * Spring data documentation says, the same list as passed must be returned. Because some updates can fail, it is very unfortunate.
      * The only way to solve this is to check revision and id of returned document to find out, what was saved/updated and what not. The failed documents are
      * logged on warn level.
      *
@@ -225,7 +243,7 @@ public class CouchDbClient {
         for (EntityT e : entities) {
             String id = entityMetadata.getIdReader().read(e);
             if ("".equals(id) || id == null) {
-                id = uidGenerator.get();
+                id = generateId(e, (Class<EntityT>) e.getClass());
                 entityMetadata.getIdWriter().write(e, id);
                 log.debug("New ID {} generated for bulk saved document", id);
             }

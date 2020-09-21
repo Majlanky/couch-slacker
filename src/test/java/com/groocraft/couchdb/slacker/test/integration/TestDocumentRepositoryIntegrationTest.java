@@ -4,7 +4,6 @@ import com.groocraft.couchdb.slacker.CouchDbClient;
 import com.groocraft.couchdb.slacker.TestDocument;
 import com.groocraft.couchdb.slacker.TestDocumentAddress;
 import com.groocraft.couchdb.slacker.annotation.EnableCouchDbRepositories;
-import com.groocraft.couchdb.slacker.configuration.CouchSlackerConfiguration;
 import com.groocraft.couchdb.slacker.exception.CouchDbRuntimeException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +37,7 @@ import java.util.stream.StreamSupport;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -45,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = {CouchSlackerConfiguration.class, TestDocumentRepository.class},
+@ContextConfiguration(classes = {SpringTestConfiguration.class, TestDocumentRepository.class},
         initializers = ConfigFileApplicationContextInitializer.class)
 @ActiveProfiles("test")
 @EnableCouchDbRepositories
@@ -545,6 +545,17 @@ public class TestDocumentRepositoryIntegrationTest {
         repository.saveAll(toSave);
         List<TestDocument> read = repository.findByAddressStreet("street10");
         assertEquals(1, read.size(), "There is street10 in DB, we should get it here");
+    }
+
+    @Test
+    public void testCustomIdGeneration() throws IOException {
+        client.save(new SpringTestDocument());
+        SpringTestDocument read = client.read("test1", SpringTestDocument.class);
+        assertNotNull(read, "Document with id test1 should be in DB if TestIdGenerator was wired and used");
+        TestDocument saved = client.save(new TestDocument("valueCIG"));
+        assertNotEquals("test2", saved.getId());
+        assertNotNull(client.read(saved.getId(), TestDocument.class), "Probably some confusion. Proper id generator used, but document is not stored in DB");
+
     }
 
 }

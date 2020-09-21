@@ -14,22 +14,34 @@
  * limitations under the License.
  */
 
-package com.groocraft.couchdb.slacker.annotation;
+package com.groocraft.couchdb.slacker;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.util.Assert;
+
+import java.util.UUID;
 
 /**
- * Annotation to specify a database name for entity. If the annotation is not present for entity, lower-cased {@link Class#getSimpleName()} is used.
+ * Implementation of {@link IdGenerator} using {@link UUID#randomUUID()} as new ID source.
  *
  * @author Majlanky
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-public @interface Database {
+public class IdGeneratorUUID implements IdGenerator<Object> {
 
-    String value();
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public @NotNull String generate(@NotNull Object e) {
+        Assert.notNull(e, "Object must not be null");
+        return UUID.randomUUID().toString();
+    }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public @NotNull Class<Object> getEntityClass() {
+        return Object.class;
+    }
 }
