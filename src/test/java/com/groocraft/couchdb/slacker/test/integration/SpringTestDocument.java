@@ -16,11 +16,11 @@
 
 package com.groocraft.couchdb.slacker.test.integration;
 
-import com.groocraft.couchdb.slacker.Document;
+import com.groocraft.couchdb.slacker.DocumentBase;
 import com.groocraft.couchdb.slacker.annotation.CustomIdGeneration;
-import com.groocraft.couchdb.slacker.annotation.Database;
+import com.groocraft.couchdb.slacker.annotation.Document;
 
-@Database("test")
+@Document("test")
 @CustomIdGeneration(TestIdGenerator.class)
-public class SpringTestDocument extends Document {
+public class SpringTestDocument extends DocumentBase {
 }

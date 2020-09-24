@@ -14,22 +14,11 @@
  * limitations under the License.
  */
 
-package com.groocraft.couchdb.slacker.annotation;
+package com.groocraft.couchdb.slacker.test.integration.schema;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import com.groocraft.couchdb.slacker.configuration.CouchSlackerConfiguration;
+import org.springframework.context.annotation.Configuration;
 
-/**
- * Annotation to specify a database name for entity. If the annotation is not present for entity, lower-cased {@link Class#getSimpleName()} is used.
- *
- * @author Majlanky
- */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-public @interface Database {
-
-    String value();
-
+@Configuration
+public class SchemaOperationTestConfiguration extends CouchSlackerConfiguration {
 }

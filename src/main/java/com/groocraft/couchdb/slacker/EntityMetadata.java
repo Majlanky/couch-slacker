@@ -17,7 +17,7 @@
 package com.groocraft.couchdb.slacker;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.groocraft.couchdb.slacker.annotation.Database;
+import com.groocraft.couchdb.slacker.annotation.Document;
 import com.groocraft.couchdb.slacker.configuration.CouchDbProperties;
 import com.groocraft.couchdb.slacker.data.FieldAccessor;
 import com.groocraft.couchdb.slacker.data.MethodReader;
@@ -26,6 +26,7 @@ import com.groocraft.couchdb.slacker.data.Reader;
 import com.groocraft.couchdb.slacker.data.Writer;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.Assert;
 
 import java.lang.reflect.Field;
@@ -37,7 +38,7 @@ import java.util.function.Function;
 
 /**
  * Class providing access to attributes where to store id and revision, both mandatory for work with CouchDB documents.
- * Database name is parsed based on the value of {@link Database} annotation or lower cased simple name of passed class.
+ * Database name is parsed based on the value of {@link Document} annotation or lower cased simple name of passed class.
  * For parsing access to storage attributes {@link JsonProperty} annotation is used with _id and _rev values.
  * {@link EntityMetadata} can provide direct access to the field or setter and getter. Logic is to used method if possible.
  * If there is field with {@link JsonProperty} annotation, setters and getter for attribute are looked for (standard naming convention is used)
@@ -63,8 +64,9 @@ public class EntityMetadata<DataT> {
     public EntityMetadata(@NotNull Class<DataT> entityClass) {
         Assert.notNull(entityClass, "EntityClass must not be null.");
         this.entityClass = entityClass;
-        Optional<Database> database = Optional.ofNullable(entityClass.getAnnotation(Database.class));
-        databaseName = database.map(Database::value).orElseGet(() -> entityClass.getSimpleName().toLowerCase());
+        Optional<Document> document = Optional.ofNullable(entityClass.getAnnotation(Document.class))
+                                        .map(a -> AnnotationUtils.synthesizeAnnotation(a, Document.class));
+        databaseName = document.map(Document::value).orElseGet(() -> entityClass.getSimpleName().toLowerCase());
         log.debug("Database with name {} will be used for all documents of class {}", databaseName, entityClass.getName());
         idWriter = getWriter(CouchDbProperties.COUCH_ID_NAME, entityClass);
         idReader = getReader(CouchDbProperties.COUCH_ID_NAME, entityClass);

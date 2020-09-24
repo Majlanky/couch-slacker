@@ -148,7 +148,8 @@ public class CouchDbClientBuilder {
                     ifNotNull(properties.getUsername(), "User must be configured, (can not be null)"),
                     ifNotNull(properties.getPassword(), "Password must be configured, (can not be null)"));
             HttpClient client = getHttpClient();
-            return new CouchDbClient(client, host, context, uri, idGenerators);
+            return new CouchDbClient(client, host, context, uri, idGenerators, properties.getDefaultShards(),
+                    properties.getDefaultReplicas(), properties.isDefaultPartitioned());
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException("Url " + properties.getUrl() + " is not valid", e);
         }

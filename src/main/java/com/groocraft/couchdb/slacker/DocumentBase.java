@@ -30,7 +30,7 @@ import java.util.Objects;
  *
  * @author Majlanky
  */
-public class Document {
+public class DocumentBase {
 
     @JsonProperty("_id")
     @JsonInclude(Include.NON_NULL)
@@ -40,14 +40,14 @@ public class Document {
     @JsonInclude(Include.NON_NULL)
     private String revision;
 
-    public Document() {
+    public DocumentBase() {
     }
 
     /**
      * @param id       of document. It can be null which means new document
      * @param revision of document. It can be null which means new document
      */
-    public Document(@Nullable String id, @Nullable String revision) {
+    public DocumentBase(@Nullable String id, @Nullable String revision) {
         this.id = id;
         this.revision = revision;
     }
@@ -68,7 +68,7 @@ public class Document {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Document document = (Document) o;
+        DocumentBase document = (DocumentBase) o;
         return Objects.equals(id, document.id) &&
                 Objects.equals(revision, document.revision);
     }

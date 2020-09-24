@@ -20,7 +20,7 @@ Artifacts releases are available on maven central (and on pages indexing central
 * [mvnRepository](https://mvnrepository.com/artifact/com.groocraft/couch-slacker)
 
 ## Wiki
-This README contains only basic information about project. For more or detailed information visit [wiki](https://github.com/Majlanky/couch-slacker/wiki) 
+This README contains only basic information about project. For more or detailed information, visit [wiki](https://github.com/Majlanky/couch-slacker/wiki) 
 
 ## Project Focus
 * Provide a basic client for [CouchDB](https://couchdb.apache.org/)
@@ -47,7 +47,7 @@ First of all we have to add Maven dependency
 ### POJO Classes
 Both the basic client and repositories works above document POJO classes. Let`s create a POJO class for user.
 ```java
-@Database("user")
+@Document("user")
 public class User{
 
     @JsonProperty("_id")
@@ -64,8 +64,8 @@ public class User{
 ```
 It looks pretty talkative does not it? Ok, do not worry, here is way to make it shorter:
 ```java
-@Database("user")
-public class User extends Document{
+@Document("user")
+public class User extends DocumentBase{
 
     @JsonProperty("name")
     private String name;

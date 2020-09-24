@@ -14,20 +14,11 @@
  * limitations under the License.
  */
 
-package com.groocraft.couchdb.slacker.exception;
+package com.groocraft.couchdb.slacker.test.integration.schema;
 
-/**
- * Exception which is thrown if there is any issues during processing a method query.
- *
- * @author Majlanky
- */
-public class QueryException extends RuntimeException {
+import com.groocraft.couchdb.slacker.DocumentBase;
+import com.groocraft.couchdb.slacker.annotation.Document;
 
-    public QueryException(String message) {
-        super(message);
-    }
-
-    public QueryException(String message, Throwable cause) {
-        super(message, cause);
-    }
+@Document("schema-test")
+public class SchemaTestDocument extends DocumentBase {
 }

@@ -49,7 +49,7 @@ public class AutoCloseableHttpResponse implements AutoCloseable {
 
     @Override
     public void close() {
-        if (response != null) {
+        if (response != null && response.getEntity() != null) {
             try {
                 response.getEntity().getContent().close();
             } catch (IOException e) {

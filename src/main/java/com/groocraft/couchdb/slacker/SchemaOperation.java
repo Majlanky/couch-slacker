@@ -14,20 +14,13 @@
  * limitations under the License.
  */
 
-package com.groocraft.couchdb.slacker.exception;
+package com.groocraft.couchdb.slacker;
 
-/**
- * Exception which is thrown if there is any issues during processing a method query.
- *
- * @author Majlanky
- */
-public class QueryException extends RuntimeException {
+public enum SchemaOperation {
 
-    public QueryException(String message) {
-        super(message);
-    }
+    NONE,
+    VALIDATE,
+    CREATE,
+    DROP
 
-    public QueryException(String message, Throwable cause) {
-        super(message, cause);
-    }
 }

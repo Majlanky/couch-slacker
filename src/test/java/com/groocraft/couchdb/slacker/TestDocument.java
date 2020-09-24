@@ -2,12 +2,12 @@ package com.groocraft.couchdb.slacker;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.groocraft.couchdb.slacker.annotation.Database;
+import com.groocraft.couchdb.slacker.annotation.Document;
 
 import java.util.List;
 
-@Database("test")
-public class TestDocument extends Document {
+@Document("test")
+public class TestDocument extends DocumentBase {
 
     @JsonProperty("value")
     String value;

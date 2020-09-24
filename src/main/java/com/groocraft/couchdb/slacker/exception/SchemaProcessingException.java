@@ -17,17 +17,13 @@
 package com.groocraft.couchdb.slacker.exception;
 
 /**
- * Exception which is thrown if there is any issues during processing a method query.
+ * Exception thrown when a rule of schema processing is not fulfilled
  *
  * @author Majlanky
  */
-public class QueryException extends RuntimeException {
+public class SchemaProcessingException extends Exception{
 
-    public QueryException(String message) {
+    public SchemaProcessingException(String message) {
         super(message);
-    }
-
-    public QueryException(String message, Throwable cause) {
-        super(message, cause);
     }
 }

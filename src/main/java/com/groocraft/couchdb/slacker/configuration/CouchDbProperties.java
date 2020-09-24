@@ -16,6 +16,7 @@
 
 package com.groocraft.couchdb.slacker.configuration;
 
+import com.groocraft.couchdb.slacker.SchemaOperation;
 import org.hibernate.validator.constraints.URL;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
@@ -77,6 +78,37 @@ public class CouchDbProperties {
      */
     private boolean findExecutionStats = false;
 
+    /**
+     * Schema operation is done before a usage of a database. Couch Slacker read all defined document mapping which gives list of used databases. Depending on
+     * the configured operation validation that databases in the list exists(validate),
+     * creates databases from the list(create),
+     * delete and create databases from the list(drop)
+     * or no operation is done (none).
+     * With what parameters a database is created depends on Database annotation values or the following three values default-shards, default-replicas,
+     * default-partitioned.
+     * Default value is validate.
+     */
+    private SchemaOperation schemaOperation = SchemaOperation.VALIDATE;
+
+    /**
+     * If database is created by Couch Slacker, this value says number of shards.
+     * Default values is 8
+     */
+    private int defaultShards = 8;
+
+    /**
+     * If database is created by Couch Slacker, this value says number of replicas.
+     * Default values is 3
+     */
+    private int defaultReplicas = 3;
+
+    /**
+     * If database is created by Couch Slacker, this value says if it should be partitioned
+     * Default values is false
+     */
+    private boolean defaultPartitioned = false;
+
+
     public CouchDbProperties() {
     }
 
@@ -120,11 +152,48 @@ public class CouchDbProperties {
         this.findExecutionStats = findExecutionStats;
     }
 
+    public SchemaOperation getSchemaOperation() {
+        return schemaOperation;
+    }
+
+    public void setSchemaOperation(SchemaOperation schemaOperation) {
+        this.schemaOperation = schemaOperation;
+    }
+
+    public int getDefaultShards() {
+        return defaultShards;
+    }
+
+    public void setDefaultShards(int defaultShards) {
+        this.defaultShards = defaultShards;
+    }
+
+    public int getDefaultReplicas() {
+        return defaultReplicas;
+    }
+
+    public void setDefaultReplicas(int defaultReplicas) {
+        this.defaultReplicas = defaultReplicas;
+    }
+
+    public boolean isDefaultPartitioned() {
+        return defaultPartitioned;
+    }
+
+    public void setDefaultPartitioned(boolean defaultPartitioned) {
+        this.defaultPartitioned = defaultPartitioned;
+    }
+
     public void copy(CouchDbProperties properties) {
         setPassword(properties.getPassword());
         setUsername(properties.getUsername());
         setUrl(properties.url);
         setBulkMaxSize(properties.getBulkMaxSize());
         setFindExecutionStats(properties.isFindExecutionStats());
+        setSchemaOperation(properties.getSchemaOperation());
+        setDefaultShards(properties.getDefaultShards());
+        setDefaultReplicas(properties.getDefaultReplicas());
+        setDefaultPartitioned(properties.isDefaultPartitioned());
     }
+
 }

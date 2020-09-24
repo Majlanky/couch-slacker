@@ -18,6 +18,7 @@ package com.groocraft.couchdb.slacker;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.groocraft.couchdb.slacker.exception.CouchDbException;
 import com.groocraft.couchdb.slacker.http.AutoCloseableHttpResponse;
 import com.groocraft.couchdb.slacker.repository.CouchDbEntityInformation;
 import com.groocraft.couchdb.slacker.structure.AllDocumentResponse;
@@ -36,10 +37,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -82,22 +85,36 @@ public class CouchDbClient {
     @SuppressWarnings({"rawtypes"})
     private final Map<Class, IdGenerator> idGenerators;
     private final IdGenerator<?> defaultIdGenerator;
+    private final int defaultShards;
+    private final int defaultReplicas;
+    private final boolean defaultPartitioned;
 
     /**
-     * @param httpClient   must not be {@literal null}
-     * @param httpHost     must not be {@literal null}
-     * @param httpContext  must not be {@literal null}
-     * @param baseURI      where CouchDB is accessible without database specification. Must not be {@literal null}
-     * @param idGenerators {@link Iterable} of available {@link IdGenerator}. If empty, default generator {@link IdGeneratorUUID} is used. Must not be {@literal
-     *                     null}
+     * @param httpClient         must not be {@literal null}
+     * @param httpHost           must not be {@literal null}
+     * @param httpContext        must not be {@literal null}
+     * @param baseURI            where CouchDB is accessible without database specification. Must not be {@literal null}
+     * @param idGenerators       {@link Iterable} of available {@link IdGenerator}. If empty, default generator {@link IdGeneratorUUID} is used. Must not be {@literal
+     *                           null}
+     * @param defaultShards      number of shard used for every a newly created database
+     * @param defaultReplicas    number of replicas used for every a newly created database
+     * @param defaultPartitioned flag of partitioned used for every a newly created database
      */
-    CouchDbClient(@NotNull HttpClient httpClient, @NotNull HttpHost httpHost, @NotNull HttpContext httpContext, @NotNull URI baseURI,
-                  @NotNull Iterable<IdGenerator<?>> idGenerators) {
+    CouchDbClient(@NotNull HttpClient httpClient,
+                  @NotNull HttpHost httpHost,
+                  @NotNull HttpContext httpContext,
+                  @NotNull URI baseURI,
+                  @NotNull Iterable<IdGenerator<?>> idGenerators,
+                  int defaultShards,
+                  int defaultReplicas,
+                  boolean defaultPartitioned) {
         Assert.notNull(httpClient, "HttpClient must not be null.");
         Assert.notNull(httpHost, "HttpHost must not be null.");
         Assert.notNull(httpContext, "HttpContext must not be null.");
         Assert.notNull(baseURI, "BaseURI must not be null.");
         Assert.notNull(idGenerators, "IdGenerators must not be null.");
+        Assert.isTrue(defaultShards > 0, "DefaultShards must be positive number");
+        Assert.isTrue(defaultReplicas > 0, "DefaultReplicas must be positive number");
         this.httpClient = httpClient;
         this.baseURI = baseURI;
         this.httpHost = httpHost;
@@ -106,6 +123,9 @@ public class CouchDbClient {
         this.mapper = new ObjectMapper();
         this.idGenerators = new HashMap<>();
         this.defaultIdGenerator = new IdGeneratorUUID();
+        this.defaultShards = defaultShards;
+        this.defaultReplicas = defaultReplicas;
+        this.defaultPartitioned = defaultPartitioned;
         idGenerators.forEach(g -> this.idGenerators.put(g.getEntityClass(), g));
     }
 
@@ -146,7 +166,7 @@ public class CouchDbClient {
      * @param clazz     Class of the given entity
      * @param <EntityT> Entity type
      * @return Generated ID for the given entity. Can not be {@literal null}
-     * @see #CouchDbClient(HttpClient, HttpHost, HttpContext, URI, Iterable)
+     * @see #CouchDbClient(HttpClient, HttpHost, HttpContext, URI, Iterable, int, int, boolean)
      */
     @SuppressWarnings("unchecked")
     private <EntityT> @NotNull String generateId(@NotNull EntityT entity, Class<EntityT> clazz) {
@@ -158,7 +178,7 @@ public class CouchDbClient {
      * @return Name of database for given class
      * @see EntityMetadata
      */
-    private @NotNull String getDatabaseName(@NotNull Class<?> clazz) {
+    public @NotNull String getDatabaseName(@NotNull Class<?> clazz) {
         return getEntityMetadata(clazz).getDatabaseName();
     }
 
@@ -204,8 +224,9 @@ public class CouchDbClient {
      * @param <EntityT> type of entity
      * @return entity instance with id and revision updated to the current state
      * @throws IOException in cases like conflict with revision and etc.
-     * @see Document
+     * @see DocumentBase
      */
+    @SuppressWarnings({"unchecked"})
     public <EntityT> @NotNull EntityT save(@NotNull EntityT entity) throws IOException {
         EntityMetadata<?> entityMetadata = getEntityMetadata(entity.getClass());
         String id = entityMetadata.getIdReader().read(entity);
@@ -235,7 +256,7 @@ public class CouchDbClient {
      * @return {@link Iterable} of all passed entities with updated revisions and ids. Can not be {@literal null}
      * @throws IOException if http request is not successful or json processing fail
      */
-    @SuppressWarnings("DuplicatedCode")
+    @SuppressWarnings({"unchecked"})
     public <EntityT> @NotNull Iterable<EntityT> saveAll(@NotNull Iterable<EntityT> entities, @NotNull Class<?> clazz) throws IOException {
         EntityMetadata<?> entityMetadata = getEntityMetadata(clazz);
         log.debug("Bulk save of {} documents to database {}", LazyLog.of(() -> StreamSupport.stream(entities.spliterator(), false).count()),
@@ -273,7 +294,7 @@ public class CouchDbClient {
      * @param <EntityT> type of entity
      * @return Instance of the given class with data of document
      * @throws IOException if http request is not successful or json processing fail
-     * @see Document
+     * @see DocumentBase
      */
     public <EntityT> EntityT read(@NotNull String id, @NotNull Class<EntityT> clazz) throws IOException {
         String databaseName = getDatabaseName(clazz);
@@ -294,11 +315,11 @@ public class CouchDbClient {
     public <EntityT> @NotNull Iterable<EntityT> readAll(@NotNull Iterable<String> ids, @NotNull Class<EntityT> clazz) throws IOException {
         ObjectMapper localMapper = new ObjectMapper();
         SimpleModule module = new SimpleModule();
-        module.addSerializer(new BulkGetIdSerializer<>(Document.class, new EntityMetadata<>(Document.class).getIdReader()));
+        module.addSerializer(new BulkGetIdSerializer<>(DocumentBase.class, getEntityMetadata(clazz).getIdReader()));
         module.addDeserializer(List.class, new BulkGetDeserializer<>(clazz));
         localMapper.registerModule(module);
-        List<Document> docs = new LinkedList<>();
-        ids.forEach(id -> docs.add(new Document(id, null)));
+        List<DocumentBase> docs = new LinkedList<>();
+        ids.forEach(id -> docs.add(new DocumentBase(id, null)));
         log.debug("Bulk read of {} document from database {} with the following IDs: {}",
                 LazyLog.of(() -> StreamSupport.stream(ids.spliterator(), false).count()),
                 getDatabaseName(clazz),
@@ -312,13 +333,13 @@ public class CouchDbClient {
 
     /**
      * Method to get result of _all_docs with ignoring design documents (If you need design documents use {@link #readAllDesign(Class)} or
-     * {@link #readAllDocs(Class, Predicate)} if you want both) to the database  specified by {@link com.groocraft.couchdb.slacker.annotation.Database} from
+     * {@link #readAllDocs(Class, Predicate)} if you want both) to the database  specified by {@link com.groocraft.couchdb.slacker.annotation.Document} from
      * the passed entity class. Result is returned as Stream of documents ids, no full data.
      *
      * @param clazz of wanted entity. Used to get database name {@link #getDatabaseName(Class)}. Must not be {@literal null}
      * @return Stream of {@link String} which contain id
      * @throws IOException if http request is not successful or json processing fail
-     * @see com.groocraft.couchdb.slacker.annotation.Database
+     * @see com.groocraft.couchdb.slacker.annotation.Document
      * @see #readAllDesign(Class)
      * @see #readAllDocs(Class, Predicate)
      */
@@ -329,13 +350,13 @@ public class CouchDbClient {
 
     /**
      * Method to get result of _design_docs which contains only design documents (If you need non-design documents use {@link #readAll(Class)} or
-     * {@link #readAllDocs(Class, Predicate)} if you want both) to the database specified by {@link com.groocraft.couchdb.slacker.annotation.Database} from
+     * {@link #readAllDocs(Class, Predicate)} if you want both) to the database specified by {@link com.groocraft.couchdb.slacker.annotation.Document} from
      * the passed entity class. Result is returned as Stream of documents ids, no full data.
      *
      * @param clazz of wanted entity. Used to get database name {@link #getDatabaseName(Class)}. Must not be {@literal null}
      * @return Stream of {@link String} which contain id
      * @throws IOException if http request is not successful or json processing fail
-     * @see com.groocraft.couchdb.slacker.annotation.Database
+     * @see com.groocraft.couchdb.slacker.annotation.Document
      * @see #readAll(Class)
      * @see #readAllDocs(Class, Predicate)
      */
@@ -348,7 +369,7 @@ public class CouchDbClient {
 
     /**
      * Method to get result of _all_docs with possibility of id filtering (If you need non-design documents use {@link #readAll(Class)} or
-     * {@link #readAllDesign(Class)} if you want design document only) to the database specified by {@link com.groocraft.couchdb.slacker.annotation.Database}
+     * {@link #readAllDesign(Class)} if you want design document only) to the database specified by {@link com.groocraft.couchdb.slacker.annotation.Document}
      * from the passed entity class. Result is returned as Stream of documents ids, no full data.
      *
      * @param clazz             of wanted entity. Used to get database name {@link #getDatabaseName(Class)}. Must not be {@literal null}
@@ -371,7 +392,7 @@ public class CouchDbClient {
      * @param <EntityT> type of entity
      * @return deleted entity
      * @throws IOException if http request is not successful or json processing fail
-     * @see Document
+     * @see DocumentBase
      */
     public <EntityT> @NotNull EntityT delete(@NotNull EntityT entity) throws IOException {
         EntityMetadata<?> entityMetadata = getEntityMetadata(entity.getClass());
@@ -386,7 +407,7 @@ public class CouchDbClient {
      * operations. As a consequence of the mentioned approach, DB deletes only document existing in the time of call, not documents created after the request
      * . Name of the database in which delete is executed is read from given class.
      *
-     * @param clazz     with {@link com.groocraft.couchdb.slacker.annotation.Database} annotation
+     * @param clazz     with {@link com.groocraft.couchdb.slacker.annotation.Document} annotation
      * @param <EntityT> Type of entity in the database
      * @return {@link Iterable} of deleted documents
      * @throws IOException if http request is not successful or json processing fail
@@ -433,7 +454,7 @@ public class CouchDbClient {
     }
 
     /**
-     * Deletes document from database based on {@link com.groocraft.couchdb.slacker.annotation.Database} annotation of given {@code clazz} with the given id.
+     * Deletes document from database based on {@link com.groocraft.couchdb.slacker.annotation.Document} annotation of given {@code clazz} with the given id.
      * The method deletes latest document, without any consistency check.
      *
      * @param id        of document which should be deleted
@@ -460,7 +481,7 @@ public class CouchDbClient {
      * @param <EntityT> type of entity
      * @return {@link List} of instances of the given class with result of the given class
      * @throws IOException if http request is not successful or json processing fail
-     * @see Document
+     * @see DocumentBase
      */
     public <EntityT> @NotNull List<EntityT> find(@NotNull String json, @NotNull Class<EntityT> clazz) throws IOException {
         ObjectMapper localMapper = new ObjectMapper();
@@ -515,6 +536,36 @@ public class CouchDbClient {
     }
 
     /**
+     * Method tests if database with name obtained from the given class exists.
+     *
+     * @param clazz which from is obtained a database name. Must not be {@literal null}
+     * @return true if database with the given name exists.
+     * @throws IOException if http request is not successful
+     */
+    public boolean databaseExists(@NotNull Class<?> clazz) throws IOException {
+        return databaseExists(getDatabaseName(clazz));
+    }
+
+    /**
+     * Method tests if database with the given name exists.
+     *
+     * @param name of database. Must not be {@literal null}
+     * @return true if database with the given name exists.
+     * @throws IOException if http request is not successful
+     */
+    public boolean databaseExists(@NotNull String name) throws IOException {
+        try {
+            head(getURI(baseURI, name));
+            return true;
+        } catch (CouchDbException ex) {
+            if (ex.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
+                return false;
+            }
+            throw ex;
+        }
+    }
+
+    /**
      * Method to create new index by the given parameters.
      *
      * @param clazz from which database name is resolved. Must not be {@literal null}
@@ -544,8 +595,7 @@ public class CouchDbClient {
      * @throws IOException if http request is not successful or json processing fail
      */
     public void createDatabase(@NotNull String name) throws IOException {
-        //Default values get from CouchDb documentation
-        createDatabase(name, 8, 3, false);
+        createDatabase(name, defaultShards, defaultReplicas, defaultPartitioned);
     }
 
     /**
@@ -563,6 +613,27 @@ public class CouchDbClient {
         put(getURI(baseURI, List.of(name), List.of(new BasicNameValuePair("q", "" + shardsCount), new BasicNameValuePair("n", replicasCount + ""),
                 new BasicNameValuePair("partitioned", Boolean.toString(partitioned)))),
                 "", r -> null);
+    }
+
+    /**
+     * Deletes whole database with a name obtained from the given class.
+     *
+     * @param clazz from which is obtained the name of deleted database. Must not be {@literal null}
+     * @throws IOException if http request is not successful
+     */
+    public void deleteDatabase(@NotNull Class<?> clazz) throws IOException {
+        deleteDatabase(getDatabaseName(clazz));
+    }
+
+    /**
+     * Deletes whole database with the given name.
+     *
+     * @param name of database which should be deleted. Must not be {@literal null}
+     * @throws IOException if http request is not successful
+     */
+    public void deleteDatabase(@NotNull String name) throws IOException {
+        delete(getURI(baseURI, name), r -> null);
+        log.info("Database {} deleted", name);
     }
 
     /**
@@ -633,7 +704,7 @@ public class CouchDbClient {
      *
      * @param uri address where delete is send. Must not be {@literal null}
      * @throws IOException if http request is not successful or json processing fail
-     * @see Document
+     * @see DocumentBase
      */
     private <DataT> DataT delete(@NotNull URI uri, @NotNull ThrowingFunction<HttpResponse, DataT, IOException> responseProcessor) throws IOException {
         try (AutoCloseableHttpResponse response = new AutoCloseableHttpResponse()) {
@@ -641,6 +712,13 @@ public class CouchDbClient {
             delete.addHeader(HttpHeaders.ACCEPT, "application/json");
             response.set(execute(delete));
             return responseProcessor.apply(response.get());
+        }
+    }
+
+    private void head(@NotNull URI uri) throws IOException {
+        try (AutoCloseableHttpResponse response = new AutoCloseableHttpResponse()) {
+            final HttpHead head = new HttpHead(uri);
+            response.set(execute(head));
         }
     }
 
