@@ -16,7 +16,14 @@
 
 package com.groocraft.couchdb.slacker.configuration;
 
+import com.groocraft.couchdb.slacker.SchemaOperation;
+import org.hibernate.validator.constraints.URL;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.validation.annotation.Validated;
+
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotEmpty;
 
 /**
  * Properties pojo class for Couch Slacker configuration. It is used in {@link CouchSlackerConfiguration} class
@@ -24,25 +31,85 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @author Majlanky
  * @see CouchSlackerConfiguration
  */
+@Validated
 @ConfigurationProperties(prefix = "couchdb.client")
 public class CouchDbProperties {
 
     public static final String COUCH_ID_NAME = "_id";
     public static final String COUCH_REVISION_NAME = "_rev";
 
+    /**
+     * Must be valid URL.
+     * Port is mandatory.
+     * Scheme can be http or https.
+     * Scheme is not mandatory, http is used if not present.
+     */
+    @URL
     private String url;
 
+    /**
+     * Name of user used for authentication to CouchDB.
+     * Must not be empty.
+     */
+    @NotEmpty
     private String username;
 
-    private String password = "";
+    /**
+     * Password for name used for authentication to CouchDB.
+     * Must not be empty.
+     */
+    @NotEmpty
+    private String password;
+
+    /**
+     * If bulk operation (findAll, deleteAll, etc.) is executed, this is the limit of document number processed in one batch.
+     * Operation requesting operation with more documents than limit is processed in more batches.
+     * Minimum is 10, maximum is 100000.
+     * Default value is 10000.
+     */
+    @Min(10)
+    @Max(100000)
+    private int bulkMaxSize = 10000;
+
+    /**
+     * Flag which can turn on/off execution stats in the _find query result.
+     * The stats are logged if turned on.
+     * Default value is false.
+     */
+    private boolean findExecutionStats = false;
+
+    /**
+     * Schema operation is done before a usage of a database. Couch Slacker read all defined document mapping which gives list of used databases. Depending on
+     * the configured operation validation that databases in the list exists(validate),
+     * creates databases from the list(create),
+     * delete and create databases from the list(drop)
+     * or no operation is done (none).
+     * With what parameters a database is created depends on Database annotation values or the following three values default-shards, default-replicas,
+     * default-partitioned.
+     * Default value is validate.
+     */
+    private SchemaOperation schemaOperation = SchemaOperation.VALIDATE;
+
+    /**
+     * If database is created by Couch Slacker, this value says number of shards.
+     * Default values is 8
+     */
+    private int defaultShards = 8;
+
+    /**
+     * If database is created by Couch Slacker, this value says number of replicas.
+     * Default values is 3
+     */
+    private int defaultReplicas = 3;
+
+    /**
+     * If database is created by Couch Slacker, this value says if it should be partitioned
+     * Default values is false
+     */
+    private boolean defaultPartitioned = false;
+
 
     public CouchDbProperties() {
-    }
-
-    public CouchDbProperties(String url, String username, String password) {
-        this.url = url;
-        this.username = username;
-        this.password = password;
     }
 
     public String getUsername() {
@@ -69,9 +136,64 @@ public class CouchDbProperties {
         this.url = url;
     }
 
+    public int getBulkMaxSize() {
+        return bulkMaxSize;
+    }
+
+    public void setBulkMaxSize(int bulkMaxSize) {
+        this.bulkMaxSize = bulkMaxSize;
+    }
+
+    public boolean isFindExecutionStats() {
+        return findExecutionStats;
+    }
+
+    public void setFindExecutionStats(boolean findExecutionStats) {
+        this.findExecutionStats = findExecutionStats;
+    }
+
+    public SchemaOperation getSchemaOperation() {
+        return schemaOperation;
+    }
+
+    public void setSchemaOperation(SchemaOperation schemaOperation) {
+        this.schemaOperation = schemaOperation;
+    }
+
+    public int getDefaultShards() {
+        return defaultShards;
+    }
+
+    public void setDefaultShards(int defaultShards) {
+        this.defaultShards = defaultShards;
+    }
+
+    public int getDefaultReplicas() {
+        return defaultReplicas;
+    }
+
+    public void setDefaultReplicas(int defaultReplicas) {
+        this.defaultReplicas = defaultReplicas;
+    }
+
+    public boolean isDefaultPartitioned() {
+        return defaultPartitioned;
+    }
+
+    public void setDefaultPartitioned(boolean defaultPartitioned) {
+        this.defaultPartitioned = defaultPartitioned;
+    }
+
     public void copy(CouchDbProperties properties) {
         setPassword(properties.getPassword());
         setUsername(properties.getUsername());
         setUrl(properties.url);
+        setBulkMaxSize(properties.getBulkMaxSize());
+        setFindExecutionStats(properties.isFindExecutionStats());
+        setSchemaOperation(properties.getSchemaOperation());
+        setDefaultShards(properties.getDefaultShards());
+        setDefaultReplicas(properties.getDefaultReplicas());
+        setDefaultPartitioned(properties.isDefaultPartitioned());
     }
+
 }

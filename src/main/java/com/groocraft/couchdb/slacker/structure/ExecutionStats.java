@@ -16,19 +16,29 @@
 
 package com.groocraft.couchdb.slacker.structure;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * Pojo class to ease reading part of {@link DocumentFindResponse}.
  *
  * @author Majlanky
  * @see DocumentFindResponse
  */
-@SuppressWarnings("unused")
 public class ExecutionStats {
 
+    @JsonProperty("total_keys_examined")
     private int totalKeysExamined;
+
+    @JsonProperty("total_docs_examined")
     private int totalDocsExamined;
+
+    @JsonProperty("total_quorum_docs_examined")
     private int totalQuorumDocsExamined;
+
+    @JsonProperty("results_returned")
     private int resultsReturned;
+
+    @JsonProperty("execution_time_ms")
     private int executionTimeMs;
 
     public int getTotalKeysExamined() {
@@ -69,5 +79,16 @@ public class ExecutionStats {
 
     public void setExecutionTimeMs(int executionTimeMs) {
         this.executionTimeMs = executionTimeMs;
+    }
+
+    @Override
+    public String toString() {
+        return "ExecutionStats{" +
+                "totalKeysExamined=" + totalKeysExamined +
+                ", totalDocsExamined=" + totalDocsExamined +
+                ", totalQuorumDocsExamined=" + totalQuorumDocsExamined +
+                ", resultsReturned=" + resultsReturned +
+                ", executionTimeMs=" + executionTimeMs +
+                '}';
     }
 }

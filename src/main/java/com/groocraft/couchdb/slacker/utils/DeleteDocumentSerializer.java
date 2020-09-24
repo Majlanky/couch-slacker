@@ -23,22 +23,38 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.BeanSerializerFactory;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.util.Assert;
 
 import java.io.IOException;
 
+/**
+ * @param <EntityT> Type of entity which should be marked as deleted in a final request
+ * @author Majlanky
+ */
 public class DeleteDocumentSerializer<EntityT> extends JsonSerializer<EntityT> {
 
     private final Class<EntityT> clazz;
 
-    public DeleteDocumentSerializer(Class<EntityT> clazz) {
+    /**
+     * @param clazz of deleted entity. Must not be {@literal null}
+     */
+    public DeleteDocumentSerializer(@NotNull Class<EntityT> clazz) {
+        Assert.notNull(clazz, "Clazz must not be null");
         this.clazz = clazz;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Class<EntityT> handledType() {
         return clazz;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void serialize(EntityT value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
         JavaType javaType = serializers.constructType(clazz);

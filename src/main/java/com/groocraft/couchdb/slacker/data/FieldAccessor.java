@@ -17,11 +17,15 @@
 package com.groocraft.couchdb.slacker.data;
 
 import com.groocraft.couchdb.slacker.exception.AccessException;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.springframework.util.Assert;
 
 import java.lang.reflect.Field;
 
 /**
  * Class providing writing and reading functionality to any {@link Field}
+ *
  * @param <DataT> Type of accessed data
  * @author Majlanky
  */
@@ -29,23 +33,35 @@ public class FieldAccessor<DataT> implements Writer<DataT>, Reader<DataT> {
 
     private final Field field;
 
-    public FieldAccessor(Field field) {
+    /**
+     * @param field which is accessed. Must not be {@literal null}
+     */
+    public FieldAccessor(@NotNull Field field) {
+        Assert.notNull(field, "Field must not be null");
         this.field = field;
         this.field.setAccessible(true);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @SuppressWarnings("unchecked")
-    public DataT read(Object o) {
+    public DataT read(@NotNull Object o) {
+        Assert.notNull(o, "Object must not be null");
         try {
-            return (DataT)field.get(o);
+            return (DataT) field.get(o);
         } catch (IllegalAccessException e) {
             throw new AccessException(e);
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public void write(Object o, DataT data) {
+    public void write(@NotNull Object o, @Nullable DataT data) {
+        Assert.notNull(o, "Object must not be null");
         try {
             field.set(o, data);
         } catch (IllegalAccessException e) {

@@ -14,22 +14,13 @@
  * limitations under the License.
  */
 
-package com.groocraft.couchdb.slacker.structure;
+package com.groocraft.couchdb.slacker.test.integration;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.groocraft.couchdb.slacker.DocumentBase;
+import com.groocraft.couchdb.slacker.annotation.CustomIdGeneration;
+import com.groocraft.couchdb.slacker.annotation.Document;
 
-import java.util.List;
-
-public class BulkGetResponse<EntityT> {
-
-    @JsonProperty("results")
-    List<EntityT> docs;
-
-    public List<EntityT> getDocs() {
-        return docs;
-    }
-
-    public void setDocs(List<EntityT> docs) {
-        this.docs = docs;
-    }
+@Document("test")
+@CustomIdGeneration(TestIdGenerator.class)
+public class SpringTestDocument extends DocumentBase {
 }

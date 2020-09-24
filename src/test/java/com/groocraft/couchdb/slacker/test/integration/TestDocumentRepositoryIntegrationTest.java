@@ -2,16 +2,23 @@ package com.groocraft.couchdb.slacker.test.integration;
 
 import com.groocraft.couchdb.slacker.CouchDbClient;
 import com.groocraft.couchdb.slacker.TestDocument;
+import com.groocraft.couchdb.slacker.TestDocumentAddress;
 import com.groocraft.couchdb.slacker.annotation.EnableCouchDbRepositories;
-import com.groocraft.couchdb.slacker.configuration.CouchSlackerConfiguration;
 import com.groocraft.couchdb.slacker.exception.CouchDbRuntimeException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.ConfigFileApplicationContextInitializer;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -19,6 +26,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -29,6 +37,7 @@ import java.util.stream.StreamSupport;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -36,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = {CouchSlackerConfiguration.class, TestDocumentRepository.class},
+@ContextConfiguration(classes = {SpringTestConfiguration.class, TestDocumentRepository.class},
         initializers = ConfigFileApplicationContextInitializer.class)
 @ActiveProfiles("test")
 @EnableCouchDbRepositories
@@ -49,12 +58,12 @@ public class TestDocumentRepositoryIntegrationTest {
     TestDocumentRepository repository;
 
     @BeforeAll
-    public void setUp(){
+    public void setUp() {
         try {
             client.createDatabase("_users");
             client.createDatabase("_replicator");
             client.createDatabase("test");
-        } catch (IOException ex){
+        } catch (IOException ex) {
             fail("Unable to initialize database", ex);
         }
     }
@@ -113,12 +122,13 @@ public class TestDocumentRepositoryIntegrationTest {
         assertEquals(newValue, read.get().getValue(), "Values must match if the same document read");
     }
 
-    @Test
-    public void testSavingAll() {
+    @ParameterizedTest()
+    @ValueSource(ints = {10, 1000})
+    public void testSavingAll(int amount) {
         List<TestDocument> all = new LinkedList<>();
-        IntStream.range(1, 21).forEach(i -> all.add(new TestDocument("value" + i, "value2" + i)));
+        IntStream.range(1, amount + 1).forEach(i -> all.add(new TestDocument("value" + i, "value2" + i)));
         Iterable<TestDocument> saved = repository.saveAll(all);
-        assertEquals(20, StreamSupport.stream(saved.spliterator(), false).count(), "All given entities must be saved");
+        assertEquals(amount, StreamSupport.stream(saved.spliterator(), false).count(), "All given entities must be saved");
         AtomicInteger i = new AtomicInteger(1);
         StreamSupport.stream(saved.spliterator(), false).forEach(s -> {
             assertNotNull(s.getId(), "All saved entities must contain id");
@@ -126,7 +136,7 @@ public class TestDocumentRepositoryIntegrationTest {
             assertEquals("value" + i.get(), s.getValue(), "Value of entity is not matching. Order or data of entities is messed up");
             assertEquals("value2" + i.getAndIncrement(), s.getValue2(), "Value of entity is not matching. Order or data of entities is messed up");
         });
-        assertEquals(20,
+        assertEquals(amount,
                 StreamSupport.stream(repository.findAllById(StreamSupport.stream(saved.spliterator(), false).map(TestDocument::getId).collect(Collectors.toList())).spliterator(), false).count(),
                 "One or more of passed entities was not truly saved");
     }
@@ -136,10 +146,11 @@ public class TestDocumentRepositoryIntegrationTest {
         assertFalse(repository.existsById("NonExisting"), "False must be returned when id does not exists");
     }
 
-    @Test
-    public void testFindAllById() {
+    @ParameterizedTest()
+    @ValueSource(ints = {10, 1000})
+    public void testFindAllById(int amount) {
         List<TestDocument> all = new LinkedList<>();
-        IntStream.range(1, 21).forEach(i -> all.add(new TestDocument("value" + i, "value2" + i)));
+        IntStream.range(1, amount + 1).forEach(i -> all.add(new TestDocument("value" + i, "value2" + i)));
         Iterable<TestDocument> saved = repository.saveAll(all);
         List<TestDocument> found = new LinkedList<>();
         repository.findAllById(StreamSupport.stream(saved.spliterator(), false).map(TestDocument::getId).collect(Collectors.toList())).forEach(found::add);
@@ -172,13 +183,14 @@ public class TestDocumentRepositoryIntegrationTest {
                 "Exception must be thrown when id of given entity does not exist");
     }
 
-    @Test
-    public void testCreateAllAndCountAndDeleteAll() {
+    @ParameterizedTest()
+    @ValueSource(ints = {10, 1000})
+    public void testSaveAllAndCountAndDeleteAll(int amount) {
         repository.deleteAll();
         List<TestDocument> all = new LinkedList<>();
-        IntStream.range(1, 21).forEach(i -> all.add(new TestDocument("value" + i, "value2" + i)));
+        IntStream.range(1, amount + 1).forEach(i -> all.add(new TestDocument("value" + i, "value2" + i)));
         Iterable<TestDocument> saved = repository.saveAll(all);
-        assertEquals(20, StreamSupport.stream(saved.spliterator(), false).count(), "Must be saved all given entities");
+        assertEquals(amount, StreamSupport.stream(saved.spliterator(), false).count(), "Must be saved all given entities");
         AtomicInteger i = new AtomicInteger(1);
         StreamSupport.stream(saved.spliterator(), false).forEach(s -> {
             assertNotNull(s.getId(), "All saved entities must contain id");
@@ -187,7 +199,7 @@ public class TestDocumentRepositoryIntegrationTest {
             assertEquals("value2" + i.getAndIncrement(), s.getValue2(), "Value of entity is not matching. Order or data of entities is messed up");
             assertTrue(repository.existsById(s.getId()), "One of passed entities was not truly saved");
         });
-        assertEquals(20, repository.count(), "There must be only 20 entities in BD now");
+        assertEquals(amount, repository.count(), "There must be only 20 entities in BD now");
         repository.deleteAll();
         assertEquals(0, repository.count(), "DB must be empty now");
     }
@@ -466,6 +478,84 @@ public class TestDocumentRepositoryIntegrationTest {
         for (TestDocument d : read) {
             assertFalse(d.isValue5(), "We requested only document with value5 set to false");
         }
+    }
+
+    @Test
+    public void testFindOverflowing() {
+        List<TestDocument> toSave = new LinkedList<>();
+        IntStream.range(1, 501).forEach(i -> toSave.add(new TestDocument("value" + i, "value2" + i)));
+        repository.saveAll(toSave);
+        List<TestDocument> read = repository.findByValue2NotNull();
+        assertEquals(500, read.size(), "500 documents with non null value2 are stored in db");
+        Map<String, TestDocument> mapped = read.stream().collect(Collectors.toMap(TestDocument::getValue, t -> t));
+        IntStream.range(1, 501).forEach(i -> assertTrue(mapped.containsKey("value" + i), "Result does not contain all documents"));
+    }
+
+    @Test
+    public void testPagedFindWithPagination() throws IOException {
+        client.createIndex("value2-sort-index", TestDocument.class, Sort.Order.asc("value2"));
+        List<TestDocument> toSave = new LinkedList<>();
+        IntStream.range(1, 501).forEach(i -> toSave.add(new TestDocument("value", "value" + i)));
+        repository.saveAll(toSave);
+        List<TestDocument> merged = new LinkedList<>();
+        Pageable pageable = PageRequest.of(0, 25, Sort.by(Sort.Order.asc("value2")));
+        for (int i = 0; i < 20; i++) {
+            Page<TestDocument> read = repository.findByValue("value", pageable);
+            int size = merged.size();
+            read.stream().forEach(merged::add);
+            assertEquals(25, merged.size() - size, "25 document in a page was requested");
+            pageable = read.nextPageable();
+        }
+        Map<String, TestDocument> mapped = merged.stream().collect(Collectors.toMap(TestDocument::getValue2, t -> t));
+        IntStream.range(1, 501).forEach(i -> assertTrue(mapped.containsKey("value" + i), "Result does not contain document with value2 = value" + i));
+    }
+
+    @Test
+    public void testSlicedFindWithPagination() throws IOException {
+        client.createIndex("value-sort-index", TestDocument.class, Sort.Order.asc("value"));
+        List<TestDocument> toSave = new LinkedList<>();
+        IntStream.range(1, 501).forEach(i -> toSave.add(new TestDocument("value" + i, "value")));
+        repository.saveAll(toSave);
+        List<TestDocument> merged = new LinkedList<>();
+        Pageable pageable = PageRequest.of(0, 25, Sort.by(Sort.Order.asc("value")));
+        for (int i = 0; i < 20; i++) {
+            Slice<TestDocument> read = repository.findByValue2("value", pageable);
+            int size = merged.size();
+            read.stream().forEach(merged::add);
+            assertEquals(25, merged.size() - size, "25 document in a page was requested");
+            pageable = read.nextPageable();
+        }
+        Map<String, TestDocument> mapped = merged.stream().collect(Collectors.toMap(TestDocument::getValue, t -> t));
+        IntStream.range(1, 501).forEach(i -> assertTrue(mapped.containsKey("value" + i), "Result does not contain document with value = value" + i));
+    }
+
+    @Test
+    public void testTopped() {
+        List<TestDocument> toSave = new LinkedList<>();
+        IntStream.range(1, 100).forEach(i -> toSave.add(new TestDocument("value", "value" + 1)));
+        repository.saveAll(toSave);
+        List<TestDocument> read = repository.findTop80ByValue("value");
+        assertEquals(80, read.size(), "There is 100 document and 80 was requested, 80 should be returned");
+    }
+
+    @Test
+    public void testFindWithSubAttributes() {
+        List<TestDocument> toSave = new LinkedList<>();
+        IntStream.range(1, 20).forEach(i -> toSave.add(new TestDocument(new TestDocumentAddress("street" + i, "city"))));
+        repository.saveAll(toSave);
+        List<TestDocument> read = repository.findByAddressStreet("street10");
+        assertEquals(1, read.size(), "There is street10 in DB, we should get it here");
+    }
+
+    @Test
+    public void testCustomIdGeneration() throws IOException {
+        client.save(new SpringTestDocument());
+        SpringTestDocument read = client.read("test1", SpringTestDocument.class);
+        assertNotNull(read, "Document with id test1 should be in DB if TestIdGenerator was wired and used");
+        TestDocument saved = client.save(new TestDocument("valueCIG"));
+        assertNotEquals("test2", saved.getId());
+        assertNotNull(client.read(saved.getId(), TestDocument.class), "Probably some confusion. Proper id generator used, but document is not stored in DB");
+
     }
 
 }

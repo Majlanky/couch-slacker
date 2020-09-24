@@ -14,20 +14,34 @@
  * limitations under the License.
  */
 
-package com.groocraft.couchdb.slacker.exception;
+package com.groocraft.couchdb.slacker;
+
+import org.jetbrains.annotations.NotNull;
+import org.springframework.util.Assert;
+
+import java.util.UUID;
 
 /**
- * Exception which is thrown if there is any issues during processing a method query.
+ * Implementation of {@link IdGenerator} using {@link UUID#randomUUID()} as new ID source.
  *
  * @author Majlanky
  */
-public class QueryException extends RuntimeException {
+public class IdGeneratorUUID implements IdGenerator<Object> {
 
-    public QueryException(String message) {
-        super(message);
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public @NotNull String generate(@NotNull Object e) {
+        Assert.notNull(e, "Object must not be null");
+        return UUID.randomUUID().toString();
     }
 
-    public QueryException(String message, Throwable cause) {
-        super(message, cause);
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public @NotNull Class<Object> getEntityClass() {
+        return Object.class;
     }
 }

@@ -1,9 +1,9 @@
 package com.groocraft.couchdb.slacker;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.groocraft.couchdb.slacker.annotation.Database;
+import com.groocraft.couchdb.slacker.annotation.Document;
 
-@Database("test")
+@Document("test")
 public class FieldWithMethodTestDocument {
 
     @JsonProperty("_id")

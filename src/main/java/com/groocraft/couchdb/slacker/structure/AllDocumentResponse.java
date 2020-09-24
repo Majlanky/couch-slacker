@@ -22,7 +22,6 @@ import com.groocraft.couchdb.slacker.utils.AllDocsIdDeserializer;
 
 import java.util.List;
 
-@SuppressWarnings("unused")
 public class AllDocumentResponse {
 
     private int offset;

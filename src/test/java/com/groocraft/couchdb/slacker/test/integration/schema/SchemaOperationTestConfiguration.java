@@ -14,22 +14,11 @@
  * limitations under the License.
  */
 
-package com.groocraft.couchdb.slacker.structure;
+package com.groocraft.couchdb.slacker.test.integration.schema;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.groocraft.couchdb.slacker.configuration.CouchSlackerConfiguration;
+import org.springframework.context.annotation.Configuration;
 
-import java.util.List;
-
-public class BulkGetResponse<EntityT> {
-
-    @JsonProperty("results")
-    List<EntityT> docs;
-
-    public List<EntityT> getDocs() {
-        return docs;
-    }
-
-    public void setDocs(List<EntityT> docs) {
-        this.docs = docs;
-    }
+@Configuration
+public class SchemaOperationTestConfiguration extends CouchSlackerConfiguration {
 }

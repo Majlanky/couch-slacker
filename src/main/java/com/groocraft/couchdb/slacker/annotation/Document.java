@@ -16,7 +16,7 @@
 
 package com.groocraft.couchdb.slacker.annotation;
 
-import org.springframework.data.annotation.QueryAnnotation;
+import org.springframework.core.annotation.AliasFor;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -24,15 +24,24 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation to specify query for query method in repository.
+ * Annotation to specify a document context (name of database). Annotation must be present for all entities
  *
  * @author Majlanky
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
-@QueryAnnotation
-public @interface Query {
+@Target(ElementType.TYPE)
+public @interface Document {
 
-    String value();
+    /**
+     * @return Name of documents database
+     */
+    @AliasFor("database")
+    String value() default "";
+
+    /**
+     * @return Name of documents database
+     */
+    @AliasFor("value")
+    String database() default "";
 
 }

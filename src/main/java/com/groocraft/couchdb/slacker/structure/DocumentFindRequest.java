@@ -19,23 +19,23 @@ package com.groocraft.couchdb.slacker.structure;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.groocraft.couchdb.slacker.annotation.Index;
 import com.groocraft.couchdb.slacker.utils.PartTreeWithParameters;
 import com.groocraft.couchdb.slacker.utils.PartTreeWithParametersSerializer;
-import org.springframework.data.domain.Pageable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.data.domain.Sort;
+import org.springframework.util.Assert;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Pojo class for creating json Mango find query.
  *
  * @author Majlanky
  */
-@SuppressWarnings({"unused", "MismatchedQueryAndUpdateOfCollection"})
+@SuppressWarnings({"MismatchedQueryAndUpdateOfCollection"})
 public class DocumentFindRequest {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -44,7 +44,7 @@ public class DocumentFindRequest {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty("limit")
-    private Integer limit;
+    private final Integer limit;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty("skip")
@@ -56,31 +56,49 @@ public class DocumentFindRequest {
 
     @JsonProperty("selector")
     @JsonSerialize(using = PartTreeWithParametersSerializer.class)
-    private final PartTreeWithParameters partTree;
+    private final PartTreeWithParameters partTreeWithParameters;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonProperty("execution_stats")
+    private Boolean addExecutionStatsToResult;
 
     /**
-     * @param partTree      created based on the generic query method name. Must not be {@literal null}
-     * @param index         {@link Index} annotation if present on the generic query methods
-     * @param pageable      if the generic query method has {@link Pageable} parameter, there is information about it, {@link Pageable#unpaged()} in all other
-     *                      cases. Must not be {@literal null}
-     * @param sortParameter if the generic query method has {@link Sort} parameter, there is an information about it, {@link Sort#unsorted()}
-     *                      in all other cases. Must not be {@literal null}
+     * @param partTreeWithParameters    created based on the generic query method name. Must not be {@literal null}
+     * @param skip                      number of document which should be skipped. Can be {@literal null} which means do not skip
+     * @param limit                     of document number in the result
+     * @param index                     Array of indexes, which should be used for querying. Can be {@literal null} which means do not use any index
+     * @param order                     List of all order rules. Can be {@literal null} which means do not order.
+     * @param addExecutionStatsToResult setting if the result should container information about execution of Mango query
      */
-    public DocumentFindRequest(PartTreeWithParameters partTree, Index index, Pageable pageable, Sort sortParameter) {
-        this.partTree = partTree;
+    public DocumentFindRequest(@NotNull PartTreeWithParameters partTreeWithParameters, @Nullable Long skip, int limit,
+                               @Nullable String[] index, @Nullable List<Sort.Order> order, boolean addExecutionStatsToResult) {
+        Assert.notNull(partTreeWithParameters, "PartTreeWithParameters must not be null.");
+        Assert.isTrue(limit > 0, "Limit must be positive number");
+        this.partTreeWithParameters = partTreeWithParameters;
         if (index != null) {
-            useIndex = index.value();
+            useIndex = index;
         }
-        Optional.ofNullable(partTree.getPartTree().getMaxResults()).ifPresent(i -> limit = i);
-        if (pageable.isPaged()) {
-            skip = pageable.getOffset();
-            limit = pageable.getPageSize();
+        this.limit = limit;
+        if (skip != null) {
+            this.skip = skip;
         }
-        if (partTree.getPartTree().getSort().isSorted() || sortParameter.isSorted() || pageable.getSort().isSorted()) {
+        if (order != null) {
             sort = new LinkedList<>();
-            sortParameter.and(partTree.getPartTree().getSort()).and(pageable.getSort()).forEach(o -> sort.add(Map.of(o.getProperty(),
-                    o.getDirection().toString().toLowerCase())));
+            order.forEach(o -> sort.add(Map.of(o.getProperty(), o.getDirection().toString().toLowerCase())));
         }
+        if (addExecutionStatsToResult) {
+            this.addExecutionStatsToResult = true;
+        }
+    }
+
+    /**
+     * Method which is setting skip parameter of Mango query to get next bunch of documents with of the same query. How much documents is obtained and how
+     * much is skipped is based on the given parameter
+     *
+     * @param count how much to skip
+     */
+    public void skip(int count) {
+        skip = skip == null ? count : skip + count;
     }
 
 }

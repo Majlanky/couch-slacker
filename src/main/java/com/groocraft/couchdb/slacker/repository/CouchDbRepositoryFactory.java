@@ -17,6 +17,8 @@
 package com.groocraft.couchdb.slacker.repository;
 
 import com.groocraft.couchdb.slacker.CouchDbClient;
+import com.groocraft.couchdb.slacker.configuration.CouchDbProperties;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.repository.core.EntityInformation;
 import org.springframework.data.repository.core.RepositoryInformation;
 import org.springframework.data.repository.core.RepositoryMetadata;
@@ -24,6 +26,7 @@ import org.springframework.data.repository.core.support.RepositoryFactorySupport
 import org.springframework.data.repository.query.QueryLookupStrategy;
 import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.lang.Nullable;
+import org.springframework.util.Assert;
 
 import java.util.Optional;
 
@@ -39,12 +42,17 @@ import java.util.Optional;
 public class CouchDbRepositoryFactory extends RepositoryFactorySupport {
 
     private final CouchDbClient client;
+    private final CouchDbProperties properties;
 
     /**
      * @param client must not be {@literal null}
+     * @param  properties must not be {@literal null}
      */
-    public CouchDbRepositoryFactory(CouchDbClient client) {
+    public CouchDbRepositoryFactory(@NotNull CouchDbClient client, @NotNull CouchDbProperties properties) {
+        Assert.notNull(client, "Client must not be null.");
+        Assert.notNull(properties, "Properties must not be null.");
         this.client = client;
+        this.properties = properties;
     }
 
     /**
@@ -77,6 +85,6 @@ public class CouchDbRepositoryFactory extends RepositoryFactorySupport {
     @Override
     protected Optional<QueryLookupStrategy> getQueryLookupStrategy(@Nullable QueryLookupStrategy.Key key,
                                                                    QueryMethodEvaluationContextProvider evaluationContextProvider) {
-        return Optional.of(new CouchDbQueryLookupStrategy(client));
+        return Optional.of(new CouchDbQueryLookupStrategy(client, properties));
     }
 }

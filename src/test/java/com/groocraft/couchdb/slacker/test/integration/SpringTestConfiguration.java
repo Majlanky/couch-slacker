@@ -14,22 +14,18 @@
  * limitations under the License.
  */
 
-package com.groocraft.couchdb.slacker.structure;
+package com.groocraft.couchdb.slacker.test.integration;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.groocraft.couchdb.slacker.configuration.CouchSlackerConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-import java.util.List;
+@Configuration
+public class SpringTestConfiguration extends CouchSlackerConfiguration {
 
-public class BulkGetResponse<EntityT> {
-
-    @JsonProperty("results")
-    List<EntityT> docs;
-
-    public List<EntityT> getDocs() {
-        return docs;
+    @Bean
+    public TestIdGenerator testIdGenerator(){
+        return new TestIdGenerator();
     }
 
-    public void setDocs(List<EntityT> docs) {
-        this.docs = docs;
-    }
 }

@@ -18,6 +18,8 @@ package com.groocraft.couchdb.slacker.http;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpResponse;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.util.Assert;
 
 import java.io.IOException;
 
@@ -33,7 +35,11 @@ public class AutoCloseableHttpResponse implements AutoCloseable {
 
     private HttpResponse response;
 
-    public void set(HttpResponse response) {
+    /**
+     * @param response which should be wrapped and automatically closed. Must not be {@literal null}
+     */
+    public void set(@NotNull HttpResponse response) {
+        Assert.notNull(response, "Response must not be null");
         this.response = response;
     }
 
@@ -43,7 +49,7 @@ public class AutoCloseableHttpResponse implements AutoCloseable {
 
     @Override
     public void close() {
-        if (response != null) {
+        if (response != null && response.getEntity() != null) {
             try {
                 response.getEntity().getContent().close();
             } catch (IOException e) {

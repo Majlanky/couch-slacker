@@ -14,22 +14,16 @@
  * limitations under the License.
  */
 
-package com.groocraft.couchdb.slacker.structure;
+package com.groocraft.couchdb.slacker.exception;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+/**
+ * Exception thrown when a rule of schema processing is not fulfilled
+ *
+ * @author Majlanky
+ */
+public class SchemaProcessingException extends Exception{
 
-import java.util.List;
-
-public class BulkGetResponse<EntityT> {
-
-    @JsonProperty("results")
-    List<EntityT> docs;
-
-    public List<EntityT> getDocs() {
-        return docs;
-    }
-
-    public void setDocs(List<EntityT> docs) {
-        this.docs = docs;
+    public SchemaProcessingException(String message) {
+        super(message);
     }
 }

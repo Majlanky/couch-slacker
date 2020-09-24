@@ -14,22 +14,24 @@
  * limitations under the License.
  */
 
-package com.groocraft.couchdb.slacker.structure;
+package com.groocraft.couchdb.slacker.test.integration;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.groocraft.couchdb.slacker.IdGenerator;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
-public class BulkGetResponse<EntityT> {
+public class TestIdGenerator implements IdGenerator<SpringTestDocument> {
 
-    @JsonProperty("results")
-    List<EntityT> docs;
+    private final AtomicInteger counter = new AtomicInteger(0);
 
-    public List<EntityT> getDocs() {
-        return docs;
+    @Override
+    public @NotNull String generate(@NotNull SpringTestDocument e) {
+        return "test" + counter.incrementAndGet();
     }
 
-    public void setDocs(List<EntityT> docs) {
-        this.docs = docs;
+    @Override
+    public @NotNull Class<SpringTestDocument> getEntityClass() {
+        return SpringTestDocument.class;
     }
 }

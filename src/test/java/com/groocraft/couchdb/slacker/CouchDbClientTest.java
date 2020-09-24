@@ -11,6 +11,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -30,6 +31,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.StreamSupport;
@@ -38,7 +40,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.only;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class CouchDbClientTest {
@@ -58,7 +64,7 @@ class CouchDbClientTest {
     @BeforeEach
     public void setUp() throws URISyntaxException {
         baseURI = new URI("http://localhost:5984/");
-        client = new CouchDbClient(httpClient, httpHost, httpContext, baseURI, () -> UUID.randomUUID().toString());
+        client = new CouchDbClient(httpClient, httpHost, httpContext, baseURI, Collections.emptyList(),8, 3, false);
     }
 
     @Test
@@ -132,7 +138,7 @@ class CouchDbClientTest {
     }
 
     @Test
-    public void testSaveAll() throws IOException{
+    public void testSaveAll() throws IOException {
         IOException thrown = new IOException("error");
         InputStream content = new ByteArrayInputStream(("[{\"id\": \"a\",\"ok\": true,\"rev\": \"rev1\"},{\"id\": \"b\",\"ok\": true,\"rev\": \"rev1\"}]").getBytes());
         ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
@@ -155,9 +161,9 @@ class CouchDbClientTest {
                 "\"value\":\"b\",\"value2\":\"b\",\"value3\":null,\"value4\":null,\"value5\":false}]}", post.getEntity().getContent(), "Body of save " +
                 "all request is not properly created");
         assertEquals(2, StreamSupport.stream(saved.spliterator(), false).count(), "Two entities were passed to save");
-        assertEquals("aaa", a.getId()+a.getValue()+a.getValue2(), "Id must be updated, value must stay");
+        assertEquals("aaa", a.getId() + a.getValue() + a.getValue2(), "Id must be updated, value must stay");
         assertEquals("rev1", a.getRevision(), "Revision must be updated");
-        assertEquals("bbb", b.getId()+b.getValue()+b.getValue2(), "Id must be updated, value must stay");
+        assertEquals("bbb", b.getId() + b.getValue() + b.getValue2(), "Id must be updated, value must stay");
         assertEquals("rev1", b.getRevision(), "Revision must be updated");
 
         assertEquals(thrown, assertThrows(IOException.class, () -> client.saveAll(List.of(new TestDocument("a", "b"), new TestDocument("b", "b")),
@@ -201,10 +207,10 @@ class CouchDbClientTest {
     }
 
     @Test
-    public void testReadAllByIds() throws IOException{
+    public void testReadAllByIds() throws IOException {
         IOException thrown = new IOException("error");
         InputStream content = new ByteArrayInputStream(("{\"results\": [{\"id\": \"a\", \"docs\": [{\"ok\":{\"_id\":\"a\",\"_rev\":\"revA\",\"value\":\"valueA\"," +
-                        "\"value2\":\"value2a\"}}]},{\"id\": \"b\", \"docs\": [{\"ok\":{\"_id\":\"b\",\"_rev\":\"revB\",\"value\":\"valueB\",\"value2\":\"value2b\"}}]}]}").getBytes());
+                "\"value2\":\"value2a\"}}]},{\"id\": \"b\", \"docs\": [{\"ok\":{\"_id\":\"b\",\"_rev\":\"revB\",\"value\":\"valueB\",\"value2\":\"value2b\"}}]}]}").getBytes());
         ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
         HttpResponse response = mock(HttpResponse.class);
         HttpEntity entity = mock(HttpEntity.class);
@@ -217,7 +223,7 @@ class CouchDbClientTest {
         HttpRequest request = requestCaptor.getValue();
         assertEquals(HttpPost.class, request.getClass(), "Read has to be done as POST request");
         HttpPost post = (HttpPost) request;
-        assertEquals("http://localhost:5984/test/_bulk_get" , post.getURI().toString(), "URI must be based on base URI and database name");
+        assertEquals("http://localhost:5984/test/_bulk_get", post.getURI().toString(), "URI must be based on base URI and database name");
         assertEquals("application/json", post.getEntity().getContentType().getValue(), "Find request should declare json content");
         assertContent("{\"docs\":[{\"id\":\"a\"},{\"id\":\"b\"}]}", post.getEntity().getContent(), "Body of read all by ids request is not properly created");
         StreamSupport.stream(read.spliterator(), false).forEach(d -> {
@@ -285,7 +291,7 @@ class CouchDbClientTest {
         assertContent("", post.getEntity().getContent(), "Body of find request is not properly created");
         assertEquals(3, StreamSupport.stream(read.spliterator(), false).count(), "Based on mocked json, there are 3 documents returned");
         int i = 1;
-        for(TestDocument d : read) {
+        for (TestDocument d : read) {
             assertEquals("unique" + i, d.getId(), "Document with index " + i + " has in-properly de-serialized id");
             assertEquals("123" + i, d.getRevision(), "Document with index " + i + " has in-properly de-serialized revision");
             assertEquals("value" + i, d.getValue(), "Document with index " + i + " has in-properly de-serialized value");
@@ -302,7 +308,7 @@ class CouchDbClientTest {
     @Test
     public void testClose() throws IOException {
         CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
-        client = new CouchDbClient(httpClient, httpHost, httpContext, baseURI, () -> UUID.randomUUID().toString());
+        client = new CouchDbClient(httpClient, httpHost, httpContext, baseURI, Collections.emptyList(), 8, 3, false);
         client.close();
         verify(httpClient, only().description("Http client must be closed")).close();
     }
@@ -327,7 +333,7 @@ class CouchDbClientTest {
         assertEquals("application/json", get.getFirstHeader(HttpHeaders.ACCEPT).getValue(), "Get document request should declare accepting json");
         assertEquals(3, StreamSupport.stream(all.spliterator(), false).count(), "Result of find was not properly read or filtered");
         int i = 1;
-        for(String id : all){
+        for (String id : all) {
             assertEquals(i++ + "", id, "One row is missing in the result");
         }
         content.reset();
@@ -423,6 +429,73 @@ class CouchDbClientTest {
     }
 
     @Test
+    public void testDatabaseExistsClass() throws IOException{
+        testDatabaseExistsWrapper(c -> c.databaseExists(TestDocument.class));
+    }
+
+    @Test
+    public void testDatabaseExistsString() throws IOException{
+        testDatabaseExistsWrapper(c -> c.databaseExists("test"));
+    }
+
+    private void testDatabaseExistsWrapper(ThrowingConsumer<CouchDbClient, IOException> testedAction) throws IOException{
+        IOException thrown = new IOException("error");
+        InputStream content = new ByteArrayInputStream(("").getBytes());
+        ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+        HttpResponse response = mock(HttpResponse.class);
+        HttpEntity entity = mock(HttpEntity.class);
+        when(entity.getContent()).thenReturn(content);
+        when(response.getEntity()).thenReturn(entity);
+        when(httpClient.execute(eq(httpHost), requestCaptor.capture(), eq(httpContext))).thenReturn(response).thenThrow(thrown);
+
+        testedAction.accept(client);
+
+        HttpRequest request = requestCaptor.getValue();
+        assertEquals(HttpHead.class, request.getClass(), "Testing if database exists has to be done as HEAD request");
+        HttpHead head = (HttpHead) request;
+        assertEquals("http://localhost:5984/test", head.getURI().toString(), "URI must be based on base URI and database name");
+        assertEquals(thrown, assertThrows(IOException.class, () -> testedAction.accept(client)), "CouchDb client should not alternate original " +
+                "exception");
+        request = requestCaptor.getValue();
+        head = (HttpHead) request;
+        assertTrue(head.isAborted(), "Request must be aborted when exception thrown");
+    }
+
+    @Test
+    public void testDeleteDatabaseClass() throws IOException{
+        testDeleteDatabaseWrapper(c -> c.deleteDatabase(TestDocument.class));
+    }
+
+    @Test
+    public void testDeleteDatabaseString() throws IOException{
+        testDeleteDatabaseWrapper(c -> c.deleteDatabase("test"));
+    }
+
+    private void testDeleteDatabaseWrapper(ThrowingConsumer<CouchDbClient, IOException> testedAction) throws IOException{
+        IOException thrown = new IOException("error");
+        InputStream content = new ByteArrayInputStream(("").getBytes());
+        ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+        HttpResponse response = mock(HttpResponse.class);
+        HttpEntity entity = mock(HttpEntity.class);
+        when(entity.getContent()).thenReturn(content);
+        when(response.getEntity()).thenReturn(entity);
+        when(httpClient.execute(eq(httpHost), requestCaptor.capture(), eq(httpContext))).thenReturn(response).thenThrow(thrown);
+
+        testedAction.accept(client);
+
+        HttpRequest request = requestCaptor.getValue();
+        assertEquals(HttpDelete.class, request.getClass(), "Database deletion has to be done as DELETE request");
+        HttpDelete delete = (HttpDelete) request;
+        assertEquals("http://localhost:5984/test", delete.getURI().toString(), "URI must be based on base URI and database name");
+        assertEquals(thrown, assertThrows(IOException.class, () -> testedAction.accept(client)), "CouchDb client should not alternate original " +
+                "exception");
+        request = requestCaptor.getValue();
+        delete = (HttpDelete) request;
+        assertTrue(delete.isAborted(), "Request must be aborted when exception thrown");
+    }
+
+
+    @Test
     public void testCreateIndex() throws IOException {
         createIndexTestWrapper(c -> c.createIndex("test", "test", List.of(Sort.Order.asc("value"))));
     }
@@ -454,7 +527,9 @@ class CouchDbClientTest {
         HttpPost post = (HttpPost) request;
         assertEquals("http://localhost:5984/test/_index", post.getURI().toString(), "URI must be based on base URI and database name");
         assertEquals("application/json", post.getEntity().getContentType().getValue(), "Find request should declare json content");
-        assertContent("{\"index\":[{\"value\":\"asc\"}],\"type\":\"json\",\"name\":\"test\"}", post.getEntity().getContent(), "Create index request is serialized poorly");
+        assertContent("{\"index\":{\"fields\":[{\"value\":\"asc\"}]},\"type\":\"json\",\"name\":\"test\"}", post.getEntity().getContent(), "Create index " +
+                "request " +
+                "is serialized poorly");
         assertEquals(thrown, assertThrows(IOException.class, () -> testedAction.accept(client)), "CouchDb client should not alternate original " +
                 "exception");
         request = requestCaptor.getValue();
@@ -462,13 +537,13 @@ class CouchDbClientTest {
         assertTrue(post.isAborted(), "Request must be aborted when exception thrown");
     }
 
-    private static void assertContent(String s, InputStream actual, String message) throws IOException{
+    private static void assertContent(String s, InputStream actual, String message) throws IOException {
         InputStream expected = new ByteArrayInputStream(s.getBytes());
-        if(!IOUtils.contentEquals(actual, expected)){
+        if (!IOUtils.contentEquals(actual, expected)) {
             actual.reset();
             expected.reset();
             throw new AssertionFailedError(message, IOUtils.toString(expected, StandardCharsets.UTF_8.name()), IOUtils.toString(actual,
-                    StandardCharsets.UTF_8.name()) );
+                    StandardCharsets.UTF_8.name()));
         }
     }
 

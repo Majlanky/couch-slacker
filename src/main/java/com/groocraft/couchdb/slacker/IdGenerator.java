@@ -14,22 +14,28 @@
  * limitations under the License.
  */
 
-package com.groocraft.couchdb.slacker.annotation;
+package com.groocraft.couchdb.slacker;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import org.jetbrains.annotations.NotNull;
 
 /**
- * Annotation to specify a database name for entity. If the annotation is not present for entity, lower-cased {@link Class#getSimpleName()} is used.
+ * Interface for all generators used for new IDs.
+ * @param <EntityT> type of new entities
  *
  * @author Majlanky
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-public @interface Database {
+public interface IdGenerator<EntityT> {
 
-    String value() default "";
+    /**
+     * Method to obtain a new ID.
+     * @param e new entity for which id should be generated. Must not be {@literal null}
+     * @return new ID. Can not be {@literal null}
+     */
+    @NotNull String generate(@NotNull EntityT e);
+
+    /**
+     * @return {@link Class} for which instances ID can be generated.
+     */
+    @NotNull Class<EntityT> getEntityClass();
 
 }

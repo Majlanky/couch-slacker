@@ -18,6 +18,12 @@ package com.groocraft.couchdb.slacker.exception;
 
 import java.io.IOException;
 
+/**
+ * Exception which is thrown in case of non-OK response from server. For details see {@link com.groocraft.couchdb.slacker.http.ThrowingInterceptor}.
+ * Exception holds status code, method of HTTP request, URI on which request was called and reason of failure.
+ *
+ * @author Majlanky
+ */
 public class CouchDbException extends IOException {
 
     private final int statusCode;

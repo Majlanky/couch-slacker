@@ -20,7 +20,9 @@ import com.groocraft.couchdb.slacker.CouchDbClient;
 import com.groocraft.couchdb.slacker.exception.CouchDbException;
 import com.groocraft.couchdb.slacker.exception.CouchDbRuntimeException;
 import org.apache.http.HttpStatus;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.util.Assert;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -43,7 +45,9 @@ public class SimpleCouchDbRepository<EntityT> implements CrudRepository<EntityT,
      * @param client must not be {@literal null}
      * @param clazz  must not be {@literal null}
      */
-    public SimpleCouchDbRepository(CouchDbClient client, Class<EntityT> clazz) {
+    public SimpleCouchDbRepository(@NotNull CouchDbClient client,@NotNull Class<EntityT> clazz) {
+        Assert.notNull(client, "Client must not be null.");
+        Assert.notNull(clazz, "Clazz must not be null.");
         this.client = client;
         this.clazz = clazz;
     }

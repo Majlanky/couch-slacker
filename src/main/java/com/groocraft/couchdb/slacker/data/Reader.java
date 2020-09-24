@@ -16,6 +16,8 @@
 
 package com.groocraft.couchdb.slacker.data;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Interface providing reading functionality
  *
@@ -27,9 +29,9 @@ public interface Reader<DataT> {
     /**
      * Method which return data read from the given source.
      *
-     * @param o Object which from data should be read. The object can not be null.
+     * @param o Object which from data should be read. Must not be {@literal null}
      * @return read data
      */
-    DataT read(Object o);
+    DataT read(@NotNull Object o);
 
 }

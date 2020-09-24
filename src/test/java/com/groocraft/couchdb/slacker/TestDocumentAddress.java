@@ -14,22 +14,35 @@
  * limitations under the License.
  */
 
-package com.groocraft.couchdb.slacker.structure;
+package com.groocraft.couchdb.slacker;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+public class TestDocumentAddress {
 
-import java.util.List;
+    private String street;
 
-public class BulkGetResponse<EntityT> {
+    private String city;
 
-    @JsonProperty("results")
-    List<EntityT> docs;
-
-    public List<EntityT> getDocs() {
-        return docs;
+    public TestDocumentAddress() {
     }
 
-    public void setDocs(List<EntityT> docs) {
-        this.docs = docs;
+    public TestDocumentAddress(String street, String city) {
+        this.street = street;
+        this.city = city;
+    }
+
+    public String getStreet() {
+        return street;
+    }
+
+    public void setStreet(String street) {
+        this.street = street;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
     }
 }

@@ -26,8 +26,16 @@ import org.apache.http.protocol.HttpContext;
 
 import java.io.IOException;
 
+/**
+ * {@link HttpResponseInterceptor} which throws {@link CouchDbException} in case that response code is not OK, CREATED, ACCEPTED or NOT_MODIFIED
+ *
+ * @author Majlanky
+ */
 public class ThrowingInterceptor implements HttpResponseInterceptor {
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void process(HttpResponse response, HttpContext context) throws IOException {
         switch (response.getStatusLine().getStatusCode()) {

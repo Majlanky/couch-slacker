@@ -5,6 +5,13 @@ Couch Slacker project started in 2020. Basic idea and motivation was to create [
 [CouchDB](https://couchdb.apache.org/) which is awesome and light document database. We felt in love with it because of easy clustering, nice API and good
  documentation. [Spring Data](https://spring.io/projects/spring-data) is an awesome tool how to make development faster. So we decided to join them.
 
+#### Why to use Couch Slacker?
+Differently from other projects, Couch Slacker not only Spring Data like library. It is true [Spring Data](https://spring.io/projects/spring-data) 
+implementation [CouchDB](https://couchdb.apache.org/) which makes Couch Slacker very powerful. You can start you project with Spring on 
+[CouchDB](https://couchdb.apache.org/) with Couch Slacker and switch to MongoDB or other database engine by simple change of dependency (and probably 
+some little changes in entity/POJO classes). *No massive refactorings needed.* The other reason is that developer does not need to know Couch Slacker well. 
+Knowledge of [Spring Data](https://spring.io/projects/spring-data) is enough.
+
 Simply said Couch Slacker let you relax on the [CouchDB](https://couchdb.apache.org/) as [Spring Data](https://spring.io/projects/spring-data) works for
  you.
  
@@ -13,7 +20,7 @@ Artifacts releases are available on maven central (and on pages indexing central
 * [mvnRepository](https://mvnrepository.com/artifact/com.groocraft/couch-slacker)
 
 ## Wiki
-This README contains only basic information about project. For more or detailed information visit [wiki](https://github.com/Majlanky/couch-slacker/wiki) 
+This README contains only basic information about project. For more or detailed information, visit [wiki](https://github.com/Majlanky/couch-slacker/wiki) 
 
 ## Project Focus
 * Provide a basic client for [CouchDB](https://couchdb.apache.org/)
@@ -40,7 +47,7 @@ First of all we have to add Maven dependency
 ### POJO Classes
 Both the basic client and repositories works above document POJO classes. Let`s create a POJO class for user.
 ```java
-@Database("user")
+@Document("user")
 public class User{
 
     @JsonProperty("_id")
@@ -57,8 +64,8 @@ public class User{
 ```
 It looks pretty talkative does not it? Ok, do not worry, here is way to make it shorter:
 ```java
-@Database("user")
-public class User extends Document{
+@Document("user")
+public class User extends DocumentBase{
 
     @JsonProperty("name")
     private String name;
@@ -83,8 +90,7 @@ class AppConfig extends CouchSlackerConfiguration{
 
 }
 ```
-Now we are ready to define Spring Data repository for [CouchDB](https://couchdb.apache.org/). Please notice, that [CouchDB](https://couchdb.apache.org
-/) supports only String IDs.
+Now we are ready to define Spring Data repository for [CouchDB](https://couchdb.apache.org/). Please notice, that [CouchDB](https://couchdb.apache.org/) supports only String IDs.
 ```java
 class UserRepository extends CrudRepository<User, String>{
 

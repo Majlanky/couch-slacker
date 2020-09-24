@@ -14,22 +14,17 @@
  * limitations under the License.
  */
 
-package com.groocraft.couchdb.slacker.structure;
+package com.groocraft.couchdb.slacker.annotation;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.groocraft.couchdb.slacker.IdGenerator;
 
-import java.util.List;
+/**
+ * Annotation to specify that documents of the annotated class, is using different than the default {@link IdGenerator}
+ *
+ * @author Majlanky
+ */
+public @interface CustomIdGeneration {
 
-public class BulkGetResponse<EntityT> {
+    Class<? extends IdGenerator<?>> value();
 
-    @JsonProperty("results")
-    List<EntityT> docs;
-
-    public List<EntityT> getDocs() {
-        return docs;
-    }
-
-    public void setDocs(List<EntityT> docs) {
-        this.docs = docs;
-    }
 }

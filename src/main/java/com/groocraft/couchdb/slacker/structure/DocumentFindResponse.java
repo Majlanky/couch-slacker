@@ -19,6 +19,7 @@ package com.groocraft.couchdb.slacker.structure;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Pojo class to ease reading responses to database _find request.
@@ -54,8 +55,8 @@ public class DocumentFindResponse<EntityT> {
         this.documents = documents;
     }
 
-    public ExecutionStats getExecutionStats() {
-        return executionStats;
+    public Optional<ExecutionStats> getExecutionStats() {
+        return Optional.ofNullable(executionStats);
     }
 
     public void setExecutionStats(ExecutionStats executionStats) {
@@ -78,8 +79,8 @@ public class DocumentFindResponse<EntityT> {
         this.bookmark = bookmark;
     }
 
-    public String getWarning() {
-        return warning;
+    public Optional<String> getWarning() {
+        return Optional.ofNullable(warning);
     }
 
     public void setWarning(String warning) {
