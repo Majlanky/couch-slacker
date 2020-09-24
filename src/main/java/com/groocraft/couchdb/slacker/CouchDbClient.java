@@ -174,7 +174,7 @@ public class CouchDbClient {
     }
 
     /**
-     * @param clazz class of entity for which database name is needed. Must not be {@link null}
+     * @param clazz class of entity for which database name is needed. Must not be {@literal null}
      * @return Name of database for given class
      * @see EntityMetadata
      */
