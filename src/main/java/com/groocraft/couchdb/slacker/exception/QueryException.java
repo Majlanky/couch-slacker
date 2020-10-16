@@ -16,6 +16,8 @@
 
 package com.groocraft.couchdb.slacker.exception;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Exception which is thrown if there is any issues during processing a method query.
  *
@@ -23,11 +25,11 @@ package com.groocraft.couchdb.slacker.exception;
  */
 public class QueryException extends RuntimeException {
 
-    public QueryException(String message) {
+    public QueryException(@NotNull String message) {
         super(message);
     }
 
-    public QueryException(String message, Throwable cause) {
+    public QueryException(@NotNull String message, @NotNull Throwable cause) {
         super(message, cause);
     }
 }

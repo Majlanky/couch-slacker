@@ -1,6 +1,7 @@
 package com.groocraft.couchdb.slacker.repository;
 
 import com.groocraft.couchdb.slacker.CouchDbClient;
+import com.groocraft.couchdb.slacker.EntityMetadata;
 import com.groocraft.couchdb.slacker.TestDocument;
 import com.groocraft.couchdb.slacker.annotation.Index;
 import com.groocraft.couchdb.slacker.exception.CouchDbRuntimeException;
@@ -47,6 +48,7 @@ class CouchDbParsingQueryTest {
         Parameters<?, ?> parameters = mock(Parameters.class);
 
         when(queryMethod.getName()).thenReturn("findByValue");
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata<>(TestDocument.class));
         when(client.find(any(), any())).thenReturn(new ArrayList<>());
         doReturn(TestDocument.class).when(queryMethod).getReturnedObjectType();
         when(queryMethod.getResultProcessor()).thenReturn(resultProcessor);
@@ -87,6 +89,7 @@ class CouchDbParsingQueryTest {
         Parameters<?, ?> parameters = mock(Parameters.class);
 
         when(queryMethod.getName()).thenReturn("findByValue");
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata<>(TestDocument.class));
         when(client.find(any(), any())).thenReturn(new ArrayList<>());
         doReturn(TestDocument.class).when(queryMethod).getReturnedObjectType();
         when(queryMethod.getResultProcessor()).thenReturn(resultProcessor);
@@ -127,6 +130,7 @@ class CouchDbParsingQueryTest {
         Parameters<?, ?> parameters = mock(Parameters.class);
 
         when(queryMethod.getName()).thenReturn("countByValue");
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata<>(TestDocument.class));
         when(client.find(any(), any())).thenReturn(new ArrayList<>());
         doReturn(TestDocument.class).when(queryMethod).getReturnedObjectType();
         when(queryMethod.getResultProcessor()).thenReturn(resultProcessor);
@@ -162,6 +166,7 @@ class CouchDbParsingQueryTest {
         Parameters<?, ?> parameters = mock(Parameters.class);
 
         when(queryMethod.getName()).thenReturn("deleteByValue");
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata<>(TestDocument.class));
         when(client.find(any(), any())).thenReturn(new ArrayList<>());
         doReturn(TestDocument.class).when(queryMethod).getReturnedObjectType();
         when(queryMethod.getResultProcessor()).thenReturn(resultProcessor);
@@ -197,6 +202,7 @@ class CouchDbParsingQueryTest {
         Parameters<?, ?> parameters = mock(Parameters.class);
 
         when(queryMethod.getName()).thenReturn("existsByValue");
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata<>(TestDocument.class));
         when(client.find(any(), any())).thenReturn(new ArrayList<>());
         doReturn(TestDocument.class).when(queryMethod).getReturnedObjectType();
         when(queryMethod.getResultProcessor()).thenReturn(resultProcessor);
@@ -233,6 +239,7 @@ class CouchDbParsingQueryTest {
         Index index = mock(Index.class);
 
         when(queryMethod.getName()).thenReturn("findByValue");
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata<>(TestDocument.class));
         when(client.find(any(), any())).thenReturn(new ArrayList<>());
         doReturn(TestDocument.class).when(queryMethod).getReturnedObjectType();
         when(queryMethod.getResultProcessor()).thenReturn(resultProcessor);
@@ -273,6 +280,7 @@ class CouchDbParsingQueryTest {
         Parameters<?, ?> parameters = mock(Parameters.class);
 
         when(queryMethod.getName()).thenReturn("findByValue");
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata<>(TestDocument.class));
         when(client.find(any(), any())).thenReturn(new ArrayList<>());
         doReturn(TestDocument.class).when(queryMethod).getReturnedObjectType();
         when(queryMethod.getResultProcessor()).thenReturn(resultProcessor);
@@ -313,6 +321,7 @@ class CouchDbParsingQueryTest {
         Parameters<?, ?> parameters = mock(Parameters.class);
 
         when(queryMethod.getName()).thenReturn("findByValue");
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata<>(TestDocument.class));
         when(client.find(any(), any())).thenReturn(new ArrayList<>());
         doReturn(TestDocument.class).when(queryMethod).getReturnedObjectType();
         when(queryMethod.getResultProcessor()).thenReturn(resultProcessor);
@@ -355,6 +364,7 @@ class CouchDbParsingQueryTest {
         Parameters<?, ?> parameters = mock(Parameters.class);
 
         when(queryMethod.getName()).thenReturn("findByAddressStreet");
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata<>(TestDocument.class));
         when(client.find(any(), any())).thenReturn(new ArrayList<>());
         doReturn(TestDocument.class).when(queryMethod).getReturnedObjectType();
         when(queryMethod.getResultProcessor()).thenReturn(resultProcessor);

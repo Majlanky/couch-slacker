@@ -75,7 +75,7 @@ public class CouchDbRepositoryFactory extends RepositoryFactorySupport {
      * {@inheritDoc}
      */
     @Override
-    protected Class<?> getRepositoryBaseClass(RepositoryMetadata metadata) {
+    protected @NotNull Class<?> getRepositoryBaseClass(RepositoryMetadata metadata) {
         return SimpleCouchDbRepository.class;
     }
 

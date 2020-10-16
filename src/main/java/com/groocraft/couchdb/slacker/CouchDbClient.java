@@ -24,15 +24,18 @@ import com.groocraft.couchdb.slacker.repository.CouchDbEntityInformation;
 import com.groocraft.couchdb.slacker.structure.AllDocumentResponse;
 import com.groocraft.couchdb.slacker.structure.BulkGetResponse;
 import com.groocraft.couchdb.slacker.structure.BulkRequest;
+import com.groocraft.couchdb.slacker.structure.DesignDocument;
 import com.groocraft.couchdb.slacker.structure.DocumentFindResponse;
 import com.groocraft.couchdb.slacker.structure.DocumentPutResponse;
 import com.groocraft.couchdb.slacker.structure.IndexCreateRequest;
 import com.groocraft.couchdb.slacker.utils.BulkGetDeserializer;
 import com.groocraft.couchdb.slacker.utils.BulkGetIdSerializer;
 import com.groocraft.couchdb.slacker.utils.DeleteDocumentSerializer;
+import com.groocraft.couchdb.slacker.utils.DeleteViewedDocumentSerializer;
 import com.groocraft.couchdb.slacker.utils.FoundDocumentDeserializer;
 import com.groocraft.couchdb.slacker.utils.LazyLog;
 import com.groocraft.couchdb.slacker.utils.ThrowingFunction;
+import com.groocraft.couchdb.slacker.utils.ViewedDocumentSerializer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
@@ -149,12 +152,12 @@ public class CouchDbClient {
     }
 
     /**
-     * @param clazz about which metadata is needed. Must not be {@link null}
+     * @param clazz about which metadata is needed. Must not be {@literal null}
      * @param <T>   type of class
      * @return {@link EntityMetadata} about passed class
      */
     @SuppressWarnings("unchecked")
-    private <T> @NotNull EntityMetadata<T> getEntityMetadata(@NotNull Class<T> clazz) {
+    public <T> @NotNull EntityMetadata<T> getEntityMetadata(@NotNull Class<T> clazz) {
         return entityMetadataCache.computeIfAbsent(clazz, EntityMetadata::new);
     }
 
@@ -229,6 +232,7 @@ public class CouchDbClient {
     @SuppressWarnings({"unchecked"})
     public <EntityT> @NotNull EntityT save(@NotNull EntityT entity) throws IOException {
         EntityMetadata<?> entityMetadata = getEntityMetadata(entity.getClass());
+        ObjectMapper localMapper = mapper;
         String id = entityMetadata.getIdReader().read(entity);
         log.debug("Saving document {} with id {} and revision {} to database {}", entity, id,
                 LazyLog.of(() -> entityMetadata.getRevisionReader().read(entity)), entityMetadata.getDatabaseName());
@@ -236,8 +240,16 @@ public class CouchDbClient {
             id = generateId(entity, (Class<EntityT>) entity.getClass());
             log.debug("New ID {} generated for saved document", id);
         }
-        DocumentPutResponse response = put(getURI(baseURI, entityMetadata.getDatabaseName(), id), mapper.writeValueAsString(entity), r -> mapper.readValue(r.getEntity().getContent(),
-                DocumentPutResponse.class));
+        if (entityMetadata.isViewed()) {
+            localMapper = new ObjectMapper();
+            SimpleModule module = new SimpleModule();
+            module.addSerializer(new ViewedDocumentSerializer<>(entity.getClass(), entityMetadata.getTypeField(), entityMetadata.getType()));
+            localMapper.registerModule(module);
+        }
+
+        DocumentPutResponse response = put(getURI(baseURI, entityMetadata.getDatabaseName(), id), localMapper.writeValueAsString(entity),
+                r -> mapper.readValue(r.getEntity().getContent(),
+                        DocumentPutResponse.class));
         entityMetadata.getRevisionWriter().write(entity, response.getRev());
         entityMetadata.getIdWriter().write(entity, response.getId());
         log.debug("Saved document {} with id {} and revision {}", entity, response.getId(), response.getRev());
@@ -259,6 +271,7 @@ public class CouchDbClient {
     @SuppressWarnings({"unchecked"})
     public <EntityT> @NotNull Iterable<EntityT> saveAll(@NotNull Iterable<EntityT> entities, @NotNull Class<?> clazz) throws IOException {
         EntityMetadata<?> entityMetadata = getEntityMetadata(clazz);
+        ObjectMapper localMapper = mapper;
         log.debug("Bulk save of {} documents to database {}", LazyLog.of(() -> StreamSupport.stream(entities.spliterator(), false).count()),
                 entityMetadata.getDatabaseName());
         for (EntityT e : entities) {
@@ -269,8 +282,16 @@ public class CouchDbClient {
                 log.debug("New ID {} generated for bulk saved document", id);
             }
         }
+
+        if (entityMetadata.isViewed()) {
+            localMapper = new ObjectMapper();
+            SimpleModule module = new SimpleModule();
+            module.addSerializer(new ViewedDocumentSerializer<>(clazz, entityMetadata.getTypeField(), entityMetadata.getType()));
+            localMapper.registerModule(module);
+        }
+
         List<DocumentPutResponse> responses = post(getURI(baseURI, entityMetadata.getDatabaseName(), "_bulk_docs"),
-                mapper.writeValueAsString(new BulkRequest<>(entities)), r -> mapper.readValue(r.getEntity().getContent(),
+                localMapper.writeValueAsString(new BulkRequest<>(entities)), r -> mapper.readValue(r.getEntity().getContent(),
                         mapper.getTypeFactory().constructCollectionType(List.class, DocumentPutResponse.class)));
         Map<String, DocumentPutResponse> indexed = responses.stream().collect(Collectors.toMap(DocumentPutResponse::getId, r -> r));
         for (EntityT e : entities) {
@@ -296,10 +317,35 @@ public class CouchDbClient {
      * @throws IOException if http request is not successful or json processing fail
      * @see DocumentBase
      */
-    public <EntityT> EntityT read(@NotNull String id, @NotNull Class<EntityT> clazz) throws IOException {
+    public <EntityT> @NotNull EntityT read(@NotNull String id, @NotNull Class<EntityT> clazz) throws IOException {
         String databaseName = getDatabaseName(clazz);
         log.debug("Read of document with ID {} from database {}", id, databaseName);
         return get(getURI(baseURI, databaseName, id), r -> mapper.readValue(r.getEntity().getContent(), clazz));
+    }
+
+    /**
+     * Method to get design document of the given name from database which name is obtained from the given class.
+     *
+     * @param id    of wanted design document
+     * @param clazz from which is obtained database name where design document should be stored
+     * @return instance of {@link DesignDocument} with data of wanted document.
+     * @throws IOException if http request is not successful or json processing fail
+     */
+    public @NotNull DesignDocument readDesign(@NotNull String id, @NotNull Class<?> clazz) throws IOException {
+        return readDesign(id, getDatabaseName(clazz));
+    }
+
+    /**
+     * Method to get design document of the given name from the database of the given name.
+     *
+     * @param id           of wanted design document
+     * @param databaseName of database where design document should be stored
+     * @return instance of {@link DesignDocument} with data of wanted document.
+     * @throws IOException if http request is not successful or json processing fail
+     */
+    public @NotNull DesignDocument readDesign(@NotNull String id, @NotNull String databaseName) throws IOException {
+        log.debug("Read of design with ID {} from database {}", id, databaseName);
+        return get(getURI(baseURI, databaseName, "_design", id), r -> mapper.readValue(r.getEntity().getContent(), DesignDocument.class));
     }
 
     /**
@@ -332,9 +378,10 @@ public class CouchDbClient {
     }
 
     /**
-     * Method to get result of _all_docs with ignoring design documents (If you need design documents use {@link #readAllDesign(Class)} or
-     * {@link #readAllDocs(Class, Predicate)} if you want both) to the database  specified by {@link com.groocraft.couchdb.slacker.annotation.Document} from
-     * the passed entity class. Result is returned as Stream of documents ids, no full data.
+     * Method to get result of _all_docs with ignoring design documents or view (If you need design documents use {@link #readAllDesign(Class)} or
+     * {@link #readAllDocs(Class, Predicate)} if you want both) from the database specified by {@link com.groocraft.couchdb.slacker.annotation.Document} from
+     * the passed entity class. Result is returned as Stream of documents ids, no full data. If the result is _all_docs or view depends on the
+     * {@link com.groocraft.couchdb.slacker.annotation.Document} settings.
      *
      * @param clazz of wanted entity. Used to get database name {@link #getDatabaseName(Class)}. Must not be {@literal null}
      * @return Stream of {@link String} which contain id
@@ -342,10 +389,15 @@ public class CouchDbClient {
      * @see com.groocraft.couchdb.slacker.annotation.Document
      * @see #readAllDesign(Class)
      * @see #readAllDocs(Class, Predicate)
+     * @see com.groocraft.couchdb.slacker.annotation.Document
      */
     public @NotNull Iterable<String> readAll(@NotNull Class<?> clazz) throws IOException {
-        log.debug("Read of all non design documents from database {}", getDatabaseName(clazz));
-        return readAllDocs(clazz, Predicate.not(s -> s.startsWith("_design")));
+        if (getEntityMetadata(clazz).isViewed()) {
+            return readAllDocsFromView(clazz);
+        } else {
+            log.debug("Read of all non design documents from database {}", getDatabaseName(clazz));
+            return readAllDocs(clazz, Predicate.not(s -> s.startsWith("_design")));
+        }
     }
 
     /**
@@ -380,9 +432,14 @@ public class CouchDbClient {
      * @see #readAllDesign(Class)
      */
     public @NotNull Iterable<String> readAllDocs(@NotNull Class<?> clazz, @NotNull Predicate<String> idFilterPredicate) throws IOException {
-        String databaseName = getDatabaseName(clazz);
-        return get(getURI(baseURI, databaseName, "_all_docs"),
+        return get(getURI(baseURI, getDatabaseName(clazz), "_all_docs"),
                 r -> mapper.readValue(r.getEntity().getContent(), AllDocumentResponse.class).getRows().stream().filter(idFilterPredicate).collect(Collectors.toList()));
+    }
+
+    public @NotNull Iterable<String> readAllDocsFromView(@NotNull Class<?> clazz) throws IOException {
+        EntityMetadata<?> em = getEntityMetadata(clazz);
+        return get(getURI(baseURI, em.getDatabaseName(), "_design", em.getDesign(), "_view", em.getView()),
+                r -> mapper.readValue(r.getEntity().getContent(), AllDocumentResponse.class).getRows());
     }
 
     /**
@@ -433,7 +490,10 @@ public class CouchDbClient {
                 entityMetadata.getDatabaseName());
         ObjectMapper localMapper = new ObjectMapper();
         SimpleModule module = new SimpleModule();
-        module.addSerializer(new DeleteDocumentSerializer<>(clazz));
+        module.addSerializer(entityMetadata.isViewed() ?
+                new DeleteViewedDocumentSerializer<>(clazz, entityMetadata.getTypeField(), entityMetadata.getType()) :
+                new DeleteDocumentSerializer<>(clazz));
+        // parameters of type
         localMapper.registerModule(module);
         List<DocumentPutResponse> responses = post(getURI(baseURI, entityMetadata.getDatabaseName(), "_bulk_docs"),
                 localMapper.writeValueAsString(new BulkRequest<>(entities)), r -> mapper.readValue(r.getEntity().getContent(),
@@ -634,6 +694,38 @@ public class CouchDbClient {
     public void deleteDatabase(@NotNull String name) throws IOException {
         delete(getURI(baseURI, name), r -> null);
         log.info("Database {} deleted", name);
+    }
+
+    /**
+     * Method for storing a design document to the database which is obtained from the given class. ID of the given design document must not be {@literal
+     * null} nor empty.
+     *
+     * @param designDocument which should be saved. Must not be {@literal null}
+     * @param clazz          which is used as source of database name where to store the given document. Must not be {@literal null}
+     * @return Stored {@link DesignDocument} with updated id and revision
+     * @throws IOException if http request is not successful
+     */
+    public @NotNull DesignDocument saveDesign(DesignDocument designDocument, Class<?> clazz) throws IOException {
+        return saveDesign(designDocument, getDatabaseName(clazz));
+    }
+
+    /**
+     * Method for storing a design document to the database with the given name. ID of the given design document must not be {@literal
+     * null} nor empty.
+     *
+     * @param designDocument which should be saved. Must not be {@literal null}
+     * @param databaseName   where to store the given document. Must not be {@literal null}
+     * @return Stored {@link DesignDocument} with updated id and revision
+     * @throws IOException if http request is not successful
+     */
+    public @NotNull DesignDocument saveDesign(@NotNull DesignDocument designDocument, @NotNull String databaseName) throws IOException {
+        Assert.hasText(designDocument.getId(), "DesignDocument.Id must not be null");
+        log.debug("Saving design with id {} and revision {} to database {}", designDocument.getId(), designDocument.getRevision(), databaseName);
+        DocumentPutResponse response = put(getURI(baseURI, databaseName, designDocument.getId()), mapper.writeValueAsString(designDocument),
+                r -> mapper.readValue(r.getEntity().getContent(), DocumentPutResponse.class));
+        designDocument.setRevision(response.getRev());
+        log.debug("Saved design with id {} and revision {}", response.getId(), response.getRev());
+        return designDocument;
     }
 
     /**

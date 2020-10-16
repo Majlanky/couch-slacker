@@ -17,6 +17,7 @@
 package com.groocraft.couchdb.slacker.repository;
 
 import com.groocraft.couchdb.slacker.CouchDbClient;
+import com.groocraft.couchdb.slacker.EntityMetadata;
 import com.groocraft.couchdb.slacker.SchemaOperation;
 import com.groocraft.couchdb.slacker.TestDocument;
 import com.groocraft.couchdb.slacker.exception.SchemaProcessingException;
@@ -42,7 +43,7 @@ class CouchDBSchemaProcessorTest {
     public CouchDbClient client;
 
     @Test
-    public void testNone() throws IOException, SchemaProcessingException {
+    public void testNone() throws Exception {
         CouchDBSchemaProcessor schemaProcessor = new CouchDBSchemaProcessor(client, SchemaOperation.NONE);
         schemaProcessor.process(List.of(TestDocument.class));
         verify(client, never().description("No test should be called if operation is NONE")).databaseExists(TestDocument.class);
@@ -52,7 +53,7 @@ class CouchDBSchemaProcessorTest {
 
     @Test
     public void testValidate() throws IOException {
-        when(client.getDatabaseName(TestDocument.class)).thenReturn("test");
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata<>(TestDocument.class));
         when(client.databaseExists(TestDocument.class)).thenReturn(true, false);
         CouchDBSchemaProcessor schemaProcessor = new CouchDBSchemaProcessor(client, SchemaOperation.VALIDATE);
         assertDoesNotThrow(() -> schemaProcessor.process(List.of(TestDocument.class)));
@@ -60,8 +61,8 @@ class CouchDBSchemaProcessorTest {
     }
 
     @Test
-    public void testCreate() throws IOException, SchemaProcessingException {
-        when(client.getDatabaseName(TestDocument.class)).thenReturn("test");
+    public void testCreate() throws Exception {
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata<>(TestDocument.class));
         when(client.databaseExists(TestDocument.class)).thenReturn(true, true, false, true);
         CouchDBSchemaProcessor schemaProcessor = new CouchDBSchemaProcessor(client, SchemaOperation.CREATE);
         schemaProcessor.process(List.of(TestDocument.class));
@@ -71,8 +72,8 @@ class CouchDBSchemaProcessorTest {
     }
 
     @Test
-    public void testDrop() throws IOException, SchemaProcessingException{
-        when(client.getDatabaseName(TestDocument.class)).thenReturn("test");
+    public void testDrop() throws Exception{
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata<>(TestDocument.class));
         when(client.databaseExists(TestDocument.class)).thenReturn(true, false, true);
         CouchDBSchemaProcessor schemaProcessor = new CouchDBSchemaProcessor(client, SchemaOperation.DROP);
         schemaProcessor.process(List.of(TestDocument.class));

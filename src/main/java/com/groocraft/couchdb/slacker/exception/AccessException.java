@@ -16,6 +16,8 @@
 
 package com.groocraft.couchdb.slacker.exception;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Exception used during states caused by wrong access implementation/configuration in {@link com.groocraft.couchdb.slacker.data.Reader} and
  * {@link com.groocraft.couchdb.slacker.data.Writer} implementations. The likeliest use-cases are tries to access non-existing field, method or accessing
@@ -25,7 +27,7 @@ package com.groocraft.couchdb.slacker.exception;
  */
 public class AccessException extends RuntimeException {
 
-    public AccessException(Throwable cause) {
+    public AccessException(@NotNull Throwable cause) {
         super(cause);
     }
 }

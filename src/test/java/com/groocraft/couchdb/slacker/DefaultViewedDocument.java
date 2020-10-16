@@ -14,18 +14,10 @@
  * limitations under the License.
  */
 
-package com.groocraft.couchdb.slacker.exception;
+package com.groocraft.couchdb.slacker;
 
-import org.jetbrains.annotations.NotNull;
+import com.groocraft.couchdb.slacker.annotation.Document;
 
-/**
- * Wrapper of all exceptions thrown during a work with CouchDB from Spring Data.
- *
- * @author Majlanky
- */
-public class CouchDbRuntimeException extends RuntimeException {
-
-    public CouchDbRuntimeException(@NotNull String message, @NotNull Throwable cause) {
-        super(message, cause);
-    }
+@Document(accessByView = true)
+public class DefaultViewedDocument extends DocumentBase{
 }

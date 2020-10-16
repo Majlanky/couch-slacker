@@ -22,6 +22,7 @@ import com.groocraft.couchdb.slacker.CouchDbClient;
 import com.groocraft.couchdb.slacker.exception.CouchDbRuntimeException;
 import com.groocraft.couchdb.slacker.exception.QueryException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.Parameters;
 import org.springframework.data.repository.query.QueryMethod;
@@ -73,7 +74,7 @@ public class CouchDbDirectQuery implements RepositoryQuery {
      * @param parameters must not be {@literal null}.
      * @return Specified query, it means all tokens are replaced by actual values of passed parameters
      */
-    protected @NotNull String specify(String query, Object[] parameters) {
+    protected @NotNull String specify(@NotNull String query, @NotNull Object[] parameters) {
         String specified = query;
         Parameters<?, ?> methodParameters = getQueryMethod().getParameters();
         for (Parameter parameter : methodParameters) {
@@ -95,7 +96,7 @@ public class CouchDbDirectQuery implements RepositoryQuery {
      * {@inheritDoc}
      */
     @Override
-    public Object execute(Object[] parameters) {
+    public @Nullable Object execute(@NotNull Object[] parameters) {
         String currentQuery = parameters.length > 0 ? specify(query, parameters) : query;
         try {
             return client.find(currentQuery, entityClass);
@@ -108,7 +109,7 @@ public class CouchDbDirectQuery implements RepositoryQuery {
      * {@inheritDoc}
      */
     @Override
-    public QueryMethod getQueryMethod() {
+    public @NotNull QueryMethod getQueryMethod() {
         return queryMethod;
     }
 

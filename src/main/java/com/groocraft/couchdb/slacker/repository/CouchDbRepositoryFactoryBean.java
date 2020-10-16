@@ -56,7 +56,7 @@ public class CouchDbRepositoryFactoryBean<T extends Repository<S, ID>, S, ID ext
      * {@inheritDoc}
      */
     @Override
-    protected RepositoryFactorySupport createRepositoryFactory() {
+    protected @NotNull RepositoryFactorySupport createRepositoryFactory() {
         return new CouchDbRepositoryFactory(client, properties);
     }
 }

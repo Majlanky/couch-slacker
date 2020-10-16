@@ -50,7 +50,6 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.util.Assert;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -140,19 +139,15 @@ public class CouchDbClientBuilder {
      * @return {@link CouchDbClient}
      */
     public @NotNull CouchDbClient build() {
-        try {
-            URI uri = new URI(ifNotNull(properties.getUrl(), "Url must be configured (can not be null)"));
-            HttpHost host = new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme());
-            HttpContext context = getHttpContext(
-                    host,
-                    ifNotNull(properties.getUsername(), "User must be configured, (can not be null)"),
-                    ifNotNull(properties.getPassword(), "Password must be configured, (can not be null)"));
-            HttpClient client = getHttpClient();
-            return new CouchDbClient(client, host, context, uri, idGenerators, properties.getDefaultShards(),
-                    properties.getDefaultReplicas(), properties.isDefaultPartitioned());
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException("Url " + properties.getUrl() + " is not valid", e);
-        }
+        URI uri = URI.create(ifNotNull(properties.getUrl(), "Url must be configured (can not be null)"));
+        HttpHost host = new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme());
+        HttpContext context = getHttpContext(
+                host,
+                ifNotNull(properties.getUsername(), "User must be configured, (can not be null)"),
+                ifNotNull(properties.getPassword(), "Password must be configured, (can not be null)"));
+        HttpClient client = getHttpClient();
+        return new CouchDbClient(client, host, context, uri, idGenerators, properties.getDefaultShards(),
+                properties.getDefaultReplicas(), properties.isDefaultPartitioned());
     }
 
     /**

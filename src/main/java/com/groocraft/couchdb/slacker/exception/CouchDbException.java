@@ -16,6 +16,8 @@
 
 package com.groocraft.couchdb.slacker.exception;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 
 /**
@@ -30,7 +32,13 @@ public class CouchDbException extends IOException {
     private final String uri;
     private final String reason;
 
-    public CouchDbException(int statusCode, String method, String uri, String reason) {
+    /**
+     * @param statusCode A valid HTTP status code that caused the exceptional state
+     * @param method     A valid HTTP method of the executed request
+     * @param uri        on which method was executed
+     * @param reason     of the given {@code statusCode}
+     */
+    public CouchDbException(int statusCode, @NotNull String method, @NotNull String uri, @NotNull String reason) {
         super(String.format("%s when trying %s on %s with reason %s", statusCode, method, uri, reason));
         this.statusCode = statusCode;
         this.uri = uri;

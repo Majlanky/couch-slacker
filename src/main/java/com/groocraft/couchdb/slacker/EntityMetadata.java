@@ -56,6 +56,11 @@ public class EntityMetadata<DataT> {
     private final Reader<String> idReader;
     private final Writer<String> revisionWriter;
     private final Reader<String> revisionReader;
+    private final String design;
+    private final String view;
+    private final String type;
+    private final String typeField;
+    private final boolean isViewed;
 
     /**
      * @param entityClass of parsed document. Must not be {@literal null}
@@ -64,14 +69,30 @@ public class EntityMetadata<DataT> {
     public EntityMetadata(@NotNull Class<DataT> entityClass) {
         Assert.notNull(entityClass, "EntityClass must not be null.");
         this.entityClass = entityClass;
-        Optional<Document> document = Optional.ofNullable(entityClass.getAnnotation(Document.class))
-                                        .map(a -> AnnotationUtils.synthesizeAnnotation(a, Document.class));
-        databaseName = document.map(Document::value).orElseGet(() -> entityClass.getSimpleName().toLowerCase());
+        Document document = entityClass.getAnnotation(Document.class);
+        Assert.notNull(document, "Document annotation must not be null");
+        document = AnnotationUtils.synthesizeAnnotation(document, Document.class);
+        databaseName = "".equals(document.value()) ? entityClass.getSimpleName().toLowerCase() : document.value();
         log.debug("Database with name {} will be used for all documents of class {}", databaseName, entityClass.getName());
         idWriter = getWriter(CouchDbProperties.COUCH_ID_NAME, entityClass);
         idReader = getReader(CouchDbProperties.COUCH_ID_NAME, entityClass);
         revisionWriter = getWriter(CouchDbProperties.COUCH_REVISION_NAME, entityClass);
         revisionReader = getReader(CouchDbProperties.COUCH_REVISION_NAME, entityClass);
+        isViewed = document.accessByView()
+                || !Document.DEFAULT_DESIGN_NAME.equals(document.design())
+                || !Document.DEFAULT_TYPE_FIELD.equals(document.typeField())
+                || !"".equals(document.view())
+                || !"".equals(document.type());
+        design = document.design();
+        view = "".equals(document.view()) ? entityClass.getSimpleName().toLowerCase() : document.view();
+        type = "".equals(document.type()) ? entityClass.getSimpleName().toLowerCase() : document.type();
+        typeField = document.typeField();
+        if (isViewed) {
+            log.debug("Documents of class {} will be processed by view ({}) and type ({}) where design is {} and typeField is {}",
+                    entityClass.getSimpleName(), view, type, design, typeField);
+        } else {
+            log.debug("Documents of class {} will be stored in exclusive database", entityClass.getSimpleName());
+        }
     }
 
     /**
@@ -219,5 +240,31 @@ public class EntityMetadata<DataT> {
 
     public Reader<String> getRevisionReader() {
         return revisionReader;
+    }
+
+    /**
+     * Method which informs about access type for the instances of the metadata class.
+     *
+     * @return true if {@link Document} annotation has set {@link Document#accessByView()} to true, or one of the following attributes return non-default
+     * value: {@link Document#design()}, {@link Document#view()}, {@link Document#typeField()}, {@link Document#type()}
+     */
+    public boolean isViewed() {
+        return isViewed;
+    }
+
+    public String getDesign() {
+        return design;
+    }
+
+    public String getView() {
+        return view;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public String getTypeField() {
+        return typeField;
     }
 }

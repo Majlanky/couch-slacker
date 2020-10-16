@@ -57,7 +57,8 @@ public class CouchDbQueryLookupStrategy implements QueryLookupStrategy {
      * {@inheritDoc}
      */
     @Override
-    public RepositoryQuery resolveQuery(Method method, RepositoryMetadata metadata, ProjectionFactory factory, NamedQueries namedQueries) {
+    public @NotNull RepositoryQuery resolveQuery(@NotNull Method method, @NotNull RepositoryMetadata metadata, @NotNull ProjectionFactory factory,
+                                                 @NotNull NamedQueries namedQueries) {
         String namedQueryName = String.format("%s.%s", metadata.getDomainType().getSimpleName(), method.getName());
         QueryMethod queryMethod = new QueryMethod(method, metadata, factory);
         Optional<String> query;

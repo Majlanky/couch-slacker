@@ -20,6 +20,7 @@ import com.groocraft.couchdb.slacker.DocumentBase;
 import com.groocraft.couchdb.slacker.EntityMetadata;
 import com.groocraft.couchdb.slacker.data.Reader;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.data.repository.core.EntityInformation;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
 import org.springframework.util.Assert;
@@ -67,7 +68,7 @@ public class CouchDbEntityInformation<EntityT, IdT> implements EntityInformation
      */
     @Override
     @SuppressWarnings("unchecked")
-    public IdT getId(EntityT entity) {
+    public @Nullable IdT getId(@NotNull EntityT entity) {
         return (IdT) idReader.read(entity);
     }
 
@@ -78,7 +79,7 @@ public class CouchDbEntityInformation<EntityT, IdT> implements EntityInformation
      */
     @Override
     @SuppressWarnings("unchecked")
-    public Class<IdT> getIdType() {
+    public @NotNull Class<IdT> getIdType() {
         return (Class<IdT>) String.class;
     }
 
@@ -88,7 +89,7 @@ public class CouchDbEntityInformation<EntityT, IdT> implements EntityInformation
      * @return class of Entity
      */
     @Override
-    public Class<EntityT> getJavaType() {
+    public @NotNull Class<EntityT> getJavaType() {
         return clazz;
     }
 }

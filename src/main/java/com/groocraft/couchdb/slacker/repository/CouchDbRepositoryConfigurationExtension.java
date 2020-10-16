@@ -16,6 +16,7 @@
 
 package com.groocraft.couchdb.slacker.repository;
 
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.repository.config.RepositoryConfigurationExtensionSupport;
 
 /**
@@ -32,7 +33,7 @@ public class CouchDbRepositoryConfigurationExtension extends RepositoryConfigura
      * {@inheritDoc}
      */
     @Override
-    protected String getModulePrefix() {
+    protected @NotNull String getModulePrefix() {
         return "couchDb";
     }
 
@@ -40,7 +41,7 @@ public class CouchDbRepositoryConfigurationExtension extends RepositoryConfigura
      * {@inheritDoc}
      */
     @Override
-    public String getRepositoryFactoryBeanClassName() {
+    public @NotNull String getRepositoryFactoryBeanClassName() {
         return CouchDbRepositoryFactoryBean.class.getName();
     }
 }

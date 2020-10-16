@@ -14,18 +14,11 @@
  * limitations under the License.
  */
 
-package com.groocraft.couchdb.slacker.exception;
+package com.groocraft.couchdb.slacker.test.integration.viewed;
 
-import org.jetbrains.annotations.NotNull;
+import com.groocraft.couchdb.slacker.configuration.CouchSlackerConfiguration;
+import org.springframework.context.annotation.Configuration;
 
-/**
- * Wrapper of all exceptions thrown during a work with CouchDB from Spring Data.
- *
- * @author Majlanky
- */
-public class CouchDbRuntimeException extends RuntimeException {
-
-    public CouchDbRuntimeException(@NotNull String message, @NotNull Throwable cause) {
-        super(message, cause);
-    }
+@Configuration
+public class ViewedTestConfiguration extends CouchSlackerConfiguration {
 }

@@ -22,7 +22,7 @@ import com.groocraft.couchdb.slacker.annotation.Index;
 import com.groocraft.couchdb.slacker.exception.CouchDbRuntimeException;
 import com.groocraft.couchdb.slacker.exception.QueryException;
 import com.groocraft.couchdb.slacker.structure.DocumentFindRequest;
-import com.groocraft.couchdb.slacker.utils.PartTreeWithParameters;
+import com.groocraft.couchdb.slacker.utils.FindContext;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -144,8 +144,8 @@ public class CouchDbParsingQuery<EntityT> implements RepositoryQuery {
         //if there is hard max result in query method, than the max, if not it depends if slice is returned. If so, we need only find out if there is next
         // slice. In case of page, we need get everything to count total pages.
         int limit = partTree.getMaxResults() != null ? partTree.getMaxResults() : queryMethod.isSliceQuery() ? pageable.getPageSize() + 1 : defaultLimit;
-        DocumentFindRequest request = new DocumentFindRequest(new PartTreeWithParameters(partTree, initializeParameters(parameters)), skip,
-                limit, index != null ? index.value() : null, sort, returnExecutionStats);
+        DocumentFindRequest request = new DocumentFindRequest(new FindContext(partTree, initializeParameters(parameters),
+                client.getEntityMetadata(entityClass)), skip, limit, index != null ? index.value() : null, sort, returnExecutionStats);
         String query = "non-existing";
         try {
             boolean isNotExternallyLimited = !(queryMethod.isSliceQuery() || partTree.getMaxResults() != null);
@@ -155,7 +155,7 @@ public class CouchDbParsingQuery<EntityT> implements RepositoryQuery {
                 query = mapper.writeValueAsString(request);
                 r = client.find(query, entityClass);
                 result.addAll(r);
-                request.skip(defaultLimit);
+                request.skipNext(defaultLimit);
             } while (isNotExternallyLimited && r.size() == defaultLimit);
             return postProcessor.apply(result, parameters);
         } catch (IOException e) {

@@ -17,6 +17,7 @@
 package com.groocraft.couchdb.slacker;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -30,6 +31,7 @@ import java.util.Objects;
  *
  * @author Majlanky
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class DocumentBase {
 
     @JsonProperty("_id")
@@ -62,6 +64,10 @@ public class DocumentBase {
 
     public String getRevision() {
         return revision;
+    }
+
+    public void setRevision(String revision) {
+        this.revision = revision;
     }
 
     @Override

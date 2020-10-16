@@ -22,6 +22,7 @@ import com.groocraft.couchdb.slacker.annotation.Document;
 import com.groocraft.couchdb.slacker.exception.SchemaProcessingException;
 import com.groocraft.couchdb.slacker.repository.CouchDBSchemaProcessor;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.domain.EntityScanPackages;
@@ -51,7 +52,7 @@ public class CouchSlackerConfiguration {
      */
     @Bean(destroyMethod = "close")
     public CouchDbClient dbClient(@NotNull CouchDbProperties properties,
-                                  @Autowired(required = false) List<IdGenerator<?>> idGenerators) {
+                                  @Nullable @Autowired(required = false) List<IdGenerator<?>> idGenerators) {
         Assert.notNull(properties, "Properties must not be null.");
         return CouchDbClient.builder().properties(properties).idGenerators(idGenerators).build();
     }
@@ -72,7 +73,7 @@ public class CouchSlackerConfiguration {
     public CouchDBSchemaProcessor schemaProcessor(
             @NotNull CouchDbProperties properties,
             @NotNull CouchDbClient client,
-            @Autowired(required = false) EntityScanPackages entityScanPackages) throws ClassNotFoundException, IOException, SchemaProcessingException {
+            @Nullable @Autowired(required = false) EntityScanPackages entityScanPackages) throws Exception {
         Assert.notNull(properties, "Properties must not be null.");
         Assert.notNull(client, "Client must not be null.");
         ClassPathScanningCandidateComponentProvider provider = new ClassPathScanningCandidateComponentProvider(false);

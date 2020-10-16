@@ -92,8 +92,8 @@ class CouchDbClientTest {
         HttpPut put = (HttpPut) request;
         assertTrue(put.getURI().toString().startsWith("http://localhost:5984/test"), "URI must be based on base URI and database name");
         assertEquals("application/json", put.getEntity().getContentType().getValue(), "Content type must be set to json");
-        assertContent("{\"value\":\"test\",\"value2\":null,\"value3\":null,\"value4\":null,\"value5\":false}", put.getEntity().getContent(), "Body of save " +
-                "all request is not properly created");
+        assertContent("{\"value\":\"test\",\"value2\":null,\"value3\":null,\"value4\":null,\"value5\":false}",
+                put.getEntity().getContent(), "Body of save request is not properly created");
         assertEquals("unique", saved.getId(), "Saved document must be updated by new id, if generated");
         assertEquals("revision", saved.getRevision(), "Saved document must be updated by given revision");
 

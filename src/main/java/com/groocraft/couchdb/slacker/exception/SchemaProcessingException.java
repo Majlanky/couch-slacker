@@ -16,6 +16,8 @@
 
 package com.groocraft.couchdb.slacker.exception;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Exception thrown when a rule of schema processing is not fulfilled
  *
@@ -23,7 +25,11 @@ package com.groocraft.couchdb.slacker.exception;
  */
 public class SchemaProcessingException extends Exception{
 
-    public SchemaProcessingException(String message) {
+    public SchemaProcessingException(@NotNull String message) {
         super(message);
+    }
+
+    public SchemaProcessingException(@NotNull String message, @NotNull Throwable cause) {
+        super(message, cause);
     }
 }

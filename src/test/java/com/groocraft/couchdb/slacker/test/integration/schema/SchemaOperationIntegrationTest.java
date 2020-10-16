@@ -18,6 +18,7 @@ package com.groocraft.couchdb.slacker.test.integration.schema;
 
 import com.groocraft.couchdb.slacker.CouchDbClient;
 import com.groocraft.couchdb.slacker.annotation.EnableCouchDbRepositories;
+import com.groocraft.couchdb.slacker.structure.DesignDocument;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,6 +31,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.IOException;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -47,6 +49,12 @@ public class SchemaOperationIntegrationTest {
     @Test
     public void testDatabaseExists() throws IOException {
         assertTrue(client.databaseExists("schema-test"), "Database schema-test do not exists, but schema operation did not failed");
+        DesignDocument design = assertDoesNotThrow(() -> client.readDesign("byType", "schema-test"), "It looks like schema processing " +
+                "did not create design document");
+        assertTrue(design.getViews().keySet().stream().anyMatch("schema"::equals), "It looks like schema processing did not create view in " +
+                "design document or overriding other views");
+        assertTrue(design.getViews().keySet().stream().anyMatch("schema2"::equals), "It looks like schema processing did not create view in " +
+                "design document or overriding other views");
     }
 
 }
