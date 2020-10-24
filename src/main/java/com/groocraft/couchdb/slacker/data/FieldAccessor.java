@@ -47,7 +47,7 @@ public class FieldAccessor<DataT> implements Writer<DataT>, Reader<DataT> {
      */
     @Override
     @SuppressWarnings("unchecked")
-    public DataT read(@NotNull Object o) {
+    public @Nullable DataT read(@NotNull Object o) {
         Assert.notNull(o, "Object must not be null");
         try {
             return (DataT) field.get(o);

@@ -19,20 +19,30 @@ package com.groocraft.couchdb.slacker.utils;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.util.Assert;
 
 import java.io.IOException;
 
 /**
- * @param <EntityT> Type of entity which should be marked as deleted in a final request
+ * @param <EntityT> Type of entity which is using views (and type fields) and should be marked as deleted in a final request
  * @author Majlanky
  */
-public class DeleteDocumentSerializer<EntityT> extends WrappingSerializer<EntityT> {
+public class DeleteViewedDocumentSerializer<EntityT> extends WrappingSerializer<EntityT> {
+
+    private final String typeField;
+    private final String type;
 
     /**
-     * @param clazz of deleted entity. Must not be {@literal null}
+     * @param clazz     of deleted entity. Must not be {@literal null}
+     * @param typeField Name of field with stores a type of the entity. Must not be {@literal null} nor empty
+     * @param type      of the entity. Must not be {@literal null} nor empty
      */
-    public DeleteDocumentSerializer(@NotNull Class<EntityT> clazz) {
+    public DeleteViewedDocumentSerializer(@NotNull Class<EntityT> clazz, @NotNull String typeField, @NotNull String type) {
         super(clazz);
+        Assert.hasText(typeField, "TypeField must not be null nor empty");
+        Assert.hasText(type, "Type must not be null nor empty");
+        this.typeField = typeField;
+        this.type = type;
     }
 
     /**
@@ -41,5 +51,6 @@ public class DeleteDocumentSerializer<EntityT> extends WrappingSerializer<Entity
     @Override
     protected void serializedAdded(EntityT value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
         gen.writeObjectField("_deleted", true);
+        gen.writeObjectField(typeField, type);
     }
 }

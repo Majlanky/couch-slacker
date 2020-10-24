@@ -13,15 +13,14 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
-
-import static org.mockito.Mockito.*;
-
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
+import java.util.Arrays;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ThrowingInterceptorTest {
@@ -74,9 +73,9 @@ class ThrowingInterceptorTest {
     }
 
     private static Stream<Integer> getNonOkHttpStatuses() {
-        return List.of(HttpStatus.class.getFields()).stream().map(f -> {
+        return Arrays.stream(HttpStatus.class.getFields()).map(f -> {
             try {
-                return (Integer)f.get(null);
+                return (Integer) f.get(null);
             } catch (IllegalAccessException e) {
                 throw new IllegalStateException("We are expecting only static fields in the HttpStatus class which represents a number");
             }

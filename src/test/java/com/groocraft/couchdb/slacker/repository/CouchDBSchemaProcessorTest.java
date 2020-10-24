@@ -17,6 +17,7 @@
 package com.groocraft.couchdb.slacker.repository;
 
 import com.groocraft.couchdb.slacker.CouchDbClient;
+import com.groocraft.couchdb.slacker.EntityMetadata;
 import com.groocraft.couchdb.slacker.SchemaOperation;
 import com.groocraft.couchdb.slacker.TestDocument;
 import com.groocraft.couchdb.slacker.exception.SchemaProcessingException;
@@ -26,7 +27,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -42,9 +43,9 @@ class CouchDBSchemaProcessorTest {
     public CouchDbClient client;
 
     @Test
-    public void testNone() throws IOException, SchemaProcessingException {
+    public void testNone() throws Exception {
         CouchDBSchemaProcessor schemaProcessor = new CouchDBSchemaProcessor(client, SchemaOperation.NONE);
-        schemaProcessor.process(List.of(TestDocument.class));
+        schemaProcessor.process(Collections.singletonList(TestDocument.class));
         verify(client, never().description("No test should be called if operation is NONE")).databaseExists(TestDocument.class);
         verify(client, never().description("No create should be called if operation is NONE")).createDatabase(TestDocument.class);
         verify(client, never().description("No delete should be called if operation is NONE")).deleteDatabase(TestDocument.class);
@@ -52,30 +53,30 @@ class CouchDBSchemaProcessorTest {
 
     @Test
     public void testValidate() throws IOException {
-        when(client.getDatabaseName(TestDocument.class)).thenReturn("test");
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata<>(TestDocument.class));
         when(client.databaseExists(TestDocument.class)).thenReturn(true, false);
         CouchDBSchemaProcessor schemaProcessor = new CouchDBSchemaProcessor(client, SchemaOperation.VALIDATE);
-        assertDoesNotThrow(() -> schemaProcessor.process(List.of(TestDocument.class)));
-        assertThrows(SchemaProcessingException.class, () -> schemaProcessor.process(List.of(TestDocument.class)));
+        assertDoesNotThrow(() -> schemaProcessor.process(Collections.singletonList(TestDocument.class)));
+        assertThrows(SchemaProcessingException.class, () -> schemaProcessor.process(Collections.singletonList(TestDocument.class)));
     }
 
     @Test
-    public void testCreate() throws IOException, SchemaProcessingException {
-        when(client.getDatabaseName(TestDocument.class)).thenReturn("test");
+    public void testCreate() throws Exception {
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata<>(TestDocument.class));
         when(client.databaseExists(TestDocument.class)).thenReturn(true, true, false, true);
         CouchDBSchemaProcessor schemaProcessor = new CouchDBSchemaProcessor(client, SchemaOperation.CREATE);
-        schemaProcessor.process(List.of(TestDocument.class));
+        schemaProcessor.process(Collections.singletonList(TestDocument.class));
         verify(client, never().description("Create must no be called when database already exists")).createDatabase(TestDocument.class);
-        schemaProcessor.process(List.of(TestDocument.class));
+        schemaProcessor.process(Collections.singletonList(TestDocument.class));
         verify(client, times(1).description("Missing database must be created")).createDatabase(TestDocument.class);
     }
 
     @Test
-    public void testDrop() throws IOException, SchemaProcessingException{
-        when(client.getDatabaseName(TestDocument.class)).thenReturn("test");
+    public void testDrop() throws Exception {
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata<>(TestDocument.class));
         when(client.databaseExists(TestDocument.class)).thenReturn(true, false, true);
         CouchDBSchemaProcessor schemaProcessor = new CouchDBSchemaProcessor(client, SchemaOperation.DROP);
-        schemaProcessor.process(List.of(TestDocument.class));
+        schemaProcessor.process(Collections.singletonList(TestDocument.class));
         verify(client, times(1).description("Database must be deleted when DROP")).deleteDatabase(TestDocument.class);
         verify(client, times(1).description("Database must be created when DROP")).createDatabase(TestDocument.class);
     }

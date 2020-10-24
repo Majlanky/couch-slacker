@@ -11,6 +11,8 @@ import org.springframework.data.repository.query.QueryMethod;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,6 +22,7 @@ import static org.mockito.Mockito.doReturn;
 
 class CouchDbDirectQueryTest {
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     @Test
     public void testIndexedReplacement() throws IOException {
         CouchDbClient client = Mockito.mock(CouchDbClient.class);
@@ -33,7 +36,7 @@ class CouchDbDirectQueryTest {
         Mockito.when(parameter.getName()).thenReturn(Optional.of("value"));
         doReturn(String.class).when(parameter).getType();
         Mockito.when(parameter.getIndex()).thenReturn(0);
-        Mockito.doReturn(List.of(parameter).iterator()).when(parameters).iterator();
+        Mockito.doReturn(Collections.singletonList(parameter).iterator()).when(parameters).iterator();
         Mockito.doReturn(parameters).when(queryMethod).getParameters();
         query.execute(new Object[]{"test"});
         Mockito.verify(client).find("{\"selector\": {\"value\": {\"$eq\": \"test\"}}}", TestDocument.class);
@@ -52,7 +55,7 @@ class CouchDbDirectQueryTest {
         Mockito.when(parameter.getName()).thenReturn(Optional.of("value"));
         doReturn(String.class).when(parameter).getType();
         Mockito.when(parameter.getIndex()).thenReturn(0);
-        Mockito.doReturn(List.of(parameter).iterator()).when(parameters).iterator();
+        Mockito.doReturn(Collections.singletonList(parameter).iterator()).when(parameters).iterator();
         Mockito.doReturn(parameters).when(queryMethod).getParameters();
         query.execute(new Object[]{"test"});
         Mockito.verify(client).find("{\"selector\": {\"value\": {\"$eq\": \"test\"}}}", TestDocument.class);
@@ -71,7 +74,7 @@ class CouchDbDirectQueryTest {
         Mockito.when(parameter.getName()).thenReturn(Optional.of("value"));
         doReturn(Integer.class).when(parameter).getType();
         Mockito.when(parameter.getIndex()).thenReturn(0);
-        Mockito.doReturn(List.of(parameter).iterator()).when(parameters).iterator();
+        Mockito.doReturn(Collections.singletonList(parameter).iterator()).when(parameters).iterator();
         Mockito.doReturn(parameters).when(queryMethod).getParameters();
         query.execute(new Object[]{1});
         Mockito.verify(client).find("{\"selector\": {\"value\": {\"$eq\": 1}}}", TestDocument.class);
@@ -90,9 +93,9 @@ class CouchDbDirectQueryTest {
         Mockito.when(parameter.getName()).thenReturn(Optional.of("value"));
         doReturn(List.class).when(parameter).getType();
         Mockito.when(parameter.getIndex()).thenReturn(0);
-        Mockito.doReturn(List.of(parameter).iterator()).when(parameters).iterator();
+        Mockito.doReturn(Collections.singletonList(parameter).iterator()).when(parameters).iterator();
         Mockito.doReturn(parameters).when(queryMethod).getParameters();
-        query.execute(new Object[]{List.of("test", "test1")});
+        query.execute(new Object[]{Arrays.asList("test", "test1")});
         Mockito.verify(client).find("{\"selector\": {\"value\": {\"$eq\": [\"test\",\"test1\"]}}}", TestDocument.class);
     }
 
@@ -110,7 +113,7 @@ class CouchDbDirectQueryTest {
             Mockito.when(parameter.getName()).thenReturn(Optional.of("value"));
             doReturn(String.class).when(parameter).getType();
             Mockito.when(parameter.getIndex()).thenReturn(0);
-            Mockito.doReturn(List.of(parameter).iterator()).when(parameters).iterator();
+            Mockito.doReturn(Collections.singletonList(parameter).iterator()).when(parameters).iterator();
             Mockito.doReturn(parameters).when(queryMethod).getParameters();
             query.execute(new Object[]{"test"});
         }, "Any issue must be reported as " + CouchDbRuntimeException.class);

@@ -31,8 +31,8 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.UUID;
 import java.util.stream.StreamSupport;
 
@@ -64,7 +64,7 @@ class CouchDbClientTest {
     @BeforeEach
     public void setUp() throws URISyntaxException {
         baseURI = new URI("http://localhost:5984/");
-        client = new CouchDbClient(httpClient, httpHost, httpContext, baseURI, Collections.emptyList(),8, 3, false);
+        client = new CouchDbClient(httpClient, httpHost, httpContext, baseURI, Collections.emptyList(), 8, 3, false);
     }
 
     @Test
@@ -92,8 +92,8 @@ class CouchDbClientTest {
         HttpPut put = (HttpPut) request;
         assertTrue(put.getURI().toString().startsWith("http://localhost:5984/test"), "URI must be based on base URI and database name");
         assertEquals("application/json", put.getEntity().getContentType().getValue(), "Content type must be set to json");
-        assertContent("{\"value\":\"test\",\"value2\":null,\"value3\":null,\"value4\":null,\"value5\":false}", put.getEntity().getContent(), "Body of save " +
-                "all request is not properly created");
+        assertContent("{\"value\":\"test\",\"value2\":null,\"value3\":null,\"value4\":null,\"value5\":false}",
+                put.getEntity().getContent(), "Body of save request is not properly created");
         assertEquals("unique", saved.getId(), "Saved document must be updated by new id, if generated");
         assertEquals("revision", saved.getRevision(), "Saved document must be updated by given revision");
 
@@ -150,7 +150,7 @@ class CouchDbClientTest {
 
         TestDocument a = new TestDocument("a", null, "a", "a");
         TestDocument b = new TestDocument("b", null, "b", "b");
-        Iterable<TestDocument> saved = client.saveAll(List.of(a, b), TestDocument.class);
+        Iterable<TestDocument> saved = client.saveAll(Arrays.asList(a, b), TestDocument.class);
 
         HttpRequest request = requestCaptor.getValue();
         assertEquals(HttpPost.class, request.getClass(), "Save has to be done as PUT request");
@@ -166,7 +166,7 @@ class CouchDbClientTest {
         assertEquals("bbb", b.getId() + b.getValue() + b.getValue2(), "Id must be updated, value must stay");
         assertEquals("rev1", b.getRevision(), "Revision must be updated");
 
-        assertEquals(thrown, assertThrows(IOException.class, () -> client.saveAll(List.of(new TestDocument("a", "b"), new TestDocument("b", "b")),
+        assertEquals(thrown, assertThrows(IOException.class, () -> client.saveAll(Arrays.asList(new TestDocument("a", "b"), new TestDocument("b", "b")),
                 TestDocument.class), "CouchDb client should not alternate original exception"));
         request = requestCaptor.getValue();
         post = (HttpPost) request;
@@ -218,7 +218,7 @@ class CouchDbClientTest {
         when(response.getEntity()).thenReturn(entity);
         when(httpClient.execute(eq(httpHost), requestCaptor.capture(), eq(httpContext))).thenReturn(response).thenThrow(thrown);
 
-        Iterable<TestDocument> read = client.readAll(List.of("a", "b"), TestDocument.class);
+        Iterable<TestDocument> read = client.readAll(Arrays.asList("a", "b"), TestDocument.class);
 
         HttpRequest request = requestCaptor.getValue();
         assertEquals(HttpPost.class, request.getClass(), "Read has to be done as POST request");
@@ -233,7 +233,7 @@ class CouchDbClientTest {
             assertTrue("value2a".equals(d.getValue2()) || "value2b".equals(d.getValue2()), "Value2 was not parsed properly, see json above");
         });
 
-        assertThrows(IOException.class, () -> client.readAll(List.of("a", "b"), TestDocument.class));
+        assertThrows(IOException.class, () -> client.readAll(Arrays.asList("a", "b"), TestDocument.class));
         request = requestCaptor.getValue();
         post = (HttpPost) request;
         assertTrue(post.isAborted(), "Request must be aborted when exception thrown");
@@ -429,16 +429,16 @@ class CouchDbClientTest {
     }
 
     @Test
-    public void testDatabaseExistsClass() throws IOException{
+    public void testDatabaseExistsClass() throws IOException {
         testDatabaseExistsWrapper(c -> c.databaseExists(TestDocument.class));
     }
 
     @Test
-    public void testDatabaseExistsString() throws IOException{
+    public void testDatabaseExistsString() throws IOException {
         testDatabaseExistsWrapper(c -> c.databaseExists("test"));
     }
 
-    private void testDatabaseExistsWrapper(ThrowingConsumer<CouchDbClient, IOException> testedAction) throws IOException{
+    private void testDatabaseExistsWrapper(ThrowingConsumer<CouchDbClient, IOException> testedAction) throws IOException {
         IOException thrown = new IOException("error");
         InputStream content = new ByteArrayInputStream(("").getBytes());
         ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
@@ -462,16 +462,16 @@ class CouchDbClientTest {
     }
 
     @Test
-    public void testDeleteDatabaseClass() throws IOException{
+    public void testDeleteDatabaseClass() throws IOException {
         testDeleteDatabaseWrapper(c -> c.deleteDatabase(TestDocument.class));
     }
 
     @Test
-    public void testDeleteDatabaseString() throws IOException{
+    public void testDeleteDatabaseString() throws IOException {
         testDeleteDatabaseWrapper(c -> c.deleteDatabase("test"));
     }
 
-    private void testDeleteDatabaseWrapper(ThrowingConsumer<CouchDbClient, IOException> testedAction) throws IOException{
+    private void testDeleteDatabaseWrapper(ThrowingConsumer<CouchDbClient, IOException> testedAction) throws IOException {
         IOException thrown = new IOException("error");
         InputStream content = new ByteArrayInputStream(("").getBytes());
         ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
@@ -497,12 +497,12 @@ class CouchDbClientTest {
 
     @Test
     public void testCreateIndex() throws IOException {
-        createIndexTestWrapper(c -> c.createIndex("test", "test", List.of(Sort.Order.asc("value"))));
+        createIndexTestWrapper(c -> c.createIndex("test", "test", Collections.singletonList(Sort.Order.asc("value"))));
     }
 
     @Test
     public void testCreateIndex2() throws IOException {
-        createIndexTestWrapper(c -> c.createIndex("test", TestDocument.class, List.of(Sort.Order.asc("value"))));
+        createIndexTestWrapper(c -> c.createIndex("test", TestDocument.class, Collections.singletonList(Sort.Order.asc("value"))));
     }
 
     @Test

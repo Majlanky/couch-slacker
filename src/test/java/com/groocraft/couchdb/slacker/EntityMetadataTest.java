@@ -1,8 +1,12 @@
 package com.groocraft.couchdb.slacker;
 
+import com.groocraft.couchdb.slacker.annotation.Document;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class EntityMetadataTest {
 
@@ -10,6 +14,7 @@ class EntityMetadataTest {
     public void testParsingFieldBased(){
         FieldTestDocument testDocument = new FieldTestDocument();
         EntityMetadata<FieldTestDocument> entityMetadata = new EntityMetadata<>(FieldTestDocument.class);
+        assertFalse(entityMetadata.isViewed(), "FieldTestDocument is not annotated as view accessed document");
         assertEquals("test", entityMetadata.getDatabaseName(), "Wrongly parsed Database annotation");
 
         entityMetadata.getIdWriter().write(testDocument, "idTest");
@@ -25,6 +30,7 @@ class EntityMetadataTest {
     public void testParsingMethodBased(){
         MethodTestDocument testDocument = new MethodTestDocument();
         EntityMetadata<MethodTestDocument> entityMetadata = new EntityMetadata<>(MethodTestDocument.class);
+        assertFalse(entityMetadata.isViewed(), "MethodTestDocument is not annotated as view accessed document");
         assertEquals("test", entityMetadata.getDatabaseName(), "Wrongly parsed Database annotation");
 
         entityMetadata.getIdWriter().write(testDocument, "idTest");
@@ -46,6 +52,7 @@ class EntityMetadataTest {
     public void testParsingFieldWithMethodBased(){
         FieldWithMethodTestDocument testDocument = new FieldWithMethodTestDocument();
         EntityMetadata<FieldWithMethodTestDocument> entityMetadata = new EntityMetadata<>(FieldWithMethodTestDocument.class);
+        assertFalse(entityMetadata.isViewed(), "FieldWithMethodTestDocument is not annotated as view accessed document");
         assertEquals("test", entityMetadata.getDatabaseName(), "Wrongly parsed Database annotation");
 
         entityMetadata.getIdWriter().write(testDocument, "idTest");
@@ -67,6 +74,7 @@ class EntityMetadataTest {
     public void testParsingMixedBased(){
         MixedTestDocument testDocument = new MixedTestDocument();
         EntityMetadata<MixedTestDocument> entityMetadata = new EntityMetadata<>(MixedTestDocument.class);
+        assertFalse(entityMetadata.isViewed(), "MixedTestDocument is not annotated as view accessed document");
         assertEquals("test", entityMetadata.getDatabaseName(), "Wrongly parsed Database annotation");
 
         entityMetadata.getIdWriter().write(testDocument, "idTest");
@@ -87,6 +95,7 @@ class EntityMetadataTest {
     public void testParsingInheritance(){
         InheritedTestDocument testDocument = new InheritedTestDocument();
         EntityMetadata<InheritedTestDocument> entityMetadata = new EntityMetadata<>(InheritedTestDocument.class);
+        assertFalse(entityMetadata.isViewed(), "InheritedTestDocument is not annotated as view accessed document");
         assertEquals("test", entityMetadata.getDatabaseName(), "Wrongly parsed Database annotation");
 
         entityMetadata.getIdWriter().write(testDocument, "idTest");
@@ -116,19 +125,27 @@ class EntityMetadataTest {
 
     @Test
     public void testMissingDatabase(){
-        assertDoesNotThrow(() -> {
-            NoDatabaseTestDocument testDocument = new NoDatabaseTestDocument();
-            EntityMetadata<NoDatabaseTestDocument> entityMetadata = new EntityMetadata<>(NoDatabaseTestDocument.class);
-            assertEquals("nodatabasetestdocument", entityMetadata.getDatabaseName(), "Wrongly created database name based on class name");
+        assertThrows(IllegalArgumentException.class, () -> new EntityMetadata<>(NoDatabaseTestDocument.class));
+    }
 
-            entityMetadata.getIdWriter().write(testDocument, "idTest");
-            assertEquals("idTest", testDocument.a, "Id field writer is not properly parsed");
-            assertEquals("idTest", entityMetadata.getIdReader().read(testDocument), "Id field reader is not properly parsed");
+    @Test
+    public void testDefaultViewed(){
+        EntityMetadata<?> em = new EntityMetadata<>(DefaultViewedDocument.class);
+        assertTrue(em.isViewed(), "DefaultViewedDocument is annotated as view accessed document");
+        assertEquals(Document.DEFAULT_DESIGN_NAME, em.getDesign(), "");
+        assertEquals(Document.DEFAULT_TYPE_FIELD, em.getTypeField(), "");
+        assertEquals("defaultvieweddocument", em.getType(), "");
+        assertEquals("defaultvieweddocument", em.getView(), "");
+    }
 
-            entityMetadata.getRevisionWriter().write(testDocument, "revisionTest");
-            assertEquals("revisionTest", testDocument.b, "Revision field writer is not properly parsed");
-            assertEquals("revisionTest", entityMetadata.getRevisionReader().read(testDocument), "Revision field reader is not properly parsed");
-        });
+    @Test
+    public void testViewed(){
+        EntityMetadata<?> em = new EntityMetadata<>(ViewedDocument.class);
+        assertTrue(em.isViewed(), "ViewedDocument is annotated as view accessed document");
+        assertEquals(Document.DEFAULT_DESIGN_NAME, em.getDesign(), "");
+        assertEquals(Document.DEFAULT_TYPE_FIELD, em.getTypeField(), "");
+        assertEquals("entity", em.getType(), "");
+        assertEquals("entity", em.getView(), "");
     }
 
 }

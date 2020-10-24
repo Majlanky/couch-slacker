@@ -19,13 +19,14 @@ package com.groocraft.couchdb.slacker.structure;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.groocraft.couchdb.slacker.utils.PartTreeWithParameters;
-import com.groocraft.couchdb.slacker.utils.PartTreeWithParametersSerializer;
+import com.groocraft.couchdb.slacker.utils.FindContext;
+import com.groocraft.couchdb.slacker.utils.FindContextSerializer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.data.domain.Sort;
 import org.springframework.util.Assert;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -55,26 +56,26 @@ public class DocumentFindRequest {
     private List<Map<String, String>> sort;
 
     @JsonProperty("selector")
-    @JsonSerialize(using = PartTreeWithParametersSerializer.class)
-    private final PartTreeWithParameters partTreeWithParameters;
+    @JsonSerialize(using = FindContextSerializer.class)
+    private final FindContext findContext;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty("execution_stats")
     private Boolean addExecutionStatsToResult;
 
     /**
-     * @param partTreeWithParameters    created based on the generic query method name. Must not be {@literal null}
+     * @param findContext               with all necessary information about finds selector. Must not be {@literal null}
      * @param skip                      number of document which should be skipped. Can be {@literal null} which means do not skip
      * @param limit                     of document number in the result
      * @param index                     Array of indexes, which should be used for querying. Can be {@literal null} which means do not use any index
      * @param order                     List of all order rules. Can be {@literal null} which means do not order.
      * @param addExecutionStatsToResult setting if the result should container information about execution of Mango query
      */
-    public DocumentFindRequest(@NotNull PartTreeWithParameters partTreeWithParameters, @Nullable Long skip, int limit,
+    public DocumentFindRequest(@NotNull FindContext findContext, @Nullable Long skip, int limit,
                                @Nullable String[] index, @Nullable List<Sort.Order> order, boolean addExecutionStatsToResult) {
-        Assert.notNull(partTreeWithParameters, "PartTreeWithParameters must not be null.");
+        Assert.notNull(findContext, "FindContext must not be null.");
         Assert.isTrue(limit > 0, "Limit must be positive number");
-        this.partTreeWithParameters = partTreeWithParameters;
+        this.findContext = findContext;
         if (index != null) {
             useIndex = index;
         }
@@ -84,7 +85,7 @@ public class DocumentFindRequest {
         }
         if (order != null) {
             sort = new LinkedList<>();
-            order.forEach(o -> sort.add(Map.of(o.getProperty(), o.getDirection().toString().toLowerCase())));
+            order.forEach(o -> sort.add(Collections.singletonMap(o.getProperty(), o.getDirection().toString().toLowerCase())));
         }
         if (addExecutionStatsToResult) {
             this.addExecutionStatsToResult = true;
@@ -97,7 +98,7 @@ public class DocumentFindRequest {
      *
      * @param count how much to skip
      */
-    public void skip(int count) {
+    public void skipNext(int count) {
         skip = skip == null ? count : skip + count;
     }
 

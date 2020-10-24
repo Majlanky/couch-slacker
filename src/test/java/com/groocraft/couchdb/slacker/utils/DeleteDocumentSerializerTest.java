@@ -7,9 +7,9 @@ import com.groocraft.couchdb.slacker.TestDocument;
 import com.groocraft.couchdb.slacker.structure.BulkRequest;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
+import java.util.Collections;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class DeleteDocumentSerializerTest {
 
@@ -19,7 +19,7 @@ class DeleteDocumentSerializerTest {
         SimpleModule module = new SimpleModule();
         module.addSerializer(new DeleteDocumentSerializer<>(TestDocument.class));
         mapper.registerModule(module);
-        BulkRequest<TestDocument> request = new BulkRequest<>(List.of(new TestDocument("id", "rev", "value", "value2")));
+        BulkRequest<TestDocument> request = new BulkRequest<>(Collections.singletonList(new TestDocument("id", "rev", "value", "value2")));
         assertEquals("{\"docs\":[{\"_id\":\"id\",\"_rev\":\"rev\",\"value\":\"value\",\"value2\":\"value2\",\"value5\":false,\"_deleted\":true}]}",
                 mapper.writeValueAsString(request), "Object should be serialized as is, only _deleted should be added");
     }

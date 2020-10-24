@@ -61,47 +61,30 @@ public class CouchDBSchemaProcessor {
      * @throws IOException               if some operation to database fails
      * @throws SchemaProcessingException if validation fails
      */
-    public void process(@NotNull List<Class<?>> entityClasses) throws IOException, SchemaProcessingException {
+    public void process(@NotNull List<Class<?>> entityClasses) throws Exception {
         if (entityClasses.isEmpty()) {
             log.warn("No entities mapping found");
         } else {
             entityClasses.forEach(c -> log.info("Found entity mapping class {}", c.getName()));
         }
         log.debug("Starting schema processing with operation set to {}", schemaOperation.toString().toLowerCase());
-        for (Class<?> clazz : entityClasses) {
-            processSchema(clazz, schemaOperation);
-        }
+        processSchema(entityClasses, schemaOperation);
         log.debug("Schema processing done");
     }
 
     /**
-     * @param clazz           must not be {@literal null}
+     * @param entityClasses   must not be {@literal null}
      * @param schemaOperation must not be {@literal null}
      * @throws IOException               if some operation to database fails
      * @throws SchemaProcessingException if validation fails
      * @see #process(List)
      */
-    private void processSchema(@NotNull Class<?> clazz, @NotNull SchemaOperation schemaOperation) throws IOException, SchemaProcessingException {
-        if (schemaOperation != SchemaOperation.NONE) {
-            String databaseName = client.getDatabaseName(clazz);
-            switch (schemaOperation) {
-                case DROP:
-                    if (client.databaseExists(clazz)) {
-                        log.debug("Database {} exists and it will be deleted", databaseName);
-                        client.deleteDatabase(clazz);
-                    }
-                case CREATE:
-                    if (!client.databaseExists(clazz)) {
-                        log.debug("Database {} not found and it will be created", databaseName);
-                        client.createDatabase(clazz);
-                    }
-                case VALIDATE:
-                    log.debug("Validating that database {} exists", databaseName);
-                    if (!client.databaseExists(clazz)) {
-                        throw new SchemaProcessingException(String.format("Database %s do not exists", databaseName));
-                    }
-                    log.info("Database {} exists", databaseName);
-            }
+    private void processSchema(@NotNull List<Class<?>> entityClasses, @NotNull SchemaOperation schemaOperation) throws Exception {
+        for (Class<?> clazz : entityClasses) {
+            schemaOperation.accept(clazz, client);
+        }
+        if (schemaOperation.hasFollowing()) {
+            processSchema(entityClasses, schemaOperation.getFollowing());
         }
     }
 

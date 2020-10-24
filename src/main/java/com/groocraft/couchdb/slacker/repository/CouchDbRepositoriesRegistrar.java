@@ -17,6 +17,7 @@
 package com.groocraft.couchdb.slacker.repository;
 
 import com.groocraft.couchdb.slacker.annotation.EnableCouchDbRepositories;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.repository.config.RepositoryBeanDefinitionRegistrarSupport;
 import org.springframework.data.repository.config.RepositoryConfigurationExtension;
 
@@ -35,7 +36,7 @@ public class CouchDbRepositoriesRegistrar extends RepositoryBeanDefinitionRegist
      * {@inheritDoc}
      */
     @Override
-    protected Class<? extends Annotation> getAnnotation() {
+    protected @NotNull Class<? extends Annotation> getAnnotation() {
         return EnableCouchDbRepositories.class;
     }
 
@@ -43,7 +44,7 @@ public class CouchDbRepositoriesRegistrar extends RepositoryBeanDefinitionRegist
      * {@inheritDoc}
      */
     @Override
-    protected RepositoryConfigurationExtension getExtension() {
+    protected @NotNull RepositoryConfigurationExtension getExtension() {
         return new CouchDbRepositoryConfigurationExtension();
     }
 }
