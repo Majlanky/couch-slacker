@@ -1,9 +1,11 @@
 # Couch Slacker 
-[![Build Status](https://travis-ci.com/Majlanky/couch-slacker.svg?branch=master)](https://travis-ci.com/Majlanky/couch-slacker) [![codecov](https://codecov.io/gh/Majlanky/couch-slacker/branch/master/graph/badge.svg)](https://codecov.io/gh/Majlanky/couch-slacker)
+[![Build Status](https://travis-ci.com/Majlanky/couch-slacker.svg?branch=master)](https://travis-ci.com/Majlanky/couch-slacker) 
+[![codecov](https://codecov.io/gh/Majlanky/couch-slacker/branch/v2.1.0/graph/badge.svg)](https://codecov.io/gh/Majlanky/couch-slacker)
+![](https://img.shields.io/badge/compatibility-JDK8%20and%20higher-purple)
 
 Couch Slacker project started in 2020. Basic idea and motivation was to create [Spring Data](https://spring.io/projects/spring-data) support for 
 [CouchDB](https://couchdb.apache.org/) which is awesome and light document database. We felt in love with it because of easy clustering, nice API and good
- documentation. [Spring Data](https://spring.io/projects/spring-data) is an awesome tool how to make development faster. So we decided to join them.
+ documentation. [Spring Data](https://spring.io/projects/spring-data) is an awesome tool how to make development faster. So we decided to join it together.
 
 #### Why to use Couch Slacker?
 Differently from other projects, Couch Slacker not only Spring Data like library. It is true [Spring Data](https://spring.io/projects/spring-data) 
@@ -20,7 +22,7 @@ Artifacts releases are available on maven central (and on pages indexing central
 * [mvnRepository](https://mvnrepository.com/artifact/com.groocraft/couch-slacker)
 
 ## Wiki
-This README contains only basic information about project. For more or detailed information, visit [wiki](https://github.com/Majlanky/couch-slacker/wiki) 
+This README contains only basic information about project. For more or detailed information, visit the [wiki](https://github.com/Majlanky/couch-slacker/wiki) 
 
 ## Project Focus
 * Provide a basic client for [CouchDB](https://couchdb.apache.org/)
@@ -45,10 +47,13 @@ First of all we have to add Maven dependency
 </dependency>
 ```
 ### POJO Classes
-Both the basic client and repositories works above document POJO classes. Let`s create a POJO class for user.
+Both the basic client and repositories works above document POJO classes. Let`s create a POJO class for user. Do you need to map more entities to the same
+ database, or you need to know more information about mapping? 
+ Visit [this wiki](https://github.com/Majlanky/couch-slacker/wiki/CouchDB-layout-with-Couch-Slacker),
+and [this wiki](https://github.com/Majlanky/couch-slacker/wiki/Documents-mapping) 
 ```java
 @Document("user")
-public class User{
+public class User {
 
     @JsonProperty("_id")
     @JsonInclude(Include.NON_NULL)
@@ -65,7 +70,7 @@ public class User{
 It looks pretty talkative does not it? Ok, do not worry, here is way to make it shorter:
 ```java
 @Document("user")
-public class User extends DocumentBase{
+public class User extends DocumentBase {
 
     @JsonProperty("name")
     private String name;
@@ -76,7 +81,7 @@ It is much better. In both examples you can notice [Jackson](https://github.com/
  needed, and it is present only as example). If database annotation is missing, lower-cased name of class is used as database name.
 ### Spring Data Repositories
 We have to start with a configuration of connectivity. URL must contain a port. Scheme can be elided, default value is HTTP. Username and password are
- mandatory. 
+ mandatory. More information about the configuration you can find [here](https://github.com/Majlanky/couch-slacker/wiki/Configuration)
 ```yaml
 couchdb:
   client:
@@ -86,13 +91,13 @@ couchdb:
 ```
 ```java
 @Configuration
-class AppConfig extends CouchSlackerConfiguration{
+class AppConfig extends CouchSlackerConfiguration {
 
 }
 ```
 Now we are ready to define Spring Data repository for [CouchDB](https://couchdb.apache.org/). Please notice, that [CouchDB](https://couchdb.apache.org/) supports only String IDs.
 ```java
-class UserRepository extends CrudRepository<User, String>{
+class UserRepository extends CrudRepository<User, String> {
 
 }
 ```
@@ -150,6 +155,7 @@ the previous command skips integration tests. For build with integration tests u
 ```shell script
 $ ./mwnw clean install -P ITs
 ```
+More information about integration tests of Couch Slacker you can find [here](https://github.com/Majlanky/couch-slacker/wiki/Integration-tests)
 
 However, every build contains integration (and junit) tests which are executed against [CouchDB](https://couchdb.apache.org/) in [Docker](https://www.docker.com/). It is reason, why
 [Docker](https://www.docker.com/) must be installed on the machine. If you do not have Docker and do not want to install it, execute the first command.

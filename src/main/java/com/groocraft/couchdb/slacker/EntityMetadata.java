@@ -32,6 +32,7 @@ import org.springframework.util.Assert;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -109,7 +110,7 @@ public class EntityMetadata<DataT> {
      * @see Field
      */
     private Writer<String> getWriter(String annotationValue, Class<?> clazz) {
-        return getAccess(List.of("set"), annotationValue, clazz, MethodWriter::new, FieldAccessor::new);
+        return getAccess(Collections.singletonList("set"), annotationValue, clazz, MethodWriter::new, FieldAccessor::new);
     }
 
     /**
@@ -126,7 +127,7 @@ public class EntityMetadata<DataT> {
      * @see Field
      */
     private Reader<String> getReader(String annotationValue, Class<?> clazz) {
-        return getAccess(List.of("get", "is"), annotationValue, clazz, MethodReader::new, FieldAccessor::new);
+        return getAccess(Arrays.asList("get", "is"), annotationValue, clazz, MethodReader::new, FieldAccessor::new);
     }
 
     /**
@@ -150,7 +151,7 @@ public class EntityMetadata<DataT> {
     private <AccessT> AccessT getAccess(List<String> types, String annotationValue, Class<?> clazz, Function<Method, AccessT> methodAccessProducer,
                                         Function<Field, AccessT> fieldAccessProducer) {
         Optional<AccessT> access = Optional.ofNullable(getAnnotatedMethod(types, annotationValue, clazz)).map(methodAccessProducer);
-        if (access.isEmpty()) {
+        if (!access.isPresent()) {
             log.debug("CLass {} does not contain JsonProperty annotated methods for {}, trying find field", clazz.getName(), annotationValue);
             Optional<Field> field = Optional.ofNullable(resolveAnnotatedField(annotationValue, clazz));
             access = field.map(fieldAccessProducer);

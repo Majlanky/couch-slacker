@@ -4,7 +4,7 @@ cache:
 
 language: java
 
-jdk: oraclejdk11
+jdk: openjdk8
 
 install: true
 script: chmod 777 mvnw && ./mvnw clean install -P ITs

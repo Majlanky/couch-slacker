@@ -62,6 +62,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -396,7 +397,7 @@ public class CouchDbClient {
             return readAllDocsFromView(clazz);
         } else {
             log.debug("Read of all non design documents from database {}", getDatabaseName(clazz));
-            return readAllDocs(clazz, Predicate.not(s -> s.startsWith("_design")));
+            return readAllDocs(clazz, s -> !s.startsWith("_design"));
         }
     }
 
@@ -456,7 +457,8 @@ public class CouchDbClient {
         String id = entityMetadata.getIdReader().read(entity);
         String revision = entityMetadata.getRevisionReader().read(entity);
         log.debug("Delete of document with id {} and revision {} from database {}", id, revision, entityMetadata.getDatabaseName());
-        return delete(getURI(baseURI, List.of(entityMetadata.getDatabaseName(), id), List.of(new BasicNameValuePair("rev", revision))), r -> entity);
+        return delete(getURI(baseURI, Arrays.asList(entityMetadata.getDatabaseName(), id), Collections.singletonList(new BasicNameValuePair("rev", revision))),
+                r -> entity);
     }
 
     /**
@@ -528,8 +530,9 @@ public class CouchDbClient {
         EntityT entity = read(id, clazz);
         log.debug("Delete of document with id {} and revision {} from database {}", id, LazyLog.of(() -> entityMetadata.getRevisionReader().read(entity)),
                 entityMetadata.getDatabaseName());
-        return delete(getURI(baseURI, List.of(entityMetadata.getDatabaseName(), id), List.of(new BasicNameValuePair("rev", entityMetadata.getRevisionReader()
-                .read(entity)))), r -> entity);
+        return delete(getURI(baseURI, Arrays.asList(entityMetadata.getDatabaseName(), id),
+                Collections.singletonList(new BasicNameValuePair("rev", entityMetadata.getRevisionReader().read(entity)))),
+                r -> entity);
     }
 
     /**
@@ -566,7 +569,7 @@ public class CouchDbClient {
      * @throws IOException if http request is not successful or json processing fail
      */
     public void createIndex(@NotNull String name, @NotNull Class<?> entityClass, Sort.Order... fields) throws IOException {
-        createIndex(name, entityClass, fields == null ? List.of() : Arrays.asList(fields));
+        createIndex(name, entityClass, fields == null ? Collections.emptyList() : Arrays.asList(fields));
     }
 
     /**
@@ -670,9 +673,9 @@ public class CouchDbClient {
     public void createDatabase(@NotNull String name, int shardsCount, int replicasCount, boolean partitioned) throws IOException {
         log.debug("Creating {} database with name {}, {} shards, {} replicas", LazyLog.of(() -> partitioned ? "portioned" : "non-portioned"), name,
                 shardsCount, replicasCount);
-        put(getURI(baseURI, List.of(name), List.of(new BasicNameValuePair("q", "" + shardsCount), new BasicNameValuePair("n", replicasCount + ""),
-                new BasicNameValuePair("partitioned", Boolean.toString(partitioned)))),
-                "", r -> null);
+        put(getURI(baseURI, Collections.singletonList(name),
+                Arrays.asList(new BasicNameValuePair("q", "" + shardsCount), new BasicNameValuePair("n", replicasCount + ""),
+                        new BasicNameValuePair("partitioned", Boolean.toString(partitioned)))), "", r -> null);
     }
 
     /**

@@ -17,6 +17,8 @@ import org.springframework.data.repository.query.ReturnedType;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -58,12 +60,12 @@ class CouchDbParsingQueryTest {
         when(parameter.getName()).thenReturn(Optional.of("value"));
         when(parameter.getIndex()).thenReturn(0);
         doReturn(String.class).when(parameter).getType();
-        doReturn(List.of(parameter).iterator()).when(parameters).iterator();
+        doReturn(Collections.singletonList(parameter).iterator()).when(parameters).iterator();
         doReturn(parameters).when(queryMethod).getParameters();
         when(parameters.getSortIndex()).thenReturn(-1);
         when(parameters.getPageableIndex()).thenReturn(-1);
         TestDocument result = new TestDocument();
-        when(client.find(any(), eq(TestDocument.class))).thenReturn(List.of(result)).thenThrow(new IOException("error"));
+        when(client.find(any(), eq(TestDocument.class))).thenReturn(Collections.singletonList(result)).thenThrow(new IOException("error"));
 
         CouchDbParsingQuery<TestDocument> query = new CouchDbParsingQuery<>(client, 10, false, method, queryMethod, TestDocument.class);
         assertEquals(queryMethod, query.getQueryMethod(), "CouchDbDirectQuery do not remember given queryMethod");
@@ -99,12 +101,12 @@ class CouchDbParsingQueryTest {
         when(parameter.getName()).thenReturn(Optional.of("value"));
         when(parameter.getIndex()).thenReturn(0);
         doReturn(Integer.class).when(parameter).getType();
-        doReturn(List.of(parameter).iterator()).when(parameters).iterator();
+        doReturn(Collections.singletonList(parameter).iterator()).when(parameters).iterator();
         doReturn(parameters).when(queryMethod).getParameters();
         when(parameters.getSortIndex()).thenReturn(-1);
         when(parameters.getPageableIndex()).thenReturn(-1);
         TestDocument result = new TestDocument();
-        when(client.find(any(), eq(TestDocument.class))).thenReturn(List.of(result)).thenThrow(new IOException("error"));
+        when(client.find(any(), eq(TestDocument.class))).thenReturn(Collections.singletonList(result)).thenThrow(new IOException("error"));
 
         CouchDbParsingQuery<TestDocument> query = new CouchDbParsingQuery<>(client, 10, false, method, queryMethod, TestDocument.class);
         assertEquals(queryMethod, query.getQueryMethod(), "CouchDbDirectQuery do not remember given queryMethod");
@@ -140,11 +142,11 @@ class CouchDbParsingQueryTest {
         when(parameter.getName()).thenReturn(Optional.of("value"));
         when(parameter.getIndex()).thenReturn(0);
         doReturn(String.class).when(parameter).getType();
-        doReturn(List.of(parameter).iterator()).when(parameters).iterator();
+        doReturn(Collections.singletonList(parameter).iterator()).when(parameters).iterator();
         doReturn(parameters).when(queryMethod).getParameters();
         when(parameters.getSortIndex()).thenReturn(-1);
         when(parameters.getPageableIndex()).thenReturn(-1);
-        when(client.find(any(), eq(TestDocument.class))).thenReturn(List.of(new TestDocument()));
+        when(client.find(any(), eq(TestDocument.class))).thenReturn(Collections.singletonList(new TestDocument()));
 
         CouchDbParsingQuery<TestDocument> query = new CouchDbParsingQuery<>(client, 10, false, method, queryMethod, TestDocument.class);
         assertEquals(queryMethod, query.getQueryMethod(), "CouchDbDirectQuery do not remember given queryMethod");
@@ -176,11 +178,11 @@ class CouchDbParsingQueryTest {
         when(parameter.getName()).thenReturn(Optional.of("value"));
         when(parameter.getIndex()).thenReturn(0);
         doReturn(String.class).when(parameter).getType();
-        doReturn(List.of(parameter).iterator()).when(parameters).iterator();
+        doReturn(Collections.singletonList(parameter).iterator()).when(parameters).iterator();
         doReturn(parameters).when(queryMethod).getParameters();
         when(parameters.getSortIndex()).thenReturn(-1);
         when(parameters.getPageableIndex()).thenReturn(-1);
-        List<TestDocument> result = List.of(new TestDocument());
+        List<TestDocument> result = Collections.singletonList(new TestDocument());
         when(client.find(any(), eq(TestDocument.class))).thenReturn(result);
 
         CouchDbParsingQuery<TestDocument> query = new CouchDbParsingQuery<>(client, 10, false, method, queryMethod, TestDocument.class);
@@ -212,11 +214,11 @@ class CouchDbParsingQueryTest {
         when(parameter.getName()).thenReturn(Optional.of("value"));
         when(parameter.getIndex()).thenReturn(0);
         doReturn(String.class).when(parameter).getType();
-        doReturn(List.of(parameter).iterator()).when(parameters).iterator();
+        doReturn(Collections.singletonList(parameter).iterator()).when(parameters).iterator();
         doReturn(parameters).when(queryMethod).getParameters();
         when(parameters.getSortIndex()).thenReturn(-1);
         when(parameters.getPageableIndex()).thenReturn(-1);
-        when(client.find(any(), eq(TestDocument.class))).thenReturn(List.of(new TestDocument()));
+        when(client.find(any(), eq(TestDocument.class))).thenReturn(Collections.singletonList(new TestDocument()));
 
         CouchDbParsingQuery<TestDocument> query = new CouchDbParsingQuery<>(client, 10, false, method, queryMethod, TestDocument.class);
         assertEquals(queryMethod, query.getQueryMethod(), "CouchDbDirectQuery do not remember given queryMethod");
@@ -250,12 +252,12 @@ class CouchDbParsingQueryTest {
         when(parameter.getName()).thenReturn(Optional.of("value"));
         when(parameter.getIndex()).thenReturn(0);
         doReturn(String.class).when(parameter).getType();
-        doReturn(List.of(parameter).iterator()).when(parameters).iterator();
+        doReturn(Collections.singletonList(parameter).iterator()).when(parameters).iterator();
         doReturn(parameters).when(queryMethod).getParameters();
         when(parameters.getSortIndex()).thenReturn(-1);
         when(parameters.getPageableIndex()).thenReturn(-1);
         TestDocument result = new TestDocument();
-        when(client.find(any(), eq(TestDocument.class))).thenReturn(List.of(result));
+        when(client.find(any(), eq(TestDocument.class))).thenReturn(Collections.singletonList(result));
 
         CouchDbParsingQuery<TestDocument> query = new CouchDbParsingQuery<>(client, 10, false, method, queryMethod, TestDocument.class);
         assertEquals(queryMethod, query.getQueryMethod(), "CouchDbDirectQuery do not remember given queryMethod");
@@ -291,12 +293,12 @@ class CouchDbParsingQueryTest {
         when(valueParameter.getName()).thenReturn(Optional.of("value"));
         when(valueParameter.getIndex()).thenReturn(0);
         doReturn(String.class).when(valueParameter).getType();
-        doReturn(List.of(valueParameter, pageableParameter).iterator()).when(parameters).iterator();
+        doReturn(Arrays.asList(valueParameter, pageableParameter).iterator()).when(parameters).iterator();
         doReturn(parameters).when(queryMethod).getParameters();
         when(parameters.getSortIndex()).thenReturn(-1);
         when(parameters.getPageableIndex()).thenReturn(1);
         TestDocument result = new TestDocument();
-        when(client.find(any(), eq(TestDocument.class))).thenReturn(List.of(result));
+        when(client.find(any(), eq(TestDocument.class))).thenReturn(Collections.singletonList(result));
 
         CouchDbParsingQuery<TestDocument> query = new CouchDbParsingQuery<>(client, 10, false, method, queryMethod, TestDocument.class);
         assertEquals(queryMethod, query.getQueryMethod(), "CouchDbDirectQuery do not remember given queryMethod");
@@ -331,12 +333,13 @@ class CouchDbParsingQueryTest {
         when(parameter.getName()).thenReturn(Optional.of("value"));
         when(parameter.getIndex()).thenReturn(0);
         doReturn(String.class).when(parameter).getType();
-        doReturn(List.of(parameter).iterator()).when(parameters).iterator();
+        doReturn(Collections.singletonList(parameter).iterator()).when(parameters).iterator();
         doReturn(parameters).when(queryMethod).getParameters();
         when(parameters.getSortIndex()).thenReturn(-1);
         when(parameters.getPageableIndex()).thenReturn(-1);
         TestDocument result = new TestDocument();
-        when(client.find(any(), eq(TestDocument.class))).thenReturn(List.of(result, result, result), List.of(result, result, result), List.of(result, result)).thenThrow(new IOException("error"));
+        when(client.find(any(), eq(TestDocument.class))).thenReturn(Arrays.asList(result, result, result), Arrays.asList(result, result, result),
+                Arrays.asList(result, result)).thenThrow(new IOException("error"));
 
         CouchDbParsingQuery<TestDocument> query = new CouchDbParsingQuery<>(client, 3, false, method, queryMethod, TestDocument.class);
         assertEquals(queryMethod, query.getQueryMethod(), "CouchDbDirectQuery do not remember given queryMethod");
@@ -374,12 +377,12 @@ class CouchDbParsingQueryTest {
         when(parameter.getName()).thenReturn(Optional.of("street"));
         when(parameter.getIndex()).thenReturn(0);
         doReturn(String.class).when(parameter).getType();
-        doReturn(List.of(parameter).iterator()).when(parameters).iterator();
+        doReturn(Collections.singletonList(parameter).iterator()).when(parameters).iterator();
         doReturn(parameters).when(queryMethod).getParameters();
         when(parameters.getSortIndex()).thenReturn(-1);
         when(parameters.getPageableIndex()).thenReturn(-1);
         TestDocument result = new TestDocument();
-        when(client.find(any(), eq(TestDocument.class))).thenReturn(List.of(result)).thenThrow(new IOException("error"));
+        when(client.find(any(), eq(TestDocument.class))).thenReturn(Collections.singletonList(result)).thenThrow(new IOException("error"));
 
         CouchDbParsingQuery<TestDocument> query = new CouchDbParsingQuery<>(client, 10, false, method, queryMethod, TestDocument.class);
         assertEquals(queryMethod, query.getQueryMethod(), "CouchDbDirectQuery do not remember given queryMethod");

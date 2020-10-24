@@ -24,6 +24,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -160,7 +161,7 @@ public class TestDocumentRepositoryIntegrationTest {
 
     @Test
     public void testFindAllByIdWithNonExisting() {
-        List<String> all = List.of("nonExisting");
+        List<String> all = Collections.singletonList("nonExisting");
         Iterable<TestDocument> found =
                 assertDoesNotThrow(() -> repository.findAllById(all), "Exception must not be thrown when one of wanted ids does not exist");
         assertEquals(0, StreamSupport.stream(found.spliterator(), false).count(), "For non existing id, no entity should be returned");
@@ -395,8 +396,8 @@ public class TestDocumentRepositoryIntegrationTest {
 
     @Test
     public void testFindByValue4Empty() {
-        IntStream.range(1, 11).forEach(i -> repository.save(new TestDocument(List.of("value" + i))));
-        IntStream.range(1, 6).forEach(i -> repository.save(new TestDocument(List.of())));
+        IntStream.range(1, 11).forEach(i -> repository.save(new TestDocument(Collections.singletonList("value" + i))));
+        IntStream.range(1, 6).forEach(i -> repository.save(new TestDocument(Collections.emptyList())));
         List<TestDocument> read = repository.findByValue4Empty();
         assertEquals(5, read.size(), "Returned list must contain only document with empty value4");
         for (TestDocument d : read) {
@@ -406,8 +407,8 @@ public class TestDocumentRepositoryIntegrationTest {
 
     @Test
     public void testFindByValue4NotEmpty() {
-        IntStream.range(1, 11).forEach(i -> repository.save(new TestDocument(List.of("value" + i))));
-        IntStream.range(1, 6).forEach(i -> repository.save(new TestDocument(List.of())));
+        IntStream.range(1, 11).forEach(i -> repository.save(new TestDocument(Collections.singletonList("value" + i))));
+        IntStream.range(1, 6).forEach(i -> repository.save(new TestDocument(Collections.emptyList())));
         List<TestDocument> read = repository.findByValue4NotEmpty();
         assertEquals(10, read.size(), "Returned list must contain only document with empty value4");
         for (TestDocument d : read) {

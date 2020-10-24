@@ -33,6 +33,7 @@ import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.util.Assert;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -50,6 +51,7 @@ public class CouchSlackerConfiguration {
      * @param idGenerators all configured beans of {@link IdGenerator} class. Can be {@literal null}
      * @return {@link CouchDbClient} with the given properties
      */
+    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Bean(destroyMethod = "close")
     public CouchDbClient dbClient(@NotNull CouchDbProperties properties,
                                   @Nullable @Autowired(required = false) List<IdGenerator<?>> idGenerators) {
@@ -69,6 +71,7 @@ public class CouchSlackerConfiguration {
      * @throws SchemaProcessingException if schema processing fails on a rule
      * @see CouchDBSchemaProcessor
      */
+    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Bean
     public CouchDBSchemaProcessor schemaProcessor(
             @NotNull CouchDbProperties properties,
@@ -79,7 +82,7 @@ public class CouchSlackerConfiguration {
         ClassPathScanningCandidateComponentProvider provider = new ClassPathScanningCandidateComponentProvider(false);
         provider.addIncludeFilter(new AnnotationTypeFilter(Document.class));
         List<Class<?>> entityClasses = new LinkedList<>();
-        for (String pack : entityScanPackages == null ? List.of(getClass().getPackage().getName()) : entityScanPackages.getPackageNames()) {
+        for (String pack : entityScanPackages == null ? Collections.singletonList(getClass().getPackage().getName()) : entityScanPackages.getPackageNames()) {
             for (BeanDefinition definition : provider.findCandidateComponents(pack)) {
                 entityClasses.add(Class.forName(definition.getBeanClassName()));
             }

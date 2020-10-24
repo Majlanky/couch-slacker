@@ -1,7 +1,6 @@
 package com.groocraft.couchdb.slacker.repository;
 
 import com.groocraft.couchdb.slacker.CouchDbClient;
-import com.groocraft.couchdb.slacker.TestDocument;
 import com.groocraft.couchdb.slacker.configuration.CouchDbProperties;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.repository.CrudRepository;
@@ -13,13 +12,11 @@ import static org.mockito.Mockito.when;
 class CouchDbRepositoryFactoryBeanTest {
 
     @Test
-    @SuppressWarnings({"unchecked", "rawtypes"})
     public void test() {
         CouchDbClient client = mock(CouchDbClient.class);
         CouchDbProperties properties = mock(CouchDbProperties.class);
         when(properties.getBulkMaxSize()).thenReturn(100);
-        CouchDbRepositoryFactoryBean<CrudRepository<TestDocument, String>, TestDocument, String> factoryBean =
-                new CouchDbRepositoryFactoryBean<>(CrudRepository.class, client, properties);
+        CouchDbRepositoryFactoryBean<?, ?, ?> factoryBean = new CouchDbRepositoryFactoryBean<>(CrudRepository.class, client, properties);
         assertEquals(CouchDbRepositoryFactory.class, factoryBean.createRepositoryFactory().getClass(),
                 CouchDbRepositoryFactoryBean.class + "must produce " + CouchDbRepositoryFactory.class);
     }

@@ -79,6 +79,7 @@ public class SimpleCouchDbRepository<EntityT> implements CrudRepository<EntityT,
     /**
      * {@inheritDoc}
      */
+    @SuppressWarnings("ConstantConditions")
     @Override
     public Optional<EntityT> findById(String id) {
         try {

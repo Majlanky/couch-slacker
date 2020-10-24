@@ -8,9 +8,9 @@ import com.groocraft.couchdb.slacker.TestDocument;
 import com.groocraft.couchdb.slacker.structure.BulkRequest;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
+import java.util.Arrays;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class BulkGetIdSerializerTest {
 
@@ -23,7 +23,7 @@ class BulkGetIdSerializerTest {
         localMapper.registerModule(module);
         assertEquals("{\"docs\":[{\"id\":\"a\"},{\"id\":\"b\"}]}",
                 localMapper.writeValueAsString(
-                        new BulkRequest<>(List.of(
+                        new BulkRequest<>(Arrays.asList(
                                 new TestDocument("a", "revA", "a"),
                                 new TestDocument("b", "revB", "b")))));
     }

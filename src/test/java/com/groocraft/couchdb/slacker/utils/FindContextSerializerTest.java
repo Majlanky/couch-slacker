@@ -25,7 +25,7 @@ import com.groocraft.couchdb.slacker.structure.DocumentFindRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.repository.query.parser.PartTree;
 
-import java.util.Map;
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -35,7 +35,7 @@ class FindContextSerializerTest {
     public void testViewed() throws JsonProcessingException {
         EntityMetadata<?> metadata = new EntityMetadata<>(ViewedDocument.class);
         PartTree partTree = new PartTree("findByField", ViewedDocument.class);
-        FindContext findContext = new FindContext(partTree, Map.of("field", "testValue"), metadata);
+        FindContext findContext = new FindContext(partTree, Collections.singletonMap("field", "testValue"), metadata);
         DocumentFindRequest request = new DocumentFindRequest(findContext, null, 100, null, null, false);
         String json = new ObjectMapper().writeValueAsString(request);
         assertEquals("{\"limit\":100,\"selector\":{\"$and\":[{\"type\":{\"$eq\":\"entity\"}},{\"$or\":[{\"field\":{\"$eq\":\"testValue\"}}]}]}}", json,
@@ -43,10 +43,10 @@ class FindContextSerializerTest {
     }
 
     @Test
-    public void testNonViewed() throws JsonProcessingException{
+    public void testNonViewed() throws JsonProcessingException {
         EntityMetadata<?> metadata = new EntityMetadata<>(TestDocument.class);
         PartTree partTree = new PartTree("findByValue", TestDocument.class);
-        FindContext findContext = new FindContext(partTree, Map.of("value", "testValue"), metadata);
+        FindContext findContext = new FindContext(partTree, Collections.singletonMap("value", "testValue"), metadata);
         DocumentFindRequest request = new DocumentFindRequest(findContext, null, 100, null, null, false);
         String json = new ObjectMapper().writeValueAsString(request);
         assertEquals("{\"limit\":100,\"selector\":{\"$or\":[{\"value\":{\"$eq\":\"testValue\"}}]}}", json, "Serialized JSON is wrong.");

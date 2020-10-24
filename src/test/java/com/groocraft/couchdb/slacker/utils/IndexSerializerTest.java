@@ -22,7 +22,7 @@ import com.groocraft.couchdb.slacker.structure.IndexCreateRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Sort;
 
-import java.util.List;
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -30,8 +30,9 @@ class IndexSerializerTest {
 
     @Test
     public void test() throws JsonProcessingException {
-        IndexCreateRequest request = new IndexCreateRequest("test", List.of(Sort.Order.asc("value")));
-        assertEquals("{\"index\":{\"fields\":[{\"value\":\"asc\"}]},\"type\":\"json\",\"name\":\"test\"}", new ObjectMapper().writeValueAsString(request), "Index request is not serialized properly");
+        IndexCreateRequest request = new IndexCreateRequest("test", Collections.singletonList(Sort.Order.asc("value")));
+        assertEquals("{\"index\":{\"fields\":[{\"value\":\"asc\"}]},\"type\":\"json\",\"name\":\"test\"}",
+                new ObjectMapper().writeValueAsString(request), "Index request is not serialized properly");
     }
 
 }

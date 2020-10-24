@@ -26,6 +26,7 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.data.domain.Sort;
 import org.springframework.util.Assert;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -63,7 +64,7 @@ public class DocumentFindRequest {
     private Boolean addExecutionStatsToResult;
 
     /**
-     * @param findContext    with all necessary information about finds selector. Must not be {@literal null}
+     * @param findContext               with all necessary information about finds selector. Must not be {@literal null}
      * @param skip                      number of document which should be skipped. Can be {@literal null} which means do not skip
      * @param limit                     of document number in the result
      * @param index                     Array of indexes, which should be used for querying. Can be {@literal null} which means do not use any index
@@ -84,7 +85,7 @@ public class DocumentFindRequest {
         }
         if (order != null) {
             sort = new LinkedList<>();
-            order.forEach(o -> sort.add(Map.of(o.getProperty(), o.getDirection().toString().toLowerCase())));
+            order.forEach(o -> sort.add(Collections.singletonMap(o.getProperty(), o.getDirection().toString().toLowerCase())));
         }
         if (addExecutionStatsToResult) {
             this.addExecutionStatsToResult = true;
