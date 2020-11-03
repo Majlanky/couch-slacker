@@ -73,7 +73,7 @@
         <logback.version>1.2.3</logback.version>
         <snake.yaml.version>1.27</snake.yaml.version>
         <jmh.version>1.21</jmh.version>
-        <find.bug.version>3.0.0</find.bug.version>
+        <find.bug.version>3.0.1u2</find.bug.version>
         <jetbrain.annoration.version>19.0.0</jetbrain.annoration.version>
         <hibernate.validator>6.1.6.Final</hibernate.validator>
     </properties>
