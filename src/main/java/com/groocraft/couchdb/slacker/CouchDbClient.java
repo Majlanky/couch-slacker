@@ -22,6 +22,7 @@ import com.groocraft.couchdb.slacker.exception.CouchDbException;
 import com.groocraft.couchdb.slacker.http.AutoCloseableHttpResponse;
 import com.groocraft.couchdb.slacker.repository.CouchDbEntityInformation;
 import com.groocraft.couchdb.slacker.structure.AllDocumentResponse;
+import com.groocraft.couchdb.slacker.structure.BulkGetRequest;
 import com.groocraft.couchdb.slacker.structure.BulkGetResponse;
 import com.groocraft.couchdb.slacker.structure.BulkRequest;
 import com.groocraft.couchdb.slacker.structure.DesignDocument;
@@ -29,7 +30,6 @@ import com.groocraft.couchdb.slacker.structure.DocumentFindResponse;
 import com.groocraft.couchdb.slacker.structure.DocumentPutResponse;
 import com.groocraft.couchdb.slacker.structure.IndexCreateRequest;
 import com.groocraft.couchdb.slacker.utils.BulkGetDeserializer;
-import com.groocraft.couchdb.slacker.utils.BulkGetIdSerializer;
 import com.groocraft.couchdb.slacker.utils.DeleteDocumentSerializer;
 import com.groocraft.couchdb.slacker.utils.DeleteViewedDocumentSerializer;
 import com.groocraft.couchdb.slacker.utils.FoundDocumentDeserializer;
@@ -362,16 +362,13 @@ public class CouchDbClient {
     public <EntityT> @NotNull Iterable<EntityT> readAll(@NotNull Iterable<String> ids, @NotNull Class<EntityT> clazz) throws IOException {
         ObjectMapper localMapper = new ObjectMapper();
         SimpleModule module = new SimpleModule();
-        module.addSerializer(new BulkGetIdSerializer<>(DocumentBase.class, getEntityMetadata(clazz).getIdReader()));
         module.addDeserializer(List.class, new BulkGetDeserializer<>(clazz));
         localMapper.registerModule(module);
-        List<DocumentBase> docs = new LinkedList<>();
-        ids.forEach(id -> docs.add(new DocumentBase(id, null)));
         log.debug("Bulk read of {} document from database {} with the following IDs: {}",
                 LazyLog.of(() -> StreamSupport.stream(ids.spliterator(), false).count()),
                 getDatabaseName(clazz),
                 LazyLog.of(() -> String.join(", ", ids)));
-        BulkGetResponse<EntityT> response = post(getURI(baseURI, getDatabaseName(clazz), "_bulk_get"), localMapper.writeValueAsString(new BulkRequest<>(docs)),
+        BulkGetResponse<EntityT> response = post(getURI(baseURI, getDatabaseName(clazz), "_bulk_get"), localMapper.writeValueAsString(new BulkGetRequest(ids)),
                 r -> localMapper.readValue(r.getEntity().getContent(), localMapper.getTypeFactory().constructParametricType(BulkGetResponse.class, clazz)));
         log.info("Bulk read of {} ids result contains {} documents", LazyLog.of(() -> StreamSupport.stream(ids.spliterator(), false).count()),
                 response.getDocs().size());
