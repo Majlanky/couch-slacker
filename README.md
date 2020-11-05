@@ -1,6 +1,8 @@
 # Couch Slacker 
 [![Build Status](https://travis-ci.com/Majlanky/couch-slacker.svg?branch=master)](https://travis-ci.com/Majlanky/couch-slacker) 
 [![codecov](https://codecov.io/gh/Majlanky/couch-slacker/branch/v2.1.0/graph/badge.svg)](https://codecov.io/gh/Majlanky/couch-slacker)
+[![Code Climate](https://api.codeclimate.com/v1/badges/715d011fb89fe741b777/maintainability.svg)](https://codeclimate.com/github/Majlanky/couch-slacker)
+[![Known Vulnerabilities](https://snyk.io/test/github/majlanky/couch-slacker/badge.svg)](https://snyk.io/test/github/majlanky/couch-slacker)
 ![](https://img.shields.io/badge/compatibility-JDK8%20and%20higher-purple)
 
 Couch Slacker project started in 2020. Basic idea and motivation was to create [Spring Data](https://spring.io/projects/spring-data) support for 
