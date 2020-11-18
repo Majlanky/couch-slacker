@@ -25,7 +25,7 @@ import java.util.Map;
  * Class for wrapping all information about find done by margo or view way. It contains all found results and bookmarks if provided (bookmarks are provided
  * only when find is done thru _find endpoint. Views do not provide bookmarks.)
  *
- * @param <EntityT>
+ * @param <EntityT> type of entities inside of the result
  * @author Majlanky
  */
 public class FindResult<EntityT> {

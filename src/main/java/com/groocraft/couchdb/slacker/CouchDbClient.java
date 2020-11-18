@@ -748,7 +748,7 @@ public class CouchDbClient {
      *
      * @param request    that will be executed depending on query strategy configuration. Must not be {@literal null}
      * @param clazz      that will be used to obtain database name. Must not be {@literal null}
-     * @param bookmarkBy number of entities between two bookmarks. Used only if the configured strategy provides it
+     * @param bookmarkBy number of how many documents should be between two bookmarks. Affects performance, null turns of chunking to bookmarks
      * @param <EntityT>  type of entities that should be in a result of query
      * @return {@link FindResult} with entities matching the provided request and bookmarks if the configured strategy returns it.
      * @throws IOException if http request is not successful or json processing fail
@@ -858,9 +858,10 @@ public class CouchDbClient {
     /**
      * Method used if {@link QueryStrategy#MANGO} is configured. Method uses translates the given request to mango json and executes it.
      *
-     * @param request   that will be executed. Must not be {@literal null}
-     * @param clazz     that will be used to obtain database name. Must not be {@literal null}
-     * @param <EntityT> type of entities that should be in a result of query
+     * @param request    that will be executed. Must not be {@literal null}
+     * @param clazz      that will be used to obtain database name. Must not be {@literal null}
+     * @param bookmarkBy number of how many documents should be between two bookmarks. Affects performance, null turns of chunking to bookmarks
+     * @param <EntityT>  type of entities that should be in a result of query
      * @return {@link FindResult} with entities matching the provided request and bookmarks if the configured strategy returns it.
      * @throws IOException if http request is not successful or json processing fail
      */
