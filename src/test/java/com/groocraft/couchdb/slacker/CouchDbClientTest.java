@@ -1,6 +1,9 @@
 package com.groocraft.couchdb.slacker;
 
 import com.groocraft.couchdb.slacker.repository.CouchDbEntityInformation;
+import com.groocraft.couchdb.slacker.structure.DocumentFindRequest;
+import com.groocraft.couchdb.slacker.structure.FindResult;
+import com.groocraft.couchdb.slacker.utils.FindContext;
 import com.groocraft.couchdb.slacker.utils.ThrowingConsumer;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
@@ -24,6 +27,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.opentest4j.AssertionFailedError;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.repository.query.parser.PartTree;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -33,6 +37,7 @@ import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 import java.util.stream.StreamSupport;
 
@@ -64,7 +69,8 @@ class CouchDbClientTest {
     @BeforeEach
     public void setUp() throws URISyntaxException {
         baseURI = new URI("http://localhost:5984/");
-        client = new CouchDbClient(httpClient, httpHost, httpContext, baseURI, Collections.emptyList(), 8, 3, false);
+        client = new CouchDbClient(httpClient, httpHost, httpContext, baseURI, Collections.emptyList(),
+                8, 3, false, 10000, QueryStrategy.MANGO);
     }
 
     @Test
@@ -281,7 +287,7 @@ class CouchDbClientTest {
         when(response.getEntity()).thenReturn(entity);
         when(httpClient.execute(eq(httpHost), requestCaptor.capture(), eq(httpContext))).thenReturn(response).thenThrow(thrown);
 
-        Iterable<TestDocument> read = client.find("", TestDocument.class);
+        Iterable<TestDocument> read = client.find("", TestDocument.class).getFirst();
 
         HttpRequest request = requestCaptor.getValue();
         assertEquals(HttpPost.class, request.getClass(), "Find has to be done as POST request");
@@ -308,7 +314,8 @@ class CouchDbClientTest {
     @Test
     public void testClose() throws IOException {
         CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
-        client = new CouchDbClient(httpClient, httpHost, httpContext, baseURI, Collections.emptyList(), 8, 3, false);
+        client = new CouchDbClient(httpClient, httpHost, httpContext, baseURI, Collections.emptyList(),
+                8, 3, false, 10000, QueryStrategy.MANGO);
         client.close();
         verify(httpClient, only().description("Http client must be closed")).close();
     }
@@ -317,8 +324,7 @@ class CouchDbClientTest {
     public void testReadAll() throws IOException {
         IOException thrown = new IOException("error");
         InputStream content = new ByteArrayInputStream(("{\"total_rows\":3,\"offset\":0,\"rows\":[{\"id\":\"1\",\"key\":\"1\",\"value\":{\"rev\":\"1-0\"}}," +
-                "{\"id\":\"2\",\"key\":\"2\",\"value\":{\"rev\":\"2-0\"}},{\"id\":\"3\",\"key\":\"3\",\"value\":{\"rev\":\"3-0\"}},{\"id\":\"_design0\"," +
-                "\"key\":\"_design0\",\"value\":{\"rev\":\"d-0\"}}]}\n").getBytes());
+                "{\"id\":\"2\",\"key\":\"2\",\"value\":{\"rev\":\"2-0\"}},{\"id\":\"3\",\"key\":\"3\",\"value\":{\"rev\":\"3-0\"}}]}\n").getBytes());
         ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
         HttpResponse response = mock(HttpResponse.class);
         HttpEntity entity = mock(HttpEntity.class);
@@ -329,7 +335,7 @@ class CouchDbClientTest {
         HttpRequest request = requestCaptor.getValue();
         assertEquals(HttpGet.class, request.getClass(), "Find has to be done as GET request");
         HttpGet get = (HttpGet) request;
-        assertEquals("http://localhost:5984/test/_all_docs", get.getURI().toString(), "URI must be based on base URI and database name");
+        assertEquals("http://localhost:5984/test/_design/all/_view/data?reduce=false", get.getURI().toString(), "URI must be based on base URI and database name");
         assertEquals("application/json", get.getFirstHeader(HttpHeaders.ACCEPT).getValue(), "Get document request should declare accepting json");
         assertEquals(3, StreamSupport.stream(all.spliterator(), false).count(), "Result of find was not properly read or filtered");
         int i = 1;
@@ -344,9 +350,34 @@ class CouchDbClientTest {
         get = (HttpGet) request;
         assertEquals("http://localhost:5984/test/_design_docs", get.getURI().toString(), "URI must be based on base URI and database name");
         assertEquals("application/json", get.getFirstHeader(HttpHeaders.ACCEPT).getValue(), "Get document request should declare accepting json");
-        assertEquals(4, StreamSupport.stream(allDesign.spliterator(), false).count(), "Result of find was not properly read or filtered");
+        assertEquals(3, StreamSupport.stream(allDesign.spliterator(), false).count(), "Result of find was not properly read or filtered");
 
         assertEquals(thrown, assertThrows(IOException.class, () -> client.readAll(TestDocument.class)), "CouchDb client should not alternate original " +
+                "exception");
+        request = requestCaptor.getValue();
+        get = (HttpGet) request;
+        assertTrue(get.isAborted(), "Request must be aborted when exception thrown");
+    }
+
+    @Test
+    public void testCountAll() throws IOException {
+        IOException thrown = new IOException("error");
+        InputStream content = new ByteArrayInputStream(("{\"rows\": [{\"key\": null,\"value\": 40}]}").getBytes());
+        ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+        HttpResponse response = mock(HttpResponse.class);
+        HttpEntity entity = mock(HttpEntity.class);
+        when(entity.getContent()).thenReturn(content);
+        when(response.getEntity()).thenReturn(entity);
+        when(httpClient.execute(eq(httpHost), requestCaptor.capture(), eq(httpContext))).thenReturn(response).thenThrow(thrown);
+        long count = client.countAll(TestDocument.class);
+        HttpRequest request = requestCaptor.getValue();
+        assertEquals(HttpGet.class, request.getClass(), "Find has to be done as GET request");
+        HttpGet get = (HttpGet) request;
+        assertEquals("http://localhost:5984/test/_design/all/_view/data", get.getURI().toString(), "URI must be based on base URI and database name");
+        assertEquals("application/json", get.getFirstHeader(HttpHeaders.ACCEPT).getValue(), "Get document request should declare accepting json");
+        assertEquals(40, count, "Result of find was not properly read or filtered");
+
+        assertEquals(thrown, assertThrows(IOException.class, () -> client.countAll(TestDocument.class)), "CouchDb client should not alternate original " +
                 "exception");
         request = requestCaptor.getValue();
         get = (HttpGet) request;
@@ -536,6 +567,162 @@ class CouchDbClientTest {
         post = (HttpPost) request;
         assertTrue(post.isAborted(), "Request must be aborted when exception thrown");
     }
+
+    @Test
+    public void testRequestFindWithSort() throws IOException {
+        Sort sort = Sort.by(Sort.Order.asc("value"));
+
+        InputStream indexContent = new ByteArrayInputStream(("}").getBytes());
+        InputStream content = new ByteArrayInputStream(("{\"docs\":[{\"_id\":\"unique1\",\"_rev\":\"1231\",\"value\":\"value1\"},{\"_id\":\"unique2\"," +
+                "\"_rev\":\"1232\",\"value\":\"value2\"},{\"_id\":\"unique3\",\"_rev\":\"1233\",\"value\":\"value3\"}],\"bookmark\": \"1234\",\"warning\": " +
+                "\"warning\"}").getBytes());
+        ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+        HttpResponse indexResponse = mock(HttpResponse.class);
+        HttpResponse response = mock(HttpResponse.class);
+        HttpEntity indexEntity = mock(HttpEntity.class);
+        HttpEntity entity = mock(HttpEntity.class);
+        when(indexEntity.getContent()).thenReturn(indexContent);
+        when(entity.getContent()).thenReturn(content);
+        when(indexResponse.getEntity()).thenReturn(indexEntity);
+        when(response.getEntity()).thenReturn(entity);
+        when(httpClient.execute(eq(httpHost), requestCaptor.capture(), eq(httpContext))).thenReturn(indexResponse, response);
+
+        TestFindRequest findRequest = new TestFindRequest(null, null, null, sort, false);
+        List<TestDocument> read = client.find(findRequest, TestDocument.class, null).getEntities();
+
+        List<HttpRequest> request = requestCaptor.getAllValues();
+        assertEquals(HttpPost.class, request.get(1).getClass(), "Find has to be done as POST request");
+        HttpPost post = (HttpPost) request.get(1);
+        assertEquals("http://localhost:5984/test/_find", post.getURI().toString(), "URI must be based on base URI and database name");
+        assertEquals("application/json", post.getEntity().getContentType().getValue(), "Find request should declare json content");
+        assertContent("{\"limit\":10000,\"sort\":[{\"value\":\"asc\"}],\"selector\":{}}", post.getEntity().getContent(), "Body of find request is not properly created");
+        assertEquals(3, read.size(), "Based on mocked json, there are 3 documents returned");
+        int i = 1;
+        for (TestDocument d : read) {
+            assertEquals("unique" + i, d.getId(), "Document with index " + i + " has in-properly de-serialized id");
+            assertEquals("123" + i, d.getRevision(), "Document with index " + i + " has in-properly de-serialized revision");
+            assertEquals("value" + i, d.getValue(), "Document with index " + i + " has in-properly de-serialized value");
+            i++;
+        }
+        assertEquals(HttpPost.class, request.get(0).getClass(), "New index request has to be done as POST request");
+        post = (HttpPost) request.get(0);
+        assertEquals("http://localhost:5984/test/_index", post.getURI().toString(), "First call should be do as new index request");
+        assertEquals("application/json", post.getEntity().getContentType().getValue(), "Find request should declare json content");
+        assertContent("{\"index\":{\"fields\":[{\"value\":\"asc\"}]},\"type\":\"json\",\"name\":\"value-value: asc\"}", post.getEntity().getContent(), "Body of find request is not properly created");
+    }
+
+    @Test
+    public void testRequestFind() throws IOException {
+        CouchDbClient client = new CouchDbClient(httpClient, httpHost, httpContext, baseURI, Collections.emptyList(),
+                8, 3, false, 3, QueryStrategy.MANGO);
+        IOException thrown = new IOException("error");
+        InputStream content = new ByteArrayInputStream(("{\"docs\":[{\"_id\":\"unique1\",\"_rev\":\"1231\",\"value\":\"value1\"},{\"_id\":\"unique2\"," +
+                "\"_rev\":\"1232\",\"value\":\"value2\"},{\"_id\":\"unique3\",\"_rev\":\"1233\",\"value\":\"value3\"}],\"bookmark\": \"1234\",\"warning\": " +
+                "\"warning\"}").getBytes());
+        InputStream content2 = new ByteArrayInputStream(("{\"docs\":[{\"_id\":\"unique1\",\"_rev\":\"1231\",\"value\":\"value1\"},{\"_id\":\"unique2\"," +
+                "\"_rev\":\"1232\",\"value\":\"value2\"},{\"_id\":\"unique3\",\"_rev\":\"1233\",\"value\":\"value3\"}],\"bookmark\": \"1234\",\"warning\": " +
+                "\"warning\"}").getBytes());
+        InputStream content3 = new ByteArrayInputStream(("{\"docs\":[{\"_id\":\"unique1\",\"_rev\":\"1231\",\"value\":\"value1\"},{\"_id\":\"unique2\"," +
+                "\"_rev\":\"1232\",\"value\":\"value2\"}],\"bookmark\": \"1234\",\"warning\": " +
+                "\"warning\"}").getBytes());
+        ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+        HttpResponse response = mock(HttpResponse.class);
+        HttpResponse response2 = mock(HttpResponse.class);
+        HttpResponse response3 = mock(HttpResponse.class);
+        HttpEntity entity = mock(HttpEntity.class);
+        HttpEntity entity2 = mock(HttpEntity.class);
+        HttpEntity entity3 = mock(HttpEntity.class);
+        when(entity.getContent()).thenReturn(content);
+        when(entity2.getContent()).thenReturn(content2);
+        when(entity3.getContent()).thenReturn(content3);
+        when(response.getEntity()).thenReturn(entity);
+        when(response2.getEntity()).thenReturn(entity2);
+        when(response3.getEntity()).thenReturn(entity3);
+        when(httpClient.execute(eq(httpHost), requestCaptor.capture(), eq(httpContext))).thenReturn(response, response2, response3).thenThrow(thrown);
+
+        PartTree partTree = new PartTree("findByValue", TestDocument.class);
+        FindContext context = new FindContext(partTree, Collections.singletonMap("value", "test"), new EntityMetadata<>(TestDocument.class));
+        DocumentFindRequest findRequest = new DocumentFindRequest(context, null, null, null, Sort.unsorted(), false);
+        FindResult<TestDocument> result = client.find(findRequest, TestDocument.class);
+        assertEquals(3, result.getBookmarks().size(), "For 8 documents read in 3 request (because max bulk size), there should be 3 bookmarks");
+        assertTrue(result.getBookmarks().values().stream().allMatch("1234"::equals));
+        assertEquals(8, result.getEntities().size(), "Three content responses contains 8 documents");
+        List<HttpRequest> requests = requestCaptor.getAllValues();
+        List<String> bodies = Arrays.asList("{\"limit\":3,\"selector\":{\"$or\":[{\"value\":{\"$eq\":\"test\"}}]}}",
+                "{\"limit\":3,\"bookmark\":\"1234\",\"selector\":{\"$or\":[{\"value\":{\"$eq\":\"test\"}}]}}",
+                "{\"limit\":3,\"bookmark\":\"1234\",\"selector\":{\"$or\":[{\"value\":{\"$eq\":\"test\"}}]}}");
+        for (int i = 0; i < 3; i++) {
+            HttpRequest request = requests.get(i);
+            assertEquals(HttpPost.class, request.getClass(), "Find has to be done as POST request");
+            HttpPost post = (HttpPost) request;
+            assertEquals("http://localhost:5984/test/_find", post.getURI().toString(), "URI must be based on base URI and database name");
+            assertEquals("application/json", post.getEntity().getContentType().getValue(), "Find request should declare json content");
+            assertContent(bodies.get(i), post.getEntity().getContent(), "Body of find request is not properly created");
+        }
+
+        assertEquals(thrown, assertThrows(IOException.class, () -> client.find(findRequest, TestDocument.class)),
+                "CouchDb client should not alternate original exception");
+        HttpRequest request = requestCaptor.getValue();
+        HttpPost post = (HttpPost) request;
+        assertTrue(post.isAborted(), "Request must be aborted when exception thrown");
+
+    }
+
+    @Test
+    public void testRequestFindWithLimitAndBookmarkBy() throws IOException {
+        CouchDbClient client = new CouchDbClient(httpClient, httpHost, httpContext, baseURI, Collections.emptyList(),
+                8, 3, false, 3, QueryStrategy.MANGO);
+        IOException thrown = new IOException("error");
+        InputStream content = new ByteArrayInputStream(("{\"docs\":[{\"_id\":\"unique1\",\"_rev\":\"1231\",\"value\":\"value1\"},{\"_id\":\"unique2\"," +
+                "\"_rev\":\"1232\",\"value\":\"value2\"},{\"_id\":\"unique3\",\"_rev\":\"1233\",\"value\":\"value3\"}],\"bookmark\": \"1234\",\"warning\": " +
+                "\"warning\"}").getBytes());
+        InputStream content2 = new ByteArrayInputStream(("{\"docs\":[{\"_id\":\"unique1\",\"_rev\":\"1231\",\"value\":\"value1\"},{\"_id\":\"unique2\"," +
+                "\"_rev\":\"1232\",\"value\":\"value2\"},{\"_id\":\"unique3\",\"_rev\":\"1233\",\"value\":\"value3\"}],\"bookmark\": \"1234\",\"warning\": " +
+                "\"warning\"}").getBytes());
+        InputStream content3 = new ByteArrayInputStream(("{\"docs\":[{\"_id\":\"unique1\",\"_rev\":\"1231\",\"value\":\"value1\"},{\"_id\":\"unique2\"," +
+                "\"_rev\":\"1232\",\"value\":\"value2\"}],\"bookmark\": \"1234\",\"warning\": " +
+                "\"warning\"}").getBytes());
+        ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+        HttpResponse response = mock(HttpResponse.class);
+        HttpResponse response2 = mock(HttpResponse.class);
+        HttpResponse response3 = mock(HttpResponse.class);
+        HttpEntity entity = mock(HttpEntity.class);
+        HttpEntity entity2 = mock(HttpEntity.class);
+        HttpEntity entity3 = mock(HttpEntity.class);
+        when(entity.getContent()).thenReturn(content);
+        when(entity2.getContent()).thenReturn(content2);
+        when(entity3.getContent()).thenReturn(content3);
+        when(response.getEntity()).thenReturn(entity);
+        when(response2.getEntity()).thenReturn(entity2);
+        when(response3.getEntity()).thenReturn(entity3);
+        when(httpClient.execute(eq(httpHost), requestCaptor.capture(), eq(httpContext))).thenReturn(response, response2, response3).thenThrow(thrown);
+
+        PartTree partTree = new PartTree("findByValue", TestDocument.class);
+        FindContext context = new FindContext(partTree, Collections.singletonMap("value", "test"), new EntityMetadata<>(TestDocument.class));
+        DocumentFindRequest findRequest = new DocumentFindRequest(context, null, 8, null, Sort.unsorted(), false);
+        List<TestDocument> result = client.find(findRequest, TestDocument.class, 3).getEntities();
+        assertEquals(8, result.size(), "Three content responses contains 8 documents");
+        List<HttpRequest> requests = requestCaptor.getAllValues();
+        List<String> bodies = Arrays.asList("{\"limit\":3,\"selector\":{\"$or\":[{\"value\":{\"$eq\":\"test\"}}]}}",
+                "{\"limit\":3,\"bookmark\":\"1234\",\"selector\":{\"$or\":[{\"value\":{\"$eq\":\"test\"}}]}}",
+                "{\"limit\":2,\"bookmark\":\"1234\",\"selector\":{\"$or\":[{\"value\":{\"$eq\":\"test\"}}]}}");
+        for (int i = 0; i < 3; i++) {
+            HttpRequest request = requests.get(i);
+            assertEquals(HttpPost.class, request.getClass(), "Find has to be done as POST request");
+            HttpPost post = (HttpPost) request;
+            assertEquals("http://localhost:5984/test/_find", post.getURI().toString(), "URI must be based on base URI and database name");
+            assertEquals("application/json", post.getEntity().getContentType().getValue(), "Find request should declare json content");
+            assertContent(bodies.get(i), post.getEntity().getContent(), "Body of find request is not properly created");
+        }
+
+        assertEquals(thrown, assertThrows(IOException.class, () -> client.find(findRequest, TestDocument.class)),
+                "CouchDb client should not alternate original exception");
+        HttpRequest request = requestCaptor.getValue();
+        HttpPost post = (HttpPost) request;
+        assertTrue(post.isAborted(), "Request must be aborted when exception thrown");
+
+    }
+
 
     private static void assertContent(String s, InputStream actual, String message) throws IOException {
         InputStream expected = new ByteArrayInputStream(s.getBytes());

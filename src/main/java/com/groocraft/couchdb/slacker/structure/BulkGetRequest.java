@@ -18,21 +18,18 @@ package com.groocraft.couchdb.slacker.structure;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.groocraft.couchdb.slacker.utils.BulkGetSerializer;
+import org.jetbrains.annotations.NotNull;
 
 @JsonSerialize(using = BulkGetSerializer.class)
 public class BulkGetRequest {
 
-    private Iterable<String> docIds;
+    private final Iterable<String> docIds;
 
-    public BulkGetRequest(Iterable<String> docIds) {
+    public BulkGetRequest(@NotNull Iterable<String> docIds) {
         this.docIds = docIds;
     }
 
-    public Iterable<String> getDocIds() {
+    public @NotNull Iterable<String> getDocIds() {
         return docIds;
-    }
-
-    public void setDocIds(Iterable<String> docIds) {
-        this.docIds = docIds;
     }
 }

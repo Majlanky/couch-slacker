@@ -69,7 +69,7 @@ public class CouchDbQueryLookupStrategy implements QueryLookupStrategy {
             query = queryAnnotation.map(Query::value);
         }
         return query.map(s -> (RepositoryQuery) new CouchDbDirectQuery(s, client, queryMethod, metadata.getDomainType()))
-                .orElseGet(() -> new CouchDbParsingQuery<>(client, properties.getBulkMaxSize(), properties.isFindExecutionStats(), method, queryMethod,
+                .orElseGet(() -> new CouchDbParsingQuery<>(client, properties.isFindExecutionStats(), method, queryMethod,
                         metadata.getDomainType()));
     }
 }

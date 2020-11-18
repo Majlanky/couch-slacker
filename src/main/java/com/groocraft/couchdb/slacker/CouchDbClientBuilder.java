@@ -147,7 +147,7 @@ public class CouchDbClientBuilder {
                 ifNotNull(properties.getPassword(), "Password must be configured, (can not be null)"));
         HttpClient client = getHttpClient();
         return new CouchDbClient(client, host, context, uri, idGenerators, properties.getDefaultShards(),
-                properties.getDefaultReplicas(), properties.isDefaultPartitioned());
+                properties.getDefaultReplicas(), properties.isDefaultPartitioned(), properties.getBulkMaxSize(), properties.getQueryStrategy());
     }
 
     /**

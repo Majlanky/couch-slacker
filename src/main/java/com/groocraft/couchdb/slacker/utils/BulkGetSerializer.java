@@ -32,14 +32,6 @@ public class BulkGetSerializer extends JsonSerializer<BulkGetRequest> {
      * {@inheritDoc}
      */
     @Override
-    public Class<BulkGetRequest> handledType() {
-        return BulkGetRequest.class;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public void serialize(BulkGetRequest value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
         gen.writeStartObject();
         gen.writeArrayFieldStart("docs");

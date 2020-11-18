@@ -5,14 +5,14 @@ import com.groocraft.couchdb.slacker.annotation.Query;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
-import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 @Repository
-public interface TestDocumentRepository extends CrudRepository<TestDocument, String> {
+public interface TestDocumentRepository extends PagingAndSortingRepository<TestDocument, String> {
 
     @Query("{\"selector\": {\"value\": {\"$eq\": ?1}}}")
     List<TestDocument> queryBased(String value);
@@ -54,6 +54,7 @@ public interface TestDocumentRepository extends CrudRepository<TestDocument, Str
 
     List<TestDocument> findByValue4Empty();
 
+    @SuppressWarnings("SpringDataMethodInconsistencyInspection")
     List<TestDocument> findByValue4NotEmpty();
 
     List<TestDocument> findByValueContaining(@Param("value") String value);
@@ -79,5 +80,7 @@ public interface TestDocumentRepository extends CrudRepository<TestDocument, Str
     List<TestDocument> findTop80ByValue(@Param("value") String value);
 
     List<TestDocument> findByAddressStreet(@Param("street") String street);
+
+    List<TestDocument> findByValueAndAddressStreet(String noName1, String noName2);
 
 }

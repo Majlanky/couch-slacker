@@ -3,25 +3,21 @@ package com.groocraft.couchdb.slacker.test.integration;
 import com.groocraft.couchdb.slacker.CouchDbClient;
 import com.groocraft.couchdb.slacker.TestDocument;
 import com.groocraft.couchdb.slacker.TestDocumentAddress;
-import com.groocraft.couchdb.slacker.annotation.EnableCouchDbRepositories;
 import com.groocraft.couchdb.slacker.exception.CouchDbRuntimeException;
+import com.groocraft.couchdb.slacker.exception.QueryException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.ConfigFileApplicationContextInitializer;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -42,15 +38,11 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
+@SuppressWarnings("SpringJavaAutowiredMembersInspection")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = {SpringTestConfiguration.class, TestDocumentRepository.class},
-        initializers = ConfigFileApplicationContextInitializer.class)
-@ActiveProfiles("test")
-@EnableCouchDbRepositories
-public class TestDocumentRepositoryIntegrationTest {
+@Disabled
+public class TestDocumentRepositoryBase {
 
     @Autowired
     CouchDbClient client;
@@ -63,9 +55,7 @@ public class TestDocumentRepositoryIntegrationTest {
         try {
             client.createDatabase("_users");
             client.createDatabase("_replicator");
-            client.createDatabase("test");
         } catch (IOException ex) {
-            fail("Unable to initialize database", ex);
         }
     }
 
@@ -493,8 +483,7 @@ public class TestDocumentRepositoryIntegrationTest {
     }
 
     @Test
-    public void testPagedFindWithPagination() throws IOException {
-        client.createIndex("value2-sort-index", TestDocument.class, Sort.Order.asc("value2"));
+    public void testPagedFindWithPagination() {
         List<TestDocument> toSave = new LinkedList<>();
         IntStream.range(1, 501).forEach(i -> toSave.add(new TestDocument("value", "value" + i)));
         repository.saveAll(toSave);
@@ -512,8 +501,13 @@ public class TestDocumentRepositoryIntegrationTest {
     }
 
     @Test
-    public void testSlicedFindWithPagination() throws IOException {
-        client.createIndex("value-sort-index", TestDocument.class, Sort.Order.asc("value"));
+    public void testPagedWithMixedOrderInPagination() {
+        Pageable pageable = PageRequest.of(0, 25, Sort.by(Sort.Order.asc("value2"), Sort.Order.desc("value")));
+        assertThrows(IllegalStateException.class, () -> repository.findByValue("value", pageable));
+    }
+
+    @Test
+    public void testSlicedFindWithPagination() {
         List<TestDocument> toSave = new LinkedList<>();
         IntStream.range(1, 501).forEach(i -> toSave.add(new TestDocument("value" + i, "value")));
         repository.saveAll(toSave);
@@ -549,6 +543,11 @@ public class TestDocumentRepositoryIntegrationTest {
     }
 
     @Test
+    public void testNoNameParameter() {
+        assertThrows(QueryException.class, () -> repository.findByValueAndAddressStreet("", ""));
+    }
+
+    @Test
     public void testCustomIdGeneration() throws IOException {
         client.save(new SpringTestDocument());
         SpringTestDocument read = client.read("test1", SpringTestDocument.class);
@@ -557,6 +556,60 @@ public class TestDocumentRepositoryIntegrationTest {
         assertNotEquals("test2", saved.getId());
         assertNotNull(client.read(saved.getId(), TestDocument.class), "Probably some confusion. Proper id generator used, but document is not stored in DB");
 
+    }
+
+    @Test
+    public void testFindAllWithSort() {
+        List<TestDocument> toSave = new LinkedList<>();
+        char c = 'a';
+        for (int i = 0; i < 26; i++) {
+            toSave.add(new TestDocument("value_" + c++));
+        }
+        repository.saveAll(toSave);
+        List<String> sorted = toSave.stream().map(TestDocument::getValue).collect(Collectors.toList());
+        Iterable<TestDocument> read = repository.findAll(Sort.by(Sort.Order.asc("value")));
+        int i = 0;
+        for (TestDocument document : read) {
+            assertEquals(document.getValue(), toSave.get(i++).getValue(), "Find all result is sorted wrongly");
+        }
+    }
+
+    @Test
+    public void testFindAllWithSortedPagination() {
+        List<TestDocument> toSave = new LinkedList<>();
+        IntStream.range(1, 501).forEach(i -> toSave.add(new TestDocument("value" + i, "value")));
+        repository.saveAll(toSave);
+        List<TestDocument> merged = new LinkedList<>();
+        Pageable pageable = PageRequest.of(0, 25, Sort.by(Sort.Order.asc("value")));
+        for (int i = 0; i < 20; i++) {
+            Page<TestDocument> read = repository.findAll(pageable);
+            int size = merged.size();
+            read.stream().forEach(merged::add);
+            assertEquals(500, read.getTotalElements(), "Total count of 500 must be returned");
+            assertEquals(25, merged.size() - size, "25 document in a page was requested");
+            pageable = read.nextPageable();
+        }
+        Map<String, TestDocument> mapped = merged.stream().collect(Collectors.toMap(TestDocument::getValue, t -> t));
+        IntStream.range(1, 501).forEach(i -> assertTrue(mapped.containsKey("value" + i), "Result does not contain document with value = value" + i));
+    }
+
+    @Test
+    public void testFindAllWithPaginationNoSort() {
+        List<TestDocument> toSave = new LinkedList<>();
+        IntStream.range(1, 501).forEach(i -> toSave.add(new TestDocument("value" + i, "value")));
+        repository.saveAll(toSave);
+        List<TestDocument> merged = new LinkedList<>();
+        Pageable pageable = PageRequest.of(0, 25, Sort.unsorted());
+        for (int i = 0; i < 20; i++) {
+            Page<TestDocument> read = repository.findAll(pageable);
+            int size = merged.size();
+            read.stream().forEach(merged::add);
+            assertEquals(500, read.getTotalElements(), "Total count of 500 must be returned");
+            assertEquals(25, merged.size() - size, "25 document in a page was requested");
+            pageable = read.nextPageable();
+        }
+        Map<String, TestDocument> mapped = merged.stream().collect(Collectors.toMap(TestDocument::getValue, t -> t));
+        IntStream.range(1, 501).forEach(i -> assertTrue(mapped.containsKey("value" + i), "Result does not contain document with value = value" + i));
     }
 
 }

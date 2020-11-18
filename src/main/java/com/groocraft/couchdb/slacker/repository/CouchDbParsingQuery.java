@@ -16,12 +16,12 @@
 
 package com.groocraft.couchdb.slacker.repository;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.groocraft.couchdb.slacker.CouchDbClient;
 import com.groocraft.couchdb.slacker.annotation.Index;
 import com.groocraft.couchdb.slacker.exception.CouchDbRuntimeException;
 import com.groocraft.couchdb.slacker.exception.QueryException;
 import com.groocraft.couchdb.slacker.structure.DocumentFindRequest;
+import com.groocraft.couchdb.slacker.structure.FindResult;
 import com.groocraft.couchdb.slacker.utils.FindContext;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Page;
@@ -63,22 +63,19 @@ public class CouchDbParsingQuery<EntityT> implements RepositoryQuery {
     private final QueryMethod queryMethod;
     private final CouchDbClient client;
     private final Class<EntityT> entityClass;
-    private final ObjectMapper mapper;
-    private final BiFunction<List<EntityT>, Object[], Object> postProcessor;
+    private final BiFunction<FindResult<EntityT>, Object[], Object> postProcessor;
     private final PartTree partTree;
     private final Index index;
-    private final int defaultLimit;
     private final boolean returnExecutionStats;
 
     /**
      * @param client               must not be {@literal null}.
-     * @param defaultLimit         which is used for all _find queries if no external limitation is requested. Must be {@literal positive} number.
      * @param returnExecutionStats flag which can turn on/off execution stats in result of every query.
      * @param method               must not be {@literal null}.
      * @param queryMethod          on which is based the query. Must not be {@literal null}.
      * @param entityClass          repository domain class. Must not be {@literal null}.
      */
-    public CouchDbParsingQuery(@NotNull CouchDbClient client, int defaultLimit, boolean returnExecutionStats, @NotNull Method method,
+    public CouchDbParsingQuery(@NotNull CouchDbClient client, boolean returnExecutionStats, @NotNull Method method,
                                @NotNull QueryMethod queryMethod,
                                @NotNull Class<EntityT> entityClass) {
         Assert.notNull(client, "Client must not be null.");
@@ -86,11 +83,9 @@ public class CouchDbParsingQuery<EntityT> implements RepositoryQuery {
         Assert.notNull(queryMethod, "QueryMethod must not be null.");
         Assert.notNull(entityClass, "EntityClass must not be null.");
         this.client = client;
-        this.defaultLimit = defaultLimit;
         this.returnExecutionStats = returnExecutionStats;
         this.queryMethod = queryMethod;
         this.entityClass = entityClass;
-        this.mapper = new ObjectMapper();
         partTree = new PartTree(queryMethod.getName(), queryMethod.getResultProcessor().getReturnedType().getDomainType());
         index = method.getAnnotation(Index.class);
         this.postProcessor = getPostProcessor(partTree, queryMethod, entityClass);
@@ -134,32 +129,21 @@ public class CouchDbParsingQuery<EntityT> implements RepositoryQuery {
         Pageable pageable = getPageableFrom(parameters);
         Sort sortParameter = getSortFrom(parameters);
         List<Sort.Order> sort = null;
-        if (partTree.getSort().isSorted() || sortParameter.isSorted() || pageable.getSort().isSorted()) {
-            sort = new LinkedList<>();
-            for (Sort.Order order : sortParameter.and(partTree.getSort()).and(pageable.getSort())) {
-                sort.add(order);
-            }
-        }
-        Long skip = pageable.isPaged() ? pageable.getOffset() : null;
-        //if there is hard max result in query method, than the max, if not it depends if slice is returned. If so, we need only find out if there is next
-        // slice. In case of page, we need get everything to count total pages.
-        int limit = partTree.getMaxResults() != null ? partTree.getMaxResults() : queryMethod.isSliceQuery() ? pageable.getPageSize() + 1 : defaultLimit;
-        DocumentFindRequest request = new DocumentFindRequest(new FindContext(partTree, initializeParameters(parameters),
-                client.getEntityMetadata(entityClass)), skip, limit, index != null ? index.value() : null, sort, returnExecutionStats);
-        String query = "non-existing";
         try {
-            boolean isNotExternallyLimited = !(queryMethod.isSliceQuery() || partTree.getMaxResults() != null);
-            List<EntityT> result = new LinkedList<>();
-            List<EntityT> r;
-            do {
-                query = mapper.writeValueAsString(request);
-                r = client.find(query, entityClass);
-                result.addAll(r);
-                request.skipNext(defaultLimit);
-            } while (isNotExternallyLimited && r.size() == defaultLimit);
-            return postProcessor.apply(result, parameters);
+            Long skip = pageable.isPaged() ? pageable.getOffset() : null;
+            //if there is hard max result in query method, than the max, if not it depends if slice is returned. If so, we need only find out if there is next
+            // slice. In case of page, we need get everything to count total pages.
+            Integer limit = partTree.getMaxResults() != null ? partTree.getMaxResults() : queryMethod.isSliceQuery() ? pageable.getPageSize() + 1 :
+                    null;
+            DocumentFindRequest request = new DocumentFindRequest(new FindContext(partTree, initializeParameters(parameters),
+                    client.getEntityMetadata(entityClass)), skip, limit, index != null ? index.value() : null,
+                    sortParameter.and(partTree.getSort()).and(pageable.getSort()), returnExecutionStats);
+
+            return postProcessor.apply(
+                    client.find(request, entityClass),
+                    parameters);
         } catch (IOException e) {
-            throw new CouchDbRuntimeException("Unable to query " + query, e);
+            throw new CouchDbRuntimeException("Unable to run parsing query", e);
         }
     }
 
@@ -190,14 +174,14 @@ public class CouchDbParsingQuery<EntityT> implements RepositoryQuery {
      * @param entityClass Must not be {@literal null}
      * @return {@link Function} processing result of find query in the requested way. Can not be {@literal null}
      */
-    private @NotNull BiFunction<List<EntityT>, Object[], Object> getPostProcessor(@NotNull PartTree partTree,
-                                                                                  @NotNull QueryMethod queryMethod,
-                                                                                  @NotNull Class<EntityT> entityClass) {
+    private @NotNull BiFunction<FindResult<EntityT>, Object[], Object> getPostProcessor(@NotNull PartTree partTree,
+                                                                                        @NotNull QueryMethod queryMethod,
+                                                                                        @NotNull Class<EntityT> entityClass) {
         if (partTree.isDelete()) {
-            return (i, p) -> delete(i, entityClass);
+            return (i, p) -> delete(i.getEntities(), entityClass);
         }
         if (partTree.isCountProjection()) {
-            return (i, p) -> i.size();
+            return (i, p) -> i.getEntities().size();
         }
         if (partTree.isDistinct()) {
             return (i, p) -> {
@@ -205,7 +189,7 @@ public class CouchDbParsingQuery<EntityT> implements RepositoryQuery {
             };
         }
         if (partTree.isExistsProjection()) {
-            return (i, p) -> i.size() > 0;
+            return (i, p) -> i.getEntities().size() > 0;
         }
         if (queryMethod.isPageQuery()) {
             return this::wrapAsPage;
@@ -213,7 +197,7 @@ public class CouchDbParsingQuery<EntityT> implements RepositoryQuery {
         if (queryMethod.isSliceQuery()) {
             return this::wrapAsSlice;
         }
-        return (i, p) -> i;
+        return (i, p) -> i.getEntities();
     }
 
     /**
@@ -231,20 +215,20 @@ public class CouchDbParsingQuery<EntityT> implements RepositoryQuery {
         }
     }
 
-    private @NotNull Page<EntityT> wrapAsPage(@NotNull List<EntityT> entities, Object[] parameters) {
+    private @NotNull Page<EntityT> wrapAsPage(@NotNull FindResult<EntityT> findResult, Object[] parameters) {
         Pageable pageable = getPageableFrom(parameters);
         List<EntityT> paged = new LinkedList<>();
-        IntStream.range(0, pageable.getPageSize()).forEach(i -> paged.add(entities.get(i)));
-        return new PageImpl<>(paged, pageable, pageable.getOffset() + entities.size());
+        IntStream.range(0, pageable.getPageSize()).forEach(i -> paged.add(findResult.getEntities().get(i)));
+        return new PageImpl<>(paged, pageable, pageable.getOffset() + findResult.getEntities().size());
     }
 
-    private @NotNull Slice<EntityT> wrapAsSlice(@NotNull List<EntityT> entities, Object[] parameters) {
+    private @NotNull Slice<EntityT> wrapAsSlice(@NotNull FindResult<EntityT> findResult, Object[] parameters) {
         Pageable pageable = getPageableFrom(parameters);
-        boolean hasNext = entities.size() > pageable.getPageSize();
+        boolean hasNext = findResult.getEntities().size() > pageable.getPageSize();
         if (hasNext) {
-            entities.remove(entities.size() - 1);
+            findResult.getEntities().remove(findResult.getEntities().size() - 1);
         }
-        return new SliceImpl<>(entities, pageable, hasNext);
+        return new SliceImpl<>(findResult.getEntities(), pageable, hasNext);
     }
 
     /**

@@ -50,10 +50,14 @@ public class SchemaOperationIntegrationTest {
     public void testDatabaseExists() throws IOException {
         assertTrue(client.databaseExists("schema-test"), "Database schema-test do not exists, but schema operation did not failed");
         DesignDocument design = assertDoesNotThrow(() -> client.readDesign("byType", "schema-test"), "It looks like schema processing " +
-                "did not create design document");
-        assertTrue(design.getViews().keySet().stream().anyMatch("schema"::equals), "It looks like schema processing did not create view in " +
+                "did not create design document byType");
+        assertTrue(design.getViews().keySet().stream().anyMatch("schema"::equals), "It looks like schema processing did not create view 'schema' in " +
                 "design document or overriding other views");
-        assertTrue(design.getViews().keySet().stream().anyMatch("schema2"::equals), "It looks like schema processing did not create view in " +
+        assertTrue(design.getViews().keySet().stream().anyMatch("schema2"::equals), "It looks like schema processing did not create view 'schema2' in " +
+                "design document or overriding other views");
+        DesignDocument all = assertDoesNotThrow(() -> client.readDesign("all", "schema-test"), "It looks like schema processing " +
+                "did not create design document all");
+        assertTrue(all.getViews().keySet().stream().anyMatch("data"::equals), "It looks like schema processing did not create view 'data' in " +
                 "design document or overriding other views");
     }
 

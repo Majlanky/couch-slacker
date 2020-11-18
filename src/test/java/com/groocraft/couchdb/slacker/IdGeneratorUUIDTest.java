@@ -14,20 +14,18 @@
  * limitations under the License.
  */
 
-package com.groocraft.couchdb.slacker.structure;
+package com.groocraft.couchdb.slacker;
 
-import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Test;
 
-public class BulkRequest<EntityT> {
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-    private final Iterable<EntityT> docs;
+class IdGeneratorUUIDTest {
 
-    public BulkRequest(@NotNull Iterable<EntityT> docs) {
-        this.docs = docs;
-    }
-
-    public @NotNull Iterable<EntityT> getDocs() {
-        return docs;
+    @Test
+    public void testClass() {
+        IdGeneratorUUID idGeneratorUUID = new IdGeneratorUUID();
+        assertEquals(Object.class, idGeneratorUUID.getEntityClass(), IdGeneratorUUID.class.getName() + " must be applicable to every object");
     }
 
 }

@@ -1,7 +1,7 @@
 ---
 
 spring:
-  profiles: test
+  profiles: test-view-strategy
 couchdb:
   client:
     url: http://localhost:5984/
@@ -9,7 +9,22 @@ couchdb:
     password: password
     bulk-max-size: 50
     find-execution-stats: true
-    schema-operation: none
+    schema-operation: drop
+    query-strategy: view
+
+---
+
+spring:
+  profiles: test-mango-strategy
+couchdb:
+  client:
+    url: http://localhost:5984/
+    username: admin
+    password: password
+    bulk-max-size: 50
+    find-execution-stats: true
+    schema-operation: drop
+    query-strategy: mango
 
 ---
 
