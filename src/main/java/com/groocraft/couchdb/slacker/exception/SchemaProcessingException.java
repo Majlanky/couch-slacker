@@ -29,7 +29,4 @@ public class SchemaProcessingException extends Exception{
         super(message);
     }
 
-    public SchemaProcessingException(@NotNull String message, @NotNull Throwable cause) {
-        super(message, cause);
-    }
 }

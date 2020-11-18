@@ -16,6 +16,7 @@
 
 package com.groocraft.couchdb.slacker.http;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.groocraft.couchdb.slacker.exception.CouchDbException;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpResponseInterceptor;
@@ -25,9 +26,12 @@ import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.protocol.HttpContext;
 
 import java.io.IOException;
+import java.util.Map;
 
 /**
- * {@link HttpResponseInterceptor} which throws {@link CouchDbException} in case that response code is not OK, CREATED, ACCEPTED or NOT_MODIFIED
+ * {@link HttpResponseInterceptor} which throws {@link CouchDbException} in case that response code is not OK, CREATED, ACCEPTED or NOT_MODIFIED. If there is
+ * a body in request, it is checked for error and reason and it is returned as reason part of the exception. If body is not present, common reason phrase is
+ * returned instead.
  *
  * @author Majlanky
  */
@@ -48,7 +52,14 @@ public class ThrowingInterceptor implements HttpResponseInterceptor {
             default:
                 HttpClientContext clientContext = HttpClientContext.adapt(context);
                 RequestLine requestLine = clientContext.getRequest().getRequestLine();
-                throw new CouchDbException(response.getStatusLine().getStatusCode(), requestLine.getMethod(), requestLine.getUri(), response.getStatusLine().getReasonPhrase());
+                String reason = response.getStatusLine().getReasonPhrase();
+                if (response.getEntity() != null) {
+                    ObjectMapper mapper = new ObjectMapper();
+                    Map<String, String> wholeBody = mapper.readValue(response.getEntity().getContent(), mapper.getTypeFactory().constructMapType(Map.class,
+                            String.class, String.class));
+                    reason = wholeBody.get("error") + " : " + wholeBody.get("reason");
+                }
+                throw new CouchDbException(response.getStatusLine().getStatusCode(), requestLine.getMethod(), requestLine.getUri(), reason);
         }
     }
 }

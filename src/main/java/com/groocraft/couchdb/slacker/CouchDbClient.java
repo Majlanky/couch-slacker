@@ -16,8 +16,10 @@
 
 package com.groocraft.couchdb.slacker;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.groocraft.couchdb.slacker.exception.CouchDbException;
 import com.groocraft.couchdb.slacker.http.AutoCloseableHttpResponse;
 import com.groocraft.couchdb.slacker.repository.CouchDbEntityInformation;
@@ -28,7 +30,9 @@ import com.groocraft.couchdb.slacker.structure.BulkRequest;
 import com.groocraft.couchdb.slacker.structure.DesignDocument;
 import com.groocraft.couchdb.slacker.structure.DocumentFindResponse;
 import com.groocraft.couchdb.slacker.structure.DocumentPutResponse;
+import com.groocraft.couchdb.slacker.structure.FindResult;
 import com.groocraft.couchdb.slacker.structure.IndexCreateRequest;
+import com.groocraft.couchdb.slacker.structure.View;
 import com.groocraft.couchdb.slacker.utils.BulkGetDeserializer;
 import com.groocraft.couchdb.slacker.utils.DeleteDocumentSerializer;
 import com.groocraft.couchdb.slacker.utils.DeleteViewedDocumentSerializer;
@@ -55,18 +59,24 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HttpContext;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.util.Pair;
 import org.springframework.util.Assert;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -79,11 +89,27 @@ import java.util.stream.StreamSupport;
 @Slf4j
 public class CouchDbClient {
 
+    final static String ALL_DESIGN = "all";
+    final static String ALL_DATA_VIEW = "data";
+    final static String VIEW_MAP = "function(doc){if(doc.%1$s == \"%2$s\"){emit(null);}}";
+    final static String ALL_DATA_MAP = "function(doc){emit(null);}";
+    final static String COUNT_REDUCE = "_count";
+    final static String SORTED_VIEW_MAP = "function(doc){emit([%1$s]);}";
+    final static String SORTED_TYPED_VIEW_MAP = "function(doc){if(doc.%1$s == \"%2$s\"){emit([%3$s]);}}";
+    final static String SORTED_FIND_VIEW_MAP = "function(doc){if%1$s{emit([%2$s]);}}";
+    final static String FIND_VIEW_MAP = "function(doc){if%1$s{emit(null);}}";
+
+    private final static String VIEW_REDUCE_PARAMETER = "reduce";
+    private final static String VIEW_LIMIT_PARAMETER = "limit";
+    private final static String VIEW_SKIP_PARAMETER = "skip";
+
     private final HttpClient httpClient;
     private final HttpHost httpHost;
     private final HttpContext httpContext;
     @SuppressWarnings({"rawtypes"})
     private final Map<Class, EntityMetadata> entityMetadataCache;
+    private final Set<String> knownIndexes;
+    private final Set<String> knownSortedViews;
     private final URI baseURI;
     private final ObjectMapper mapper;
     @SuppressWarnings({"rawtypes"})
@@ -92,6 +118,8 @@ public class CouchDbClient {
     private final int defaultShards;
     private final int defaultReplicas;
     private final boolean defaultPartitioned;
+    private final int bulkMaxSize;
+    private final QueryStrategy queryStrategy;
 
     /**
      * @param httpClient         must not be {@literal null}
@@ -103,6 +131,7 @@ public class CouchDbClient {
      * @param defaultShards      number of shard used for every a newly created database
      * @param defaultReplicas    number of replicas used for every a newly created database
      * @param defaultPartitioned flag of partitioned used for every a newly created database
+     * @param bulkMaxSize        maximal size of bulk operations
      */
     CouchDbClient(@NotNull HttpClient httpClient,
                   @NotNull HttpHost httpHost,
@@ -111,7 +140,9 @@ public class CouchDbClient {
                   @NotNull Iterable<IdGenerator<?>> idGenerators,
                   int defaultShards,
                   int defaultReplicas,
-                  boolean defaultPartitioned) {
+                  boolean defaultPartitioned,
+                  int bulkMaxSize,
+                  QueryStrategy queryStrategy) {
         Assert.notNull(httpClient, "HttpClient must not be null.");
         Assert.notNull(httpHost, "HttpHost must not be null.");
         Assert.notNull(httpContext, "HttpContext must not be null.");
@@ -124,12 +155,16 @@ public class CouchDbClient {
         this.httpHost = httpHost;
         this.httpContext = httpContext;
         entityMetadataCache = new HashMap<>();
+        knownIndexes = new HashSet<>();
+        knownSortedViews = new HashSet<>();
         this.mapper = new ObjectMapper();
         this.idGenerators = new HashMap<>();
         this.defaultIdGenerator = new IdGeneratorUUID();
         this.defaultShards = defaultShards;
         this.defaultReplicas = defaultReplicas;
         this.defaultPartitioned = defaultPartitioned;
+        this.bulkMaxSize = bulkMaxSize;
+        this.queryStrategy = queryStrategy;
         idGenerators.forEach(g -> this.idGenerators.put(g.getEntityClass(), g));
     }
 
@@ -170,7 +205,7 @@ public class CouchDbClient {
      * @param clazz     Class of the given entity
      * @param <EntityT> Entity type
      * @return Generated ID for the given entity. Can not be {@literal null}
-     * @see #CouchDbClient(HttpClient, HttpHost, HttpContext, URI, Iterable, int, int, boolean)
+     * @see #CouchDbClient(HttpClient, HttpHost, HttpContext, URI, Iterable, int, int, boolean, int, QueryStrategy)
      */
     @SuppressWarnings("unchecked")
     private <EntityT> @NotNull String generateId(@NotNull EntityT entity, Class<EntityT> clazz) {
@@ -329,7 +364,7 @@ public class CouchDbClient {
      *
      * @param id    of wanted design document
      * @param clazz from which is obtained database name where design document should be stored
-     * @return instance of {@link DesignDocument} with data of wanted document.
+     * @return instance of the wanted {@link DesignDocument}.
      * @throws IOException if http request is not successful or json processing fail
      */
     public @NotNull DesignDocument readDesign(@NotNull String id, @NotNull Class<?> clazz) throws IOException {
@@ -341,12 +376,48 @@ public class CouchDbClient {
      *
      * @param id           of wanted design document
      * @param databaseName of database where design document should be stored
-     * @return instance of {@link DesignDocument} with data of wanted document.
+     * @return instance of the wanted {@link DesignDocument}
      * @throws IOException if http request is not successful or json processing fail
      */
     public @NotNull DesignDocument readDesign(@NotNull String id, @NotNull String databaseName) throws IOException {
         log.debug("Read of design with ID {} from database {}", id, databaseName);
         return get(getURI(baseURI, databaseName, "_design", id), r -> mapper.readValue(r.getEntity().getContent(), DesignDocument.class));
+    }
+
+    /**
+     * Method to get design document of the given name from database which name is obtained from the given class. Differently from
+     * {@link #readDesign(String, Class)}, method do not throw IOException in case of {@link HttpStatus#SC_NOT_FOUND} status but returns empty Optional
+     * instead.
+     *
+     * @param id    of wanted design document
+     * @param clazz from which is obtained database name where design document should be stored
+     * @return instance of the wanted {@link DesignDocument} wrapped in {@link Optional} or empty {@link Optional} is design not found.
+     * @throws IOException if http request is not successful or json processing fail
+     */
+    public @NotNull Optional<DesignDocument> readDesignSafely(@NotNull String id, @NotNull Class<?> clazz) throws IOException {
+        return readDesignSafely(id, getDatabaseName(clazz));
+    }
+
+    /**
+     * Method to get design document of the given name from database which name is obtained from the given class. Differently from
+     * {@link #readDesign(String, Class)}, method do not throw IOException in case of {@link HttpStatus#SC_NOT_FOUND} status but returns empty Optional
+     * instead.
+     *
+     * @param id           of wanted design document
+     * @param databaseName of database where design document should be stored
+     * @return instance of the wanted {@link DesignDocument} wrapped in {@link Optional} or empty {@link Optional} is design not found.
+     * @throws IOException if http request is not successful or json processing fail
+     */
+    public Optional<DesignDocument> readDesignSafely(@NotNull String id, @NotNull String databaseName) throws IOException {
+        try {
+            return Optional.of(readDesign(id, databaseName));
+        } catch (CouchDbException couchDbException) {
+            if (couchDbException.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
+                return Optional.empty();
+            } else {
+                throw couchDbException;
+            }
+        }
     }
 
     /**
@@ -359,7 +430,7 @@ public class CouchDbClient {
      * @return {@link Iterable} of read documents. Can not be {@literal null}
      * @throws IOException if http request is not successful or json processing fail
      */
-    public <EntityT> @NotNull Iterable<EntityT> readAll(@NotNull Iterable<String> ids, @NotNull Class<EntityT> clazz) throws IOException {
+    public <EntityT> @NotNull List<EntityT> readAll(@NotNull Iterable<String> ids, @NotNull Class<EntityT> clazz) throws IOException {
         ObjectMapper localMapper = new ObjectMapper();
         SimpleModule module = new SimpleModule();
         module.addDeserializer(List.class, new BulkGetDeserializer<>(clazz));
@@ -376,41 +447,148 @@ public class CouchDbClient {
     }
 
     /**
-     * Method to get result of _all_docs with ignoring design documents or view (If you need design documents use {@link #readAllDesign(Class)} or
-     * {@link #readAllDocs(Class, Predicate)} if you want both) from the database specified by {@link com.groocraft.couchdb.slacker.annotation.Document} from
-     * the passed entity class. Result is returned as Stream of documents ids, no full data. If the result is _all_docs or view depends on the
-     * {@link com.groocraft.couchdb.slacker.annotation.Document} settings.
+     * Method using view to get all document ids. If entity {@link EntityMetadata#isViewed()} than the configured view for the configured design is used. If
+     * entity is not viewed, the expected data view from the all design is used. Method supports pagination. If design documents are needed, use
+     * {@link #readAllDesign(Class)}.
+     * {@link #readAllDocsWithoutView(Class, Predicate)} can be used if no default view is present.
      *
      * @param clazz of wanted entity. Used to get database name {@link #getDatabaseName(Class)}. Must not be {@literal null}
-     * @return Stream of {@link String} which contain id
+     * @param skip  number of skipped documents. 0 means no document is skipped
+     * @param limit of document in a result. Can be {@literal null} if no limitation is wanted.
+     * @param sort  information for the result
+     * @return all or limited result of documents from database depending on the given class
+     * @throws IOException if http request is not successful or json processing fail
+     */
+    public @NotNull List<String> readAll(@NotNull Class<?> clazz, Long skip, @Nullable Integer limit, @NotNull Sort sort) throws IOException {
+        String design = ALL_DESIGN;
+        String view = ALL_DATA_VIEW;
+        EntityMetadata<?> em = getEntityMetadata(clazz);
+        if (sort.isSorted()) {
+            Sort.Direction direction = null;
+            for (Sort.Order order : sort) {
+                direction = assertSameDirection(direction, order.getDirection());
+            }
+            Pair<String, String> designAndView = getSortedViewId(sort, em);
+            design = designAndView.getFirst();
+            view = designAndView.getSecond();
+        } else if (em.isViewed()) {
+            design = em.getDesign();
+            view = em.getView();
+        }
+
+        return readFromView(em.getDatabaseName(), design, view, skip, limit, sort);
+    }
+
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
+    private @NotNull List<String> readFromView(@NotNull String database, @NotNull String design, @NotNull String view, Long skip, @Nullable Integer limit,
+                                               @NotNull Sort sort) throws IOException {
+        List<NameValuePair> parameters = new ArrayList<>(4);
+        if (sort.isSorted()) {
+            parameters.add(new BasicNameValuePair("descending", sort.stream().findFirst().get().getDirection() == Sort.Direction.DESC ? "true" : "false"));
+        }
+        if (skip != null) {
+            parameters.add(new BasicNameValuePair(VIEW_SKIP_PARAMETER, skip + ""));
+        }
+        if (limit != null) {
+            parameters.add(new BasicNameValuePair(VIEW_LIMIT_PARAMETER, limit + ""));
+        }
+
+        parameters.add(new BasicNameValuePair(VIEW_REDUCE_PARAMETER, Boolean.toString(false)));
+
+        return get(getURI(baseURI, Arrays.asList(database, "_design", design, "_view", view), parameters),
+                r -> mapper.readValue(r.getEntity().getContent(), AllDocumentResponse.class).getRows());
+    }
+
+    private Pair<String, String> getSortedViewId(Sort sort, EntityMetadata<?> em) throws IOException {
+        String sortViewId = "sorted-by-" + (em.isViewed() ? em.getType() + "-" : "") +
+                sort.stream().map(o -> o.getProperty().replace(".", "-")).collect(Collectors.joining(":"));
+        String designId = em.isViewed() ? em.getDesign() : ALL_DESIGN;
+        DesignDocument design = readDesign(designId, em.getDatabaseName());
+        if (!knownSortedViews.contains(sortViewId)) {
+            if (!design.getViews().containsKey(sortViewId)) {
+                View view;
+                String sortKey = sort.stream().map(o -> "doc." + o.getProperty()).collect(Collectors.joining(","));
+                if (em.isViewed()) {
+                    view = new View(sortViewId, String.format(SORTED_TYPED_VIEW_MAP, em.getTypeField(), em.getType(), sortKey), COUNT_REDUCE);
+                } else {
+                    view = new View(sortViewId, String.format(SORTED_VIEW_MAP, sortKey), COUNT_REDUCE);
+                }
+                design.addView(view);
+                saveDesign(design, em.getDatabaseName());
+            }
+            knownSortedViews.add(sortViewId);
+        }
+        return Pair.of(designId, sortViewId);
+    }
+
+    /**
+     * Method tests if the two given directions are the same. The test is necessary because CouchDB is not able to mix sort directions in Mango query.
+     *
+     * @param expected expected direction. Can be {@literal null} which means do not test the current
+     * @param current  tested direction that must match the expected
+     * @return everytime returns current. Can not be {@literal null}
+     */
+    public static @NotNull Sort.Direction assertSameDirection(@Nullable Sort.Direction expected, @NotNull Sort.Direction current) {
+        if (expected != null) {
+            if (expected != current) {
+                throw new IllegalStateException("CouchDB is not able to mix sort directions");
+            }
+        }
+        return current;
+    }
+
+    /**
+     * Method using view to get document count. If entity {@link EntityMetadata#isViewed()} than the configured view for the configured design is used. If
+     * entity is not viewed, the expected data view from the all design is used.
+     *
+     * @param clazz of wanted entity. Used to get database name {@link #getDatabaseName(Class)}. Must not be {@literal null}
+     * @return {@literal non-null} count of documents of the given entity
      * @throws IOException if http request is not successful or json processing fail
      * @see com.groocraft.couchdb.slacker.annotation.Document
-     * @see #readAllDesign(Class)
-     * @see #readAllDocs(Class, Predicate)
+     */
+    public long countAll(@NotNull Class<?> clazz) throws IOException {
+        EntityMetadata<?> em = getEntityMetadata(clazz);
+        String design = ALL_DESIGN;
+        String view = ALL_DATA_VIEW;
+        if (em.isViewed()) {
+            design = em.getDesign();
+            view = em.getView();
+        }
+        return get(getURI(baseURI, em.getDatabaseName(), "_design", design, "_view", view),
+                r -> {
+                    JsonNode rows = mapper.readValue(r.getEntity().getContent(), ObjectNode.class).get("rows");
+                    if (rows.has(0)) {
+                        return rows.get(0).get("value").asLong();
+                    } else {
+                        return 0L;
+                    }
+                });
+    }
+
+    /**
+     * {@link #readAll(Class, Long, Integer, Sort)} where skip is 0 and limit null.
+     *
+     * @param clazz of wanted entity. Used to get database name {@link #getDatabaseName(Class)}. Must not be {@literal null}
+     * @return ids of all entities
+     * @throws IOException if http request is not successful or json processing fail
+     * @see #readAll(Class, Long, Integer, Sort)
      * @see com.groocraft.couchdb.slacker.annotation.Document
      */
-    public @NotNull Iterable<String> readAll(@NotNull Class<?> clazz) throws IOException {
-        if (getEntityMetadata(clazz).isViewed()) {
-            return readAllDocsFromView(clazz);
-        } else {
-            log.debug("Read of all non design documents from database {}", getDatabaseName(clazz));
-            return readAllDocs(clazz, s -> !s.startsWith("_design"));
-        }
+    public @NotNull List<String> readAll(@NotNull Class<?> clazz) throws IOException {
+        return readAll(clazz, null, null, Sort.unsorted());
     }
 
     /**
      * Method to get result of _design_docs which contains only design documents (If you need non-design documents use {@link #readAll(Class)} or
-     * {@link #readAllDocs(Class, Predicate)} if you want both) to the database specified by {@link com.groocraft.couchdb.slacker.annotation.Document} from
-     * the passed entity class. Result is returned as Stream of documents ids, no full data.
+     * {@link #readAllDocsWithoutView(Class, Predicate)} (Class, Predicate)} if you want both) to the database specified by
+     * {@link com.groocraft.couchdb.slacker.annotation.Document} from the passed entity class. Result is returned as Stream of documents ids, no full data.
      *
      * @param clazz of wanted entity. Used to get database name {@link #getDatabaseName(Class)}. Must not be {@literal null}
-     * @return Stream of {@link String} which contain id
+     * @return {@literal non-null} document ids
      * @throws IOException if http request is not successful or json processing fail
-     * @see com.groocraft.couchdb.slacker.annotation.Document
-     * @see #readAll(Class)
-     * @see #readAllDocs(Class, Predicate)
+     * @see #readAll(Class, Long, Integer, Sort)
      */
-    public @NotNull Iterable<String> readAllDesign(@NotNull Class<?> clazz) throws IOException {
+    public @NotNull List<String> readAllDesign(@NotNull Class<?> clazz) throws IOException {
         String databaseName = getDatabaseName(clazz);
         log.debug("Read of all design documents from database {}", databaseName);
         return get(getURI(baseURI, databaseName, "_design_docs"),
@@ -429,15 +607,9 @@ public class CouchDbClient {
      * @see #readAll(Class)
      * @see #readAllDesign(Class)
      */
-    public @NotNull Iterable<String> readAllDocs(@NotNull Class<?> clazz, @NotNull Predicate<String> idFilterPredicate) throws IOException {
+    public @NotNull List<String> readAllDocsWithoutView(@NotNull Class<?> clazz, @NotNull Predicate<String> idFilterPredicate) throws IOException {
         return get(getURI(baseURI, getDatabaseName(clazz), "_all_docs"),
                 r -> mapper.readValue(r.getEntity().getContent(), AllDocumentResponse.class).getRows().stream().filter(idFilterPredicate).collect(Collectors.toList()));
-    }
-
-    public @NotNull Iterable<String> readAllDocsFromView(@NotNull Class<?> clazz) throws IOException {
-        EntityMetadata<?> em = getEntityMetadata(clazz);
-        return get(getURI(baseURI, em.getDatabaseName(), "_design", em.getDesign(), "_view", em.getView()),
-                r -> mapper.readValue(r.getEntity().getContent(), AllDocumentResponse.class).getRows());
     }
 
     /**
@@ -465,10 +637,10 @@ public class CouchDbClient {
      *
      * @param clazz     with {@link com.groocraft.couchdb.slacker.annotation.Document} annotation
      * @param <EntityT> Type of entity in the database
-     * @return {@link Iterable} of deleted documents
+     * @return {@link List} of deleted documents
      * @throws IOException if http request is not successful or json processing fail
      */
-    public <EntityT> @NotNull Iterable<EntityT> deleteAll(@NotNull Class<EntityT> clazz) throws IOException {
+    public <EntityT> @NotNull List<EntityT> deleteAll(@NotNull Class<EntityT> clazz) throws IOException {
         log.debug("Delete of all documents from database {}", getDatabaseName(clazz));
         return deleteAll(readAll(readAll(clazz), clazz), clazz);
     }
@@ -476,14 +648,14 @@ public class CouchDbClient {
     /**
      * Method to delete given documents. A bulk operation is used.
      *
-     * @param entities  {@link Iterable} of entities to be erased
+     * @param entities  {@link List} of entities to be erased
      * @param clazz     of given entities
      * @param <EntityT> type of entities
      * @return {@link Iterable} of deleted entities
      * @throws IOException if http request is not successful or json processing fail
      */
     @SuppressWarnings("DuplicatedCode")
-    public <EntityT> @NotNull Iterable<EntityT> deleteAll(@NotNull Iterable<EntityT> entities, @NotNull Class<?> clazz) throws IOException {
+    public <EntityT> @NotNull List<EntityT> deleteAll(@NotNull Iterable<EntityT> entities, @NotNull Class<?> clazz) throws IOException {
         EntityMetadata<?> entityMetadata = getEntityMetadata(clazz);
         log.debug("Bulk delete of {} documents from database {}", LazyLog.of(() -> StreamSupport.stream(entities.spliterator(), false).count()),
                 entityMetadata.getDatabaseName());
@@ -539,11 +711,11 @@ public class CouchDbClient {
      * @param json      query of valid Mango query. Must not be {@literal null}
      * @param clazz     of entities expected as result. Must not be {@literal null}
      * @param <EntityT> type of entity
-     * @return {@link List} of instances of the given class with result of the given class
+     * @return pair of bookmark of result and {@link List} of instances of the given class with result of the given class
      * @throws IOException if http request is not successful or json processing fail
      * @see DocumentBase
      */
-    public <EntityT> @NotNull List<EntityT> find(@NotNull String json, @NotNull Class<EntityT> clazz) throws IOException {
+    public <EntityT> @NotNull Pair<List<EntityT>, String> find(@NotNull String json, @NotNull Class<EntityT> clazz) throws IOException {
         ObjectMapper localMapper = new ObjectMapper();
         SimpleModule simpleModule = new SimpleModule();
         simpleModule.addDeserializer(List.class, new FoundDocumentDeserializer<>(clazz));
@@ -554,11 +726,180 @@ public class CouchDbClient {
         log.debug("Mango query executed with result of {} documents", response.getDocuments().size());
         response.getWarning().ifPresent(w -> log.info("{} for query {}", w, json));
         response.getExecutionStats().ifPresent(s -> log.info("{} for query {}", s, json));
-        return response.getDocuments();
+        return Pair.of(response.getDocuments(), response.getBookmark());
     }
 
     /**
-     * Method to create new index by the given parameters.
+     * Executes the given request as mango or view lookup.
+     *
+     * @param request   that will be executed depending on query strategy configuration. Must not be {@literal null}
+     * @param clazz     that will be used to as used to obtain database name. Must not be {@literal null}
+     * @param <EntityT> type of entities that should be in a result of query
+     * @return {@link FindResult} with entities matching the provided request and bookmarks if the configured strategy returns it.
+     * @throws IOException if http request is not successful or json processing fail
+     */
+    public <EntityT> @NotNull FindResult<EntityT> find(@NotNull FindRequest request, @NotNull Class<EntityT> clazz) throws IOException {
+        return find(request, clazz, null);
+    }
+
+    /**
+     * Executes the given request as mango or view lookup. If configured query strategy provides bookmarks, the {@code bookmarkBy} parameter is used as size
+     * of page for that bookmark will be generated.
+     *
+     * @param request    that will be executed depending on query strategy configuration. Must not be {@literal null}
+     * @param clazz      that will be used to obtain database name. Must not be {@literal null}
+     * @param bookmarkBy number of entities between two bookmarks. Used only if the configured strategy provides it
+     * @param <EntityT>  type of entities that should be in a result of query
+     * @return {@link FindResult} with entities matching the provided request and bookmarks if the configured strategy returns it.
+     * @throws IOException if http request is not successful or json processing fail
+     */
+    public <EntityT> @NotNull FindResult<EntityT> find(@NotNull FindRequest request, @NotNull Class<EntityT> clazz,
+                                                       @Nullable Integer bookmarkBy) throws IOException {
+        if (queryStrategy == QueryStrategy.MANGO) {
+            return findByMango(request, clazz, bookmarkBy);
+        } else {
+            return findByView(request, clazz);
+        }
+
+    }
+
+    /**
+     * Method used if {@link QueryStrategy#VIEW} is configured. Method uses {@link #ensureView(Sort, String, Class)} method to create (or obtain the existing
+     * one) view where mapping  function is matching the provided request. The view is used as source of a result.
+     *
+     * @param request   that will be executed. Must not be {@literal null}
+     * @param clazz     that will be used to obtain database name. Must not be {@literal null}
+     * @param <EntityT> type of entities that should be in a result of query
+     * @return {@link FindResult} with entities matching the provided request and bookmarks if the configured strategy returns it.
+     * @throws IOException if http request is not successful or json processing fail
+     */
+    public <EntityT> @NotNull FindResult<EntityT> findByView(@NotNull FindRequest request, @NotNull Class<EntityT> clazz) throws IOException {
+        String designId = ensureView(request.getSort(), request.getJavaScriptCondition(), clazz);
+        List<EntityT> entities = readAll(readFromView(getDatabaseName(clazz), designId, ALL_DATA_VIEW, request.getSkip(), request.getLimit(),
+                request.getSort()), clazz);
+        return FindResult.of(entities, Collections.emptyMap());
+    }
+
+    /**
+     * Method to obtain total amount of documents matching the given request. It depends on the configured query strategy if mango or view is used to process
+     * the given request.
+     *
+     * @param request that will be executed. Must not be {@literal null}
+     * @param clazz   that will be used to obtain database name. Must not be {@literal null}
+     * @return total amount of entities matching the given request
+     * @throws IOException if http request is not successful or json processing fail
+     */
+    public long count(@NotNull FindRequest request, @NotNull Class<?> clazz) throws IOException {
+        if (queryStrategy == QueryStrategy.MANGO) {
+            request.setLimit(null);
+            request.setSkip(null);
+            request.setBookmark(null);
+            return findByMango(request, clazz, null).getEntities().size();
+        } else {
+            return countByView(request, clazz);
+        }
+    }
+
+    /**
+     * Method to obtain total amount of documents matching the given request. Method uses {@link #ensureView(Sort, String, Class)} method to create (or obtain the existing
+     * one) view where mapping function is matching the provided request. The view is used in reduce mode with _count to get total.
+     *
+     * @param request that will be executed. Must not be {@literal null}
+     * @param clazz   that will be used to obtain database name. Must not be {@literal null}
+     * @return total amount of entities matching the given request
+     * @throws IOException if http request is not successful or json processing fail
+     */
+    public long countByView(@NotNull FindRequest request, @NotNull Class<?> clazz) throws IOException {
+        String designId = ensureView(request.getSort(), request.getJavaScriptCondition(), clazz);
+
+        return get(getURI(baseURI, getDatabaseName(clazz), "_design", designId, "_view", ALL_DATA_VIEW),
+                r -> {
+                    JsonNode rows = mapper.readValue(r.getEntity().getContent(), ObjectNode.class).get("rows");
+                    if (rows.has(0)) {
+                        return rows.get(0).get("value").asLong();
+                    } else {
+                        return 0L;
+                    }
+                });
+    }
+
+    /**
+     * Method to ensure that a view matching the given javascript condition and sort exists or will be created. Sort is used to determine the key of view.
+     * If there is not sort, view emits null. The given javascript is used in mapping function of the view.
+     *
+     * @param sort                of the view. Must not be {@literal null}
+     * @param javaScriptCondition of mapping function of the view. Must not be {@literal null}
+     * @param clazz               that will be used to obtain database name. Must not be {@literal null}
+     * @return name of the view with mapping function matching the given javascript condition and key(s) with the given sort.
+     * @throws IOException if http request is not successful or json processing fail
+     */
+    private String ensureView(@NotNull Sort sort, @NotNull String javaScriptCondition, @NotNull Class<?> clazz) throws IOException {
+        String mapFunction;
+        if (sort.isSorted()) {
+            Sort.Direction direction = null;
+            for (Sort.Order order : sort) {
+                direction = assertSameDirection(direction, order.getDirection());
+            }
+            String key = sort.stream().map(o -> "doc." + o.getProperty()).collect(Collectors.joining(","));
+            mapFunction = String.format(SORTED_FIND_VIEW_MAP, javaScriptCondition, key);
+        } else {
+            mapFunction = String.format(FIND_VIEW_MAP, javaScriptCondition);
+        }
+
+        Optional<DesignDocument> design = readDesignSafely(mapFunction.hashCode() + "", clazz);
+        if (!design.isPresent()) {
+            View view = new View(ALL_DATA_VIEW, mapFunction, COUNT_REDUCE);
+            DesignDocument newDesign = new DesignDocument(mapFunction.hashCode() + "", Collections.singleton(view));
+            saveDesign(newDesign, clazz);
+        }
+        return mapFunction.hashCode() + "";
+    }
+
+    /**
+     * Method used if {@link QueryStrategy#MANGO} is configured. Method uses translates the given request to mango json and executes it.
+     *
+     * @param request   that will be executed. Must not be {@literal null}
+     * @param clazz     that will be used to obtain database name. Must not be {@literal null}
+     * @param <EntityT> type of entities that should be in a result of query
+     * @return {@link FindResult} with entities matching the provided request and bookmarks if the configured strategy returns it.
+     * @throws IOException if http request is not successful or json processing fail
+     */
+    public <EntityT> @NotNull FindResult<EntityT> findByMango(@NotNull FindRequest request, @NotNull Class<EntityT> clazz,
+                                                              @Nullable Integer bookmarkBy) throws IOException {
+        Integer originalLimit = request.getLimit();
+        Sort sort = request.getSort();
+
+        if (sort.isSorted()) {
+            createIndex(sort, clazz);
+        }
+
+        List<EntityT> result = new LinkedList<>();
+        Pair<List<EntityT>, String> r;
+        Map<Integer, String> bookmarks = new HashMap<>();
+        int limit = bookmarkBy == null ? bulkMaxSize : bookmarkBy;
+        if (originalLimit == null || bookmarkBy != null) {
+            request.setLimit(limit);
+        }
+        do {
+            //if we are limited by request and we can see that next request cause overflow of the limit, we request as less as needed.
+            if (originalLimit != null && result.size() + limit > originalLimit) {
+                limit = originalLimit - result.size();
+                request.setLimit(limit);
+            }
+            String query = mapper.writeValueAsString(request);
+            r = find(query, clazz);
+            result.addAll(r.getFirst());
+            bookmarks.put(result.size(), r.getSecond());
+            request.setBookmark(r.getSecond());
+            //We repeat whole process with next bookmark until we have all documents or as much document as limit from request
+        } while ((originalLimit != null && result.size() < originalLimit && r.getFirst().size() == limit)
+                || (originalLimit == null && r.getFirst().size() == limit));
+
+        return FindResult.of(result, bookmarks);
+    }
+
+    /**
+     * Method to create new index by the given parameters. All order rules must be in the same direction (it is a limitation of CouchDB)
      *
      * @param name        of the created index. Must not be {@literal null}
      * @param entityClass as definition of database in which index should be created. Must not be {@literal null}
@@ -570,7 +911,7 @@ public class CouchDbClient {
     }
 
     /**
-     * Method to create new index by the given parameters.
+     * Method to create new index by the given parameters. All order rules must be in the same direction (it is a limitation of CouchDB)
      *
      * @param name        of the created index. Must not be {@literal null}
      * @param entityClass as definition of database in which index should be created. Must not be {@literal null}
@@ -582,7 +923,7 @@ public class CouchDbClient {
     }
 
     /**
-     * Method to create new index by the given parameters.
+     * Method to create new index by the given parameters. All order rules must be in the same direction (it is a limitation of CouchDB)
      *
      * @param name   of the created index. Must not be {@literal null}
      * @param dbName in which index should be created. Must not be {@literal null}
@@ -590,9 +931,32 @@ public class CouchDbClient {
      * @throws IOException if http request is not successful or json processing fail
      */
     public void createIndex(@NotNull String name, @NotNull String dbName, @NotNull Iterable<Sort.Order> fields) throws IOException {
+        Sort.Direction direction = null;
+        for (Sort.Order order : fields) {
+            direction = CouchDbClient.assertSameDirection(direction, order.getDirection());
+        }
+
         log.debug("Creating index with name {} in database {} and ordering {}", name, dbName,
                 LazyLog.of(() -> StreamSupport.stream(fields.spliterator(), false).map(Sort.Order::toString).collect(Collectors.joining(", "))));
         post(getURI(baseURI, dbName, "_index"), mapper.writeValueAsString(new IndexCreateRequest(name, fields)), r -> null);
+    }
+
+    /**
+     * Method to create new index by the given parameters. All order rules must be in the same direction (it is a limitation of CouchDB)
+     *
+     * @param sort  from that index should be done. Must not be {@literal null}
+     * @param clazz as definition of database in which index should be created. Must not be {@literal null}
+     * @throws IOException if http request is not successful or json processing fail
+     */
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
+    private void createIndex(@NotNull Sort sort, @NotNull Class<?> clazz) throws IOException {
+        Assert.isTrue(sort.isSorted(), "Sort must contain at leas one Order for creating index");
+        String indexId = sort.stream().map(Sort.Order::getProperty).collect(Collectors.joining("-"))
+                + "-" + sort.stream().findFirst().get().toString().toLowerCase();
+        if (!knownIndexes.contains(indexId)) {
+            createIndex(indexId, clazz, sort);
+            knownIndexes.add(indexId);
+        }
     }
 
     /**

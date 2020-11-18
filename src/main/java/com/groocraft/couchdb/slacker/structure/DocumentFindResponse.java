@@ -35,17 +35,11 @@ public class DocumentFindResponse<EntityT> {
     @JsonProperty("execution_stats")
     private ExecutionStats executionStats;
 
-    @JsonProperty("error")
-    private String error;
-
     @JsonProperty("bookmark")
     private String bookmark;
 
     @JsonProperty("warning")
     private String warning;
-
-    @JsonProperty("reason")
-    private String reason;
 
     public List<EntityT> getDocuments() {
         return documents;
@@ -61,14 +55,6 @@ public class DocumentFindResponse<EntityT> {
 
     public void setExecutionStats(ExecutionStats executionStats) {
         this.executionStats = executionStats;
-    }
-
-    public String getError() {
-        return error;
-    }
-
-    public void setError(String error) {
-        this.error = error;
     }
 
     public String getBookmark() {
@@ -87,11 +73,4 @@ public class DocumentFindResponse<EntityT> {
         this.warning = warning;
     }
 
-    public String getReason() {
-        return reason;
-    }
-
-    public void setReason(String reason) {
-        this.reason = reason;
-    }
 }

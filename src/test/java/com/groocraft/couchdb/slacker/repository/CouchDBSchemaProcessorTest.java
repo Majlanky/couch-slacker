@@ -21,6 +21,8 @@ import com.groocraft.couchdb.slacker.EntityMetadata;
 import com.groocraft.couchdb.slacker.SchemaOperation;
 import com.groocraft.couchdb.slacker.TestDocument;
 import com.groocraft.couchdb.slacker.exception.SchemaProcessingException;
+import com.groocraft.couchdb.slacker.structure.DesignDocument;
+import com.groocraft.couchdb.slacker.structure.View;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -28,6 +30,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -55,6 +58,8 @@ class CouchDBSchemaProcessorTest {
     public void testValidate() throws IOException {
         when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata<>(TestDocument.class));
         when(client.databaseExists(TestDocument.class)).thenReturn(true, false);
+        when(client.readDesignSafely("all", "test")).thenReturn(Optional.of(
+                new DesignDocument("all", Collections.singleton(new View("data", "function(doc){emit(null);}", "_count")))));
         CouchDBSchemaProcessor schemaProcessor = new CouchDBSchemaProcessor(client, SchemaOperation.VALIDATE);
         assertDoesNotThrow(() -> schemaProcessor.process(Collections.singletonList(TestDocument.class)));
         assertThrows(SchemaProcessingException.class, () -> schemaProcessor.process(Collections.singletonList(TestDocument.class)));
@@ -64,6 +69,8 @@ class CouchDBSchemaProcessorTest {
     public void testCreate() throws Exception {
         when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata<>(TestDocument.class));
         when(client.databaseExists(TestDocument.class)).thenReturn(true, true, false, true);
+        when(client.readDesignSafely("all", "test")).thenReturn(Optional.of(
+                new DesignDocument("all", Collections.singleton(new View("data", "function(doc){emit(null);}", "_count")))));
         CouchDBSchemaProcessor schemaProcessor = new CouchDBSchemaProcessor(client, SchemaOperation.CREATE);
         schemaProcessor.process(Collections.singletonList(TestDocument.class));
         verify(client, never().description("Create must no be called when database already exists")).createDatabase(TestDocument.class);
@@ -75,6 +82,8 @@ class CouchDBSchemaProcessorTest {
     public void testDrop() throws Exception {
         when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata<>(TestDocument.class));
         when(client.databaseExists(TestDocument.class)).thenReturn(true, false, true);
+        when(client.readDesignSafely("all", "test")).thenReturn(Optional.of(
+                new DesignDocument("all", Collections.singleton(new View("data", "function(doc){emit(null);}", "_count")))));
         CouchDBSchemaProcessor schemaProcessor = new CouchDBSchemaProcessor(client, SchemaOperation.DROP);
         schemaProcessor.process(Collections.singletonList(TestDocument.class));
         verify(client, times(1).description("Database must be deleted when DROP")).deleteDatabase(TestDocument.class);

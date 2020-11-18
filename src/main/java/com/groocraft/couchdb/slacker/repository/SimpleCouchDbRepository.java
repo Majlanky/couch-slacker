@@ -21,12 +21,17 @@ import com.groocraft.couchdb.slacker.exception.CouchDbException;
 import com.groocraft.couchdb.slacker.exception.CouchDbRuntimeException;
 import org.apache.http.HttpStatus;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.util.Assert;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
-import java.util.stream.StreamSupport;
 
 /**
  * Implementation of {@link CrudRepository} which is providing basing DRUD operation above CouchDB thru {@link CouchDbClient}
@@ -36,7 +41,7 @@ import java.util.stream.StreamSupport;
  * @see CrudRepository
  * @see CouchDbClient
  */
-public class SimpleCouchDbRepository<EntityT> implements CrudRepository<EntityT, String> {
+public class SimpleCouchDbRepository<EntityT> implements PagingAndSortingRepository<EntityT, String> {
 
     private final CouchDbClient client;
     private final Class<EntityT> clazz;
@@ -45,7 +50,7 @@ public class SimpleCouchDbRepository<EntityT> implements CrudRepository<EntityT,
      * @param client must not be {@literal null}
      * @param clazz  must not be {@literal null}
      */
-    public SimpleCouchDbRepository(@NotNull CouchDbClient client,@NotNull Class<EntityT> clazz) {
+    public SimpleCouchDbRepository(@NotNull CouchDbClient client, @NotNull Class<EntityT> clazz) {
         Assert.notNull(client, "Client must not be null.");
         Assert.notNull(clazz, "Clazz must not be null.");
         this.client = client;
@@ -133,7 +138,7 @@ public class SimpleCouchDbRepository<EntityT> implements CrudRepository<EntityT,
     @Override
     public long count() {
         try {
-            return StreamSupport.stream(client.readAll(clazz).spliterator(), false).count();
+            return client.countAll(clazz);
         } catch (IOException e) {
             throw new CouchDbRuntimeException("Unable to read all " + clazz.getSimpleName() + " for counting", e);
         }
@@ -186,4 +191,31 @@ public class SimpleCouchDbRepository<EntityT> implements CrudRepository<EntityT,
             throw new CouchDbRuntimeException("Unable to delete all", ex);
         }
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Iterable<EntityT> findAll(Sort sort) {
+        try {
+            return client.readAll(client.readAll(clazz, null, null, sort), clazz);
+        } catch (IOException ex) {
+            throw new CouchDbRuntimeException("Unable to find all with sorting", ex);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Page<EntityT> findAll(Pageable pageable) {
+        try {
+            List<EntityT> documents = client.readAll(client.readAll(clazz, pageable.getOffset(), pageable.getPageSize(), pageable.getSort()), clazz);
+            long totalCount = client.countAll(clazz);
+            return new PageImpl<>(documents, pageable, totalCount);
+        } catch (IOException ex) {
+            throw new CouchDbRuntimeException("Unable to find all with sorting", ex);
+        }
+    }
+
 }

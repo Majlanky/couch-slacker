@@ -99,7 +99,7 @@ public class CouchDbDirectQuery implements RepositoryQuery {
     public @Nullable Object execute(@NotNull Object[] parameters) {
         String currentQuery = parameters.length > 0 ? specify(query, parameters) : query;
         try {
-            return client.find(currentQuery, entityClass);
+            return client.find(currentQuery, entityClass).getFirst();
         } catch (IOException e) {
             throw new CouchDbRuntimeException("Unable to query " + query, e);
         }

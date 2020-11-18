@@ -146,8 +146,8 @@ class SimpleCouchDbRepositoryTest {
 
     @Test
     public void testCount() throws IOException {
-        when(client.readAll(TestDocument.class)).thenReturn(Arrays.asList("1", "2", "3")).thenThrow(new IOException("error"));
-        assertEquals(3, repository.count());
+        when(client.countAll(TestDocument.class)).thenReturn(3L).thenThrow(new IOException("error"));
+        assertEquals(3L, repository.count());
         CouchDbRuntimeException ex = assertThrows(CouchDbRuntimeException.class, () -> repository.count(), "All exceptions thrown by client must be reported");
         assertEquals("error", ex.getCause().getMessage(), "Repository must pass original cause of exceptional state");
     }

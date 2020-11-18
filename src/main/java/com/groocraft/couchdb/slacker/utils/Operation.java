@@ -18,6 +18,7 @@ package com.groocraft.couchdb.slacker.utils;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.data.repository.query.parser.Part;
 import org.springframework.util.Assert;
 
@@ -26,48 +27,57 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiFunction;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 /**
- * Enum to map {@link Part.Type} operation to CouchDB Mango query operators.
+ * Enum to map {@link Part.Type} operation to CouchDB Mango query operators and javascript for automated creation of views from query methods.
  *
  * @author Majlanky
  */
 public enum Operation {
 
-    EQUALS(Part.Type.SIMPLE_PROPERTY, (g, v) -> g.writeObjectField("$eq", v)),
-    NOT_EQUALS(Part.Type.NEGATING_SIMPLE_PROPERTY, (g, v) -> g.writeObjectField("$ne", v)),
-    GREATER_THAN(Part.Type.GREATER_THAN, (g, v) -> g.writeObjectField("$gt", v)),
-    GREATER_THAN_OR_EQUALS(Part.Type.GREATER_THAN_EQUAL, (g, v) -> g.writeObjectField("$gte", v)),
-    LESSER_THAN(Part.Type.LESS_THAN, (g, v) -> g.writeObjectField("$lt", v)),
-    LESSER_THAN_OR_EQUALS(Part.Type.LESS_THAN_EQUAL, (g, v) -> g.writeObjectField("$lte", v)),
-    REGEX(Part.Type.REGEX, (g, v) -> g.writeObjectField("$regex", v)),
-    NOT_NULL(Part.Type.IS_NOT_NULL, (g, v) -> g.writeObjectField("$ne", null)),
-    NULL(Part.Type.IS_NULL, (g, v) -> g.writeObjectField("$eq", null)),
-    BEFORE(Part.Type.BEFORE, (g, v) -> g.writeObjectField("$lt", v)),
-    AFTER(Part.Type.AFTER, (g, v) -> g.writeObjectField("$gt", v)),
-    STARTING_WITH(Part.Type.STARTING_WITH, (g, v) -> g.writeObjectField("$regex", "^" + v)),
-    ENDING_WITH(Part.Type.ENDING_WITH, (g, v) -> g.writeObjectField("$regex", v + "$")),
-    EMPTY(Part.Type.IS_EMPTY, (g, v) -> g.writeObjectField("$size", 0)),
+    EQUALS(Part.Type.SIMPLE_PROPERTY, (g, v) -> g.writeObjectField("$eq", v), (k, v) -> replace("(%1$s == %2$s)", k, v)),
+    NOT_EQUALS(Part.Type.NEGATING_SIMPLE_PROPERTY, (g, v) -> g.writeObjectField("$ne", v), (k, v) -> replace("(%1$s != %2$s)", k, v)),
+    GREATER_THAN(Part.Type.GREATER_THAN, (g, v) -> g.writeObjectField("$gt", v), (k, v) -> replace("(%1$s > %2$s)", k, v)),
+    GREATER_THAN_OR_EQUALS(Part.Type.GREATER_THAN_EQUAL, (g, v) -> g.writeObjectField("$gte", v), (k, v) -> replace("(%1$s >= %2$s)", k, v)),
+    LESSER_THAN(Part.Type.LESS_THAN, (g, v) -> g.writeObjectField("$lt", v), (k, v) -> replace("(%1$s < %2$s)", k, v)),
+    LESSER_THAN_OR_EQUALS(Part.Type.LESS_THAN_EQUAL, (g, v) -> g.writeObjectField("$lte", v), (k, v) -> replace("(%1$s <= %2$s)", k, v)),
+    REGEX(Part.Type.REGEX, (g, v) -> g.writeObjectField("$regex", v), (k, v) -> format("(/%2$s/.test(%1$s))", k, v)),
+    NOT_NULL(Part.Type.IS_NOT_NULL, (g, v) -> g.writeObjectField("$ne", null), (k, v) -> replace("(%1$s != null)", k, v)),
+    NULL(Part.Type.IS_NULL, (g, v) -> g.writeObjectField("$eq", null), (k, v) -> replace("(%1$s == null)", k, v)),
+    BEFORE(Part.Type.BEFORE, (g, v) -> g.writeObjectField("$lt", v), (k, v) -> replace("(%1$s < %2$s)", k, v)),
+    AFTER(Part.Type.AFTER, (g, v) -> g.writeObjectField("$gt", v), (k, v) -> replace("(%1$s > %2$s)", k, v)),
+    STARTING_WITH(Part.Type.STARTING_WITH, (g, v) -> g.writeObjectField("$regex", "^" + v), (k, v) -> replace("(%1$s.startsWith(%2$s))", k, v)),
+    ENDING_WITH(Part.Type.ENDING_WITH, (g, v) -> g.writeObjectField("$regex", v + "$"), (k, v) -> replace("(%1$s.endsWith(%2$s))", k, v)),
+    EMPTY(Part.Type.IS_EMPTY, (g, v) -> g.writeObjectField("$size", 0), (k, v) -> replace("(%1$s.length == 0)", k, v)),
     NOT_EMPTY(Part.Type.IS_NOT_EMPTY, (g, v) -> {
         g.writeFieldName("$not");
         g.writeRaw(":{\"$size\":0}");
-    }),
-    CONTAINING(Part.Type.CONTAINING, (g, v) -> g.writeObjectField("$regex", v)),
-    NOT_CONTAINING(Part.Type.NOT_CONTAINING, (g, v) -> g.writeObjectField("$regex", "^((?!" + v + ").)*$")),
-    LIKE(Part.Type.LIKE, (g, v) -> g.writeObjectField("$regex", "^" + v)),
-    NOT_LIKE(Part.Type.NOT_LIKE, (g, v) -> g.writeObjectField("$regex", "^((?!" + v + ").)*$")),
-    IN(Part.Type.IN, (g, v) -> g.writeObjectField("$in", v)),
-    NOT_IN(Part.Type.NOT_IN, (g, v) -> g.writeObjectField("$nin", v)),
-    TRUE(Part.Type.TRUE, (g, v) -> g.writeObjectField("$eq", true)),
-    FALSE(Part.Type.FALSE, (g, v) -> g.writeObjectField("$eq", false)),
+    }, (k, v) -> replace("(%1$s.length != 0)", k, v)),
+    CONTAINING(Part.Type.CONTAINING, (g, v) -> g.writeObjectField("$regex", v), (k, v) -> replace("(%1$s.includes(%2$s))", k, v)),
+    NOT_CONTAINING(Part.Type.NOT_CONTAINING, (g, v) -> g.writeObjectField("$regex", "^((?!" + v + ").)*$"), (k, v) -> replace("(!%1$s.includes(%2$s))", k, v)),
+    LIKE(Part.Type.LIKE, (g, v) -> g.writeObjectField("$regex", "^" + v), (k, v) -> replace("(%1$s.startsWith(%2$s))", k, v)),
+    NOT_LIKE(Part.Type.NOT_LIKE, (g, v) -> g.writeObjectField("$regex", "^((?!" + v + ").)*$"), (k, v) -> replace("(!%1$s.includes(%2$s))", k, v)),
+    IN(Part.Type.IN, (g, v) -> g.writeObjectField("$in", v), (k, v) -> replace("(%2$s.includes(%1$s))", k, v)),
+    NOT_IN(Part.Type.NOT_IN, (g, v) -> g.writeObjectField("$nin", v), (k, v) -> replace("(!%2$s.includes(%1$s))", k, v)),
+    TRUE(Part.Type.TRUE, (g, v) -> g.writeObjectField("$eq", true), (k, v) -> replace("(%1$s == true)", k, v)),
+    FALSE(Part.Type.FALSE, (g, v) -> g.writeObjectField("$eq", false), (k, v) -> replace("(%1$s == false)", k, v)),
     BETWEEN(Part.Type.BETWEEN, (g, v) -> {
         throw new IllegalArgumentException("BETWEEN is not implemented yet");
         //g.writeObjectField("$allMatch", ":{\"$gt\": #from#, \"$lt\": #to#}"))
+    }, (k, v) -> {
+        throw new IllegalArgumentException("BETWEEN is not implemented yet");
     }),
     WITHIN(Part.Type.WITHIN, (g, v) -> {
         throw new IllegalArgumentException("WITHIN is not implemented yet");
+    }, (k, v) -> {
+        throw new IllegalArgumentException("WITHIN is not implemented yet");
     }),
     NEAR(Part.Type.NEAR, (g, v) -> {
+        throw new IllegalArgumentException("NEAR is not implemented yet");
+    }, (k, v) -> {
         throw new IllegalArgumentException("NEAR is not implemented yet");
     });
 
@@ -79,16 +89,20 @@ public enum Operation {
 
     private final Part.Type type;
     private final ThrowingBiConsumer<JsonGenerator, Object, IOException> ruleWriter;
+    private final BiFunction<String, Object, String> jsGenerator;
 
     /**
-     * @param type       {@link Part.Type} of operation. Must not be {@literal null}
-     * @param ruleWriter {@link ThrowingBiConsumer} which do serialization of operation to given {@link JsonGenerator}. Must not be {@literal null}
+     * @param type        {@link Part.Type} of operation. Must not be {@literal null}
+     * @param ruleWriter  {@link ThrowingBiConsumer} which do serialization of operation to given {@link JsonGenerator}. Must not be {@literal null}
+     * @param jsGenerator {@link BiFunction} consuming attribute key and tested value and returns javascript condition of the operation
      */
-    Operation(@NotNull Part.Type type, @NotNull ThrowingBiConsumer<JsonGenerator, Object, IOException> ruleWriter) {
+    Operation(@NotNull Part.Type type, @NotNull ThrowingBiConsumer<JsonGenerator, Object, IOException> ruleWriter,
+              @NotNull BiFunction<String, Object, String> jsGenerator) {
         Assert.notNull(type, "Type must not be null.");
         Assert.notNull(ruleWriter, "RuleWriter must not be null");
         this.type = type;
         this.ruleWriter = ruleWriter;
+        this.jsGenerator = jsGenerator;
     }
 
     /**
@@ -107,6 +121,32 @@ public enum Operation {
      */
     public void write(Object value, @NotNull JsonGenerator generator) throws IOException {
         ruleWriter.accept(generator, value);
+    }
+
+    /**
+     * @param key   must not be {@literal null}
+     * @param value must not be {@literal null}
+     * @return javascript condition of the operation with the given key and value
+     */
+    public @NotNull String jsCondition(@NotNull String key, @Nullable Object value) {
+        return jsGenerator.apply(key, value);
+    }
+
+    private static String format(String pattern, String key, Object value) {
+        return String.format(pattern, "doc." + key, value);
+    }
+
+    private static String replace(String pattern, String key, Object value) {
+        String v = value != null ? value.toString() : null;
+        if (value instanceof String) {
+            v = "\"" + value + "\"";
+        }
+        if (value instanceof Iterable) {
+            v = "[" + StreamSupport.stream(((Iterable<?>) value).spliterator(), false).
+                    map(e -> e instanceof String ? "\"" + e + "\"" : e.toString()).
+                    collect(Collectors.joining(",")) + "]";
+        }
+        return format(pattern, key, v);
     }
 
     /**

@@ -16,6 +16,7 @@
 
 package com.groocraft.couchdb.slacker.configuration;
 
+import com.groocraft.couchdb.slacker.QueryStrategy;
 import com.groocraft.couchdb.slacker.SchemaOperation;
 import org.hibernate.validator.constraints.URL;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -92,21 +93,27 @@ public class CouchDbProperties {
 
     /**
      * If database is created by Couch Slacker, this value says number of shards.
-     * Default values is 8
+     * Default value is 8
      */
     private int defaultShards = 8;
 
     /**
      * If database is created by Couch Slacker, this value says number of replicas.
-     * Default values is 3
+     * Default value is 3
      */
     private int defaultReplicas = 3;
 
     /**
      * If database is created by Couch Slacker, this value says if it should be partitioned
-     * Default values is false
+     * Default value is false
      */
     private boolean defaultPartitioned = false;
+
+    /**
+     * Query strategy defines how query methods are executed. If mango is used, query methods are parsed to mango query and process standard CouchDB way. If
+     * "view" is used, Couch Slacker will define view with matching rules for every query to speed up query time.
+     */
+    private QueryStrategy queryStrategy = QueryStrategy.MANGO;
 
 
     public CouchDbProperties() {
@@ -184,6 +191,14 @@ public class CouchDbProperties {
         this.defaultPartitioned = defaultPartitioned;
     }
 
+    public QueryStrategy getQueryStrategy() {
+        return queryStrategy;
+    }
+
+    public void setQueryStrategy(QueryStrategy queryStrategy) {
+        this.queryStrategy = queryStrategy;
+    }
+
     public void copy(CouchDbProperties properties) {
         setPassword(properties.getPassword());
         setUsername(properties.getUsername());
@@ -194,6 +209,7 @@ public class CouchDbProperties {
         setDefaultShards(properties.getDefaultShards());
         setDefaultReplicas(properties.getDefaultReplicas());
         setDefaultPartitioned(properties.isDefaultPartitioned());
+        setQueryStrategy(properties.getQueryStrategy());
     }
 
 }
