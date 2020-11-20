@@ -18,6 +18,7 @@ package com.groocraft.couchdb.slacker.repository;
 
 import com.groocraft.couchdb.slacker.CouchDbClient;
 import com.groocraft.couchdb.slacker.annotation.Index;
+import com.groocraft.couchdb.slacker.annotation.Strategy;
 import com.groocraft.couchdb.slacker.exception.CouchDbRuntimeException;
 import com.groocraft.couchdb.slacker.exception.QueryException;
 import com.groocraft.couchdb.slacker.structure.DocumentFindRequest;
@@ -66,6 +67,7 @@ public class CouchDbParsingQuery<EntityT> implements RepositoryQuery {
     private final BiFunction<FindResult<EntityT>, Object[], Object> postProcessor;
     private final PartTree partTree;
     private final Index index;
+    private final Strategy strategy;
     private final boolean returnExecutionStats;
 
     /**
@@ -88,6 +90,7 @@ public class CouchDbParsingQuery<EntityT> implements RepositoryQuery {
         this.entityClass = entityClass;
         partTree = new PartTree(queryMethod.getName(), queryMethod.getResultProcessor().getReturnedType().getDomainType());
         index = method.getAnnotation(Index.class);
+        strategy = method.getAnnotation(Strategy.class);
         this.postProcessor = getPostProcessor(partTree, queryMethod, entityClass);
     }
 
@@ -138,6 +141,9 @@ public class CouchDbParsingQuery<EntityT> implements RepositoryQuery {
             DocumentFindRequest request = new DocumentFindRequest(new FindContext(partTree, initializeParameters(parameters),
                     client.getEntityMetadata(entityClass)), skip, limit, index != null ? index.value() : null,
                     sortParameter.and(partTree.getSort()).and(pageable.getSort()), returnExecutionStats);
+            if (strategy != null) {
+                request.setQueryStrategy(strategy.value());
+            }
 
             return postProcessor.apply(
                     client.find(request, entityClass),

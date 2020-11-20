@@ -132,6 +132,8 @@ public class CouchDbClient {
      * @param defaultReplicas    number of replicas used for every a newly created database
      * @param defaultPartitioned flag of partitioned used for every a newly created database
      * @param bulkMaxSize        maximal size of bulk operations
+     * @param queryStrategy      default query strategy for find method
+     * @param objectMapper       object mapper used for all json serializations
      */
     CouchDbClient(@NotNull HttpClient httpClient,
                   @NotNull HttpHost httpHost,
@@ -142,7 +144,8 @@ public class CouchDbClient {
                   int defaultReplicas,
                   boolean defaultPartitioned,
                   int bulkMaxSize,
-                  QueryStrategy queryStrategy) {
+                  @NotNull QueryStrategy queryStrategy,
+                  @NotNull ObjectMapper objectMapper) {
         Assert.notNull(httpClient, "HttpClient must not be null.");
         Assert.notNull(httpHost, "HttpHost must not be null.");
         Assert.notNull(httpContext, "HttpContext must not be null.");
@@ -157,7 +160,7 @@ public class CouchDbClient {
         entityMetadataCache = new HashMap<>();
         knownIndexes = new HashSet<>();
         knownSortedViews = new HashSet<>();
-        this.mapper = new ObjectMapper();
+        this.mapper = objectMapper;
         this.idGenerators = new HashMap<>();
         this.defaultIdGenerator = new IdGeneratorUUID();
         this.defaultShards = defaultShards;
@@ -205,7 +208,7 @@ public class CouchDbClient {
      * @param clazz     Class of the given entity
      * @param <EntityT> Entity type
      * @return Generated ID for the given entity. Can not be {@literal null}
-     * @see #CouchDbClient(HttpClient, HttpHost, HttpContext, URI, Iterable, int, int, boolean, int, QueryStrategy)
+     * @see #CouchDbClient(HttpClient, HttpHost, HttpContext, URI, Iterable, int, int, boolean, int, QueryStrategy, ObjectMapper)
      */
     @SuppressWarnings("unchecked")
     private <EntityT> @NotNull String generateId(@NotNull EntityT entity, Class<EntityT> clazz) {
@@ -755,7 +758,9 @@ public class CouchDbClient {
      */
     public <EntityT> @NotNull FindResult<EntityT> find(@NotNull FindRequest request, @NotNull Class<EntityT> clazz,
                                                        @Nullable Integer bookmarkBy) throws IOException {
-        if (queryStrategy == QueryStrategy.MANGO) {
+        QueryStrategy pickedStrategy = request.getQueryStrategy() != null ? request.getQueryStrategy() : queryStrategy;
+        log.debug("{} will be executed by {} strategy", request, pickedStrategy);
+        if (pickedStrategy == QueryStrategy.MANGO) {
             return findByMango(request, clazz, bookmarkBy);
         } else {
             return findByView(request, clazz);
@@ -774,7 +779,7 @@ public class CouchDbClient {
      * @throws IOException if http request is not successful or json processing fail
      */
     public <EntityT> @NotNull FindResult<EntityT> findByView(@NotNull FindRequest request, @NotNull Class<EntityT> clazz) throws IOException {
-        String designId = ensureView(request.getSort(), request.getJavaScriptCondition(), clazz);
+        String designId = ensureView(request.getSort(), request.getJavaScriptCondition(mapper), clazz);
         List<EntityT> entities = readAll(readFromView(getDatabaseName(clazz), designId, ALL_DATA_VIEW, request.getSkip(), request.getLimit(),
                 request.getSort()), clazz);
         return FindResult.of(entities, Collections.emptyMap());
@@ -790,7 +795,9 @@ public class CouchDbClient {
      * @throws IOException if http request is not successful or json processing fail
      */
     public long count(@NotNull FindRequest request, @NotNull Class<?> clazz) throws IOException {
-        if (queryStrategy == QueryStrategy.MANGO) {
+        QueryStrategy pickedStrategy = request.getQueryStrategy() != null ? request.getQueryStrategy() : queryStrategy;
+        log.debug("{} will be counted by {} strategy", request, pickedStrategy);
+        if (pickedStrategy == QueryStrategy.MANGO) {
             request.setLimit(null);
             request.setSkip(null);
             request.setBookmark(null);
@@ -810,8 +817,8 @@ public class CouchDbClient {
      * @throws IOException if http request is not successful or json processing fail
      */
     public long countByView(@NotNull FindRequest request, @NotNull Class<?> clazz) throws IOException {
-        String designId = ensureView(request.getSort(), request.getJavaScriptCondition(), clazz);
-
+        String designId = ensureView(request.getSort(), request.getJavaScriptCondition(mapper), clazz);
+        log.debug("Using design {} for counting {}", designId, request);
         return get(getURI(baseURI, getDatabaseName(clazz), "_design", designId, "_view", ALL_DATA_VIEW),
                 r -> {
                     JsonNode rows = mapper.readValue(r.getEntity().getContent(), ObjectNode.class).get("rows");
@@ -848,6 +855,7 @@ public class CouchDbClient {
 
         Optional<DesignDocument> design = readDesignSafely(mapFunction.hashCode() + "", clazz);
         if (!design.isPresent()) {
+            log.debug("Creating new view {} in design {} for querying with map function {}", ALL_DATA_VIEW, mapFunction.hashCode() + "", mapFunction);
             View view = new View(ALL_DATA_VIEW, mapFunction, COUNT_REDUCE);
             DesignDocument newDesign = new DesignDocument(mapFunction.hashCode() + "", Collections.singleton(view));
             saveDesign(newDesign, clazz);
@@ -954,6 +962,7 @@ public class CouchDbClient {
         Assert.isTrue(sort.isSorted(), "Sort must contain at leas one Order for creating index");
         String indexId = sort.stream().map(Sort.Order::getProperty).collect(Collectors.joining("-"))
                 + "-" + sort.stream().findFirst().get().toString().toLowerCase();
+        log.debug("Creating index {} for sort {}", indexId, sort);
         if (!knownIndexes.contains(indexId)) {
             createIndex(indexId, clazz, sort);
             knownIndexes.add(indexId);

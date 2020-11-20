@@ -16,6 +16,8 @@
 
 package com.groocraft.couchdb.slacker;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.data.domain.Sort;
@@ -30,15 +32,47 @@ public interface FindRequest {
      */
     void setBookmark(@Nullable String bookmark);
 
+    /**
+     * Method used to optimize query (chunking of big bulk requests)
+     *
+     * @param limit null if request must be unlimited, number in other cases
+     */
     void setLimit(@Nullable Integer limit);
 
+    /**
+     * @return limit of the query. Null means no limit is wanted
+     */
     @Nullable Integer getLimit();
 
+    /**
+     * Method used mostly as remover of skip from the request during internal process. Must be considered, or query strategy can fail.
+     *
+     * @param skip number of skipped documents. Null means no skip at all.
+     */
     void setSkip(@Nullable Long skip);
 
+    /**
+     * @return how many documents should be skipped. Null means no skip at all.
+     */
     @Nullable Long getSkip();
 
+    /**
+     * @return Sort information about the reqeust
+     */
     @NotNull Sort getSort();
 
-    @NotNull String getJavaScriptCondition();
+    /**
+     * @return Null or requested strategy for querying. Null causing usage of the default strategy.
+     */
+    @Nullable QueryStrategy getQueryStrategy();
+
+    /**
+     * Method returns javascript condition matching the request. Condition is used during {@link QueryStrategy#VIEW} strategy as part of condition in map
+     * function of the view.
+     *
+     * @param objectMapper must not be {@literal null}
+     * @return javascript condition matching the request
+     * @throws JsonProcessingException in case one of {@link com.groocraft.couchdb.slacker.utils.Operation} is non-serializable.
+     */
+    @NotNull String getJavaScriptCondition(@NotNull ObjectMapper objectMapper) throws JsonProcessingException;
 }

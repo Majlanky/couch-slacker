@@ -43,6 +43,7 @@ public abstract class FindRequestBase implements FindRequest {
     @JsonProperty("skip")
     private Long skip;
 
+    @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty("sort")
     private List<Map<String, String>> sortFields;
@@ -57,6 +58,9 @@ public abstract class FindRequestBase implements FindRequest {
 
     @JsonIgnore
     private final Sort sort;
+
+    @JsonIgnore
+    private QueryStrategy queryStrategy;
 
     /**
      * @param skip                      number of document which should be skipped. Can be {@literal null} which means do not skip
@@ -113,5 +117,14 @@ public abstract class FindRequestBase implements FindRequest {
 
     public @Nullable Long getSkip() {
         return skip;
+    }
+
+    public void setQueryStrategy(@NotNull QueryStrategy queryStrategy) {
+        this.queryStrategy = queryStrategy;
+    }
+
+    @Override
+    public @Nullable QueryStrategy getQueryStrategy() {
+        return queryStrategy;
     }
 }

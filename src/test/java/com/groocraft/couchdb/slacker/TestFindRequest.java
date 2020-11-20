@@ -18,6 +18,7 @@ package com.groocraft.couchdb.slacker;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.data.domain.Sort;
@@ -47,7 +48,7 @@ public class TestFindRequest extends FindRequestBase {
 
     @Override
     @JsonIgnore
-    public @NotNull String getJavaScriptCondition() {
+    public @NotNull String getJavaScriptCondition(@NotNull ObjectMapper objectMapper) {
         throw new IllegalStateException("TestFind do not provide javascript conversion");
     }
 }

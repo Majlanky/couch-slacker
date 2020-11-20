@@ -18,6 +18,8 @@ package com.groocraft.couchdb.slacker.structure;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.groocraft.couchdb.slacker.FindRequestBase;
 import com.groocraft.couchdb.slacker.utils.FindContext;
@@ -60,15 +62,15 @@ public class DocumentFindRequest extends FindRequestBase {
 
     @JsonIgnore
     @Override
-    public @NotNull String getJavaScriptCondition() {
+    public @NotNull String getJavaScriptCondition(@NotNull ObjectMapper objectMapper) throws JsonProcessingException {
         StringBuilder builder = new StringBuilder();
         if (findContext.getEntityMetadata().isViewed()) {
             builder.append("(");
-            builder.append(Operation.EQUALS.jsCondition(findContext.getEntityMetadata().getTypeField(), findContext.getEntityMetadata().getType()));
+            builder.append(Operation.EQUALS.jsCondition(findContext.getEntityMetadata().getTypeField(), findContext.getEntityMetadata().getType(), objectMapper));
             builder.append(" && ");
         }
 
-        getJavaScriptCondition(findContext.getPartTree(), findContext.getParameters(), builder);
+        getJavaScriptCondition(findContext.getPartTree(), findContext.getParameters(), builder, objectMapper);
 
         if (findContext.getEntityMetadata().isViewed()) {
             builder.append(")");
@@ -76,11 +78,14 @@ public class DocumentFindRequest extends FindRequestBase {
         return builder.toString();
     }
 
-    private void getJavaScriptCondition(PartTree partTree, Map<String, Object> parameters, StringBuilder builder) {
+    private void getJavaScriptCondition(@NotNull PartTree partTree,
+                                        @NotNull Map<String, Object> parameters,
+                                        @NotNull StringBuilder builder,
+                                        @NotNull ObjectMapper objectMapper) throws JsonProcessingException {
         builder.append("(");
 
         for (PartTree.OrPart orPart : partTree) {
-            write(builder, orPart, parameters);
+            write(builder, orPart, parameters, objectMapper);
             builder.append(" || ");
         }
         builder.delete(builder.length() - 4, builder.length());
@@ -88,13 +93,14 @@ public class DocumentFindRequest extends FindRequestBase {
         builder.append(")");
     }
 
-    private void write(@NotNull StringBuilder builder, @NotNull PartTree.OrPart orPart, @NotNull Map<String, Object> parameters) {
+    private void write(@NotNull StringBuilder builder, @NotNull PartTree.OrPart orPart,
+                       @NotNull Map<String, Object> parameters, @NotNull ObjectMapper objectMapper) throws JsonProcessingException {
         boolean isAnd = orPart.get().count() > 1;
         if (isAnd) {
             builder.append("(");
         }
         for (Part part : orPart) {
-            write(builder, part, parameters);
+            write(builder, part, parameters, objectMapper);
             if (isAnd) {
                 builder.append(" && ");
             }
@@ -105,9 +111,11 @@ public class DocumentFindRequest extends FindRequestBase {
         }
     }
 
-    private void write(@NotNull StringBuilder builder, @NotNull Part part, @NotNull Map<String, Object> parameters) {
+    private void write(@NotNull StringBuilder builder, @NotNull Part part,
+                       @NotNull Map<String, Object> parameters, @NotNull ObjectMapper objectMapper) throws JsonProcessingException {
         builder.append(Operation.of(part.getType()).jsCondition(part.getProperty().toDotPath(),
-                parameters.get(part.getProperty().getLeafProperty().getSegment())));
+                parameters.get(part.getProperty().getLeafProperty().getSegment()),
+                objectMapper));
     }
 
 }

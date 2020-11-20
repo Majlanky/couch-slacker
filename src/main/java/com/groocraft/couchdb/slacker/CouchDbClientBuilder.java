@@ -16,6 +16,7 @@
 
 package com.groocraft.couchdb.slacker;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.groocraft.couchdb.slacker.configuration.CouchDbProperties;
 import com.groocraft.couchdb.slacker.http.ThrowingInterceptor;
 import com.groocraft.couchdb.slacker.http.TrustAllStrategy;
@@ -66,6 +67,7 @@ public class CouchDbClientBuilder {
 
     private final CouchDbProperties properties;
     private final List<IdGenerator<?>> idGenerators;
+    private ObjectMapper objectMapper;
 
     CouchDbClientBuilder() {
         properties = new CouchDbProperties();
@@ -133,12 +135,20 @@ public class CouchDbClientBuilder {
         return this;
     }
 
+    public @NotNull CouchDbClientBuilder objectMapper(@Nullable ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+        return this;
+    }
+
     /**
      * Method to build new instance of {@link CouchDbClient} by the given setting.
      *
      * @return {@link CouchDbClient}
      */
     public @NotNull CouchDbClient build() {
+        if (objectMapper == null) {
+            objectMapper = new ObjectMapper();
+        }
         URI uri = URI.create(ifNotNull(properties.getUrl(), "Url must be configured (can not be null)"));
         HttpHost host = new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme());
         HttpContext context = getHttpContext(
@@ -147,7 +157,7 @@ public class CouchDbClientBuilder {
                 ifNotNull(properties.getPassword(), "Password must be configured, (can not be null)"));
         HttpClient client = getHttpClient();
         return new CouchDbClient(client, host, context, uri, idGenerators, properties.getDefaultShards(),
-                properties.getDefaultReplicas(), properties.isDefaultPartitioned(), properties.getBulkMaxSize(), properties.getQueryStrategy());
+                properties.getDefaultReplicas(), properties.isDefaultPartitioned(), properties.getBulkMaxSize(), properties.getQueryStrategy(), objectMapper);
     }
 
     /**

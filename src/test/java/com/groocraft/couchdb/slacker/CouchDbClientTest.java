@@ -1,5 +1,6 @@
 package com.groocraft.couchdb.slacker;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.groocraft.couchdb.slacker.repository.CouchDbEntityInformation;
 import com.groocraft.couchdb.slacker.structure.DocumentFindRequest;
 import com.groocraft.couchdb.slacker.structure.FindResult;
@@ -70,7 +71,7 @@ class CouchDbClientTest {
     public void setUp() throws URISyntaxException {
         baseURI = new URI("http://localhost:5984/");
         client = new CouchDbClient(httpClient, httpHost, httpContext, baseURI, Collections.emptyList(),
-                8, 3, false, 10000, QueryStrategy.MANGO);
+                8, 3, false, 10000, QueryStrategy.MANGO, new ObjectMapper());
     }
 
     @Test
@@ -315,7 +316,7 @@ class CouchDbClientTest {
     public void testClose() throws IOException {
         CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
         client = new CouchDbClient(httpClient, httpHost, httpContext, baseURI, Collections.emptyList(),
-                8, 3, false, 10000, QueryStrategy.MANGO);
+                8, 3, false, 10000, QueryStrategy.MANGO, new ObjectMapper());
         client.close();
         verify(httpClient, only().description("Http client must be closed")).close();
     }
@@ -614,7 +615,7 @@ class CouchDbClientTest {
     @Test
     public void testRequestFind() throws IOException {
         CouchDbClient client = new CouchDbClient(httpClient, httpHost, httpContext, baseURI, Collections.emptyList(),
-                8, 3, false, 3, QueryStrategy.MANGO);
+                8, 3, false, 3, QueryStrategy.MANGO, new ObjectMapper());
         IOException thrown = new IOException("error");
         InputStream content = new ByteArrayInputStream(("{\"docs\":[{\"_id\":\"unique1\",\"_rev\":\"1231\",\"value\":\"value1\"},{\"_id\":\"unique2\"," +
                 "\"_rev\":\"1232\",\"value\":\"value2\"},{\"_id\":\"unique3\",\"_rev\":\"1233\",\"value\":\"value3\"}],\"bookmark\": \"1234\",\"warning\": " +
@@ -671,7 +672,7 @@ class CouchDbClientTest {
     @Test
     public void testRequestFindWithLimitAndBookmarkBy() throws IOException {
         CouchDbClient client = new CouchDbClient(httpClient, httpHost, httpContext, baseURI, Collections.emptyList(),
-                8, 3, false, 3, QueryStrategy.MANGO);
+                8, 3, false, 3, QueryStrategy.MANGO, new ObjectMapper());
         IOException thrown = new IOException("error");
         InputStream content = new ByteArrayInputStream(("{\"docs\":[{\"_id\":\"unique1\",\"_rev\":\"1231\",\"value\":\"value1\"},{\"_id\":\"unique2\"," +
                 "\"_rev\":\"1232\",\"value\":\"value2\"},{\"_id\":\"unique3\",\"_rev\":\"1233\",\"value\":\"value3\"}],\"bookmark\": \"1234\",\"warning\": " +
@@ -722,7 +723,6 @@ class CouchDbClientTest {
         assertTrue(post.isAborted(), "Request must be aborted when exception thrown");
 
     }
-
 
     private static void assertContent(String s, InputStream actual, String message) throws IOException {
         InputStream expected = new ByteArrayInputStream(s.getBytes());
