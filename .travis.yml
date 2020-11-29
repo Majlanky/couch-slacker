@@ -1,3 +1,9 @@
+addons:
+  sonarcloud:
+    organization: "majlanky"
+    token:
+      secure: "gcEP2eUgT622kDwjPPL8y4zZ5kEyFlO4NdcaUre3lLNtBvxBTt3t8+U9MY1fcPQ487H6lUQlPT+YDv8NI6X3NYRz9dGdVIiVMnW0aLXV80YIghUDhIF8ZlvVmmH54E7k8nuoKQwLzjBowwxoVvwunjLMJYej0xAouvz3EtpvuLpGJSGDpOcWTLVpCTFXlbRMkGq8ODldm8pdtHy3Dm5BDHMZCtvgE459/StRA5+yDJjCgbLpUWekWlssF1xfN5WQhnOIE/0ewDcAglMvlXOA+SIQvqSCYaAN5y9qdPmgCZIkABp2ummmMnOhvQYNYdu9Kbt/q6K0N6xJUjL2Kc+PcyUPUayT3mNpubOiOnplUONdmE1oGdAN3Bn/x8sxJHGem6XZ+2R897V4TND+mU4LD3SOJCfx4ASgmtHg+jtAR5GzABa2wQbrlH8Fq2rKjEDiKCPweK1xfri5CZ5iH7JEnmSc2gjevpHPloQxYTzsRYQJg71p+J0la/im6+/WomuGhUQ3p8CfNKmCboxyqWjId1aZ9v1UM/yG/YQOfMLHz0qhGJP5VCBKb1t0RF+pgyj3j03AjunFgeEGz6GePRU8FO9AjxEMTk6As4NMp6CcTXj/X/6+v9PybFiKt0irPcq36QsYQiSce+YBGZykIDpbHAEZWjjsZRCRJEhj4/IE5h4="
+
 cache:
   directories:
     - $HOME/.m2
@@ -7,7 +13,7 @@ language: java
 jdk: openjdk8
 
 install: true
-script: chmod 777 mvnw && ./mvnw clean install -P ITs
+script: chmod 777 mvnw && ./mvnw clean install sonar:sonar -Dsonar.projectKey=Majlanky_couch-slacker -P ITs
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
