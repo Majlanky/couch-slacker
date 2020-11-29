@@ -9,7 +9,7 @@ cache:
 
 language: java
 
-jdk: openjdk11
+jdk: oraclejdk11
 
 install: true
 script: chmod 777 mvnw && ./mvnw clean install sonar:sonar -P ITs -Dsonar.login=${SONAR_TOKEN}
