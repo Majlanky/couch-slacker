@@ -1,8 +1,6 @@
 addons:
   sonarcloud:
     organization: "Majlanky"
-    token:
-      secure: "mjmmKDTiPQ5mj1o1pUtIG8itx41P7SkTuCXkw129YMRmsE93JiIO4bZ/ZPCIOShXL9r3TICMHqeJklh45k0RMZnXwRE0VWG1JnOJEUWANlCTe61YgQDC/JGRTTO2KMTnUpD0/KD6NCfFga0TjnyxRSO24pgjVAzsewW+jxgtY/cT0JSMQcLPT0RpJLZtNyfWfeLlQgR78UjgZz+k6OpwcLrZPmIwhziLnZ2y0mX6p+Stk0uZCmuQfUhHIBke0kzglpk9Tg7pf30sLQnYUL/pexjue81JmUOTbxBTM0dEML13S06sgg7vTmitPgNm+/6ej+BHZSQoQKOhuy0+wFVYrt7OVISJgGGvH6aikdKFAm7SSUAKzzmphp0lwUHMef79qqtM3ZhpA+HwRl+e7F0Qns2i23RUEb76EoGuZsOLYLvqVguST/pyUOlCvOro1CcRggk/+ORywuOkpOCB2CWxHYJrXihK25Km+YjX9sOas1qa+Dw4p/xBRkuB+PKtzN+HNRVLvNcnIHMbYq9Ct0juKVyAm3M0p0GP/5e3FQuNn4YyhChV/vI/BfgtB4Z/7IiQBU/rZhhnxOpcnlW/CEAQinuOf+G4U8dEGl0jUu8mECqJiDhB9rh1NtG9FIvyIDVv+dxGpxdMxw3U5PeTcjsrbH2e7dtUPpQHlpuFXDqftGo="
 
 cache:
   directories:
@@ -13,7 +11,7 @@ language: java
 jdk: openjdk8
 
 install: true
-script: chmod 777 mvnw && ./mvnw clean install sonar:sonar -Dsonar.projectKey=Majlanky_couch-slacker -P ITs
+script: chmod 777 mvnw && ./mvnw clean install sonar:sonar -P ITs -Dsonar.login=${SONAR_TOKEN}
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
