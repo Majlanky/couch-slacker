@@ -24,7 +24,7 @@ import static org.mockito.Mockito.doReturn;
 class CouchDbDirectQueryTest {
 
     @Test
-    public void testIndexedReplacement() throws IOException {
+    void testIndexedReplacement() throws IOException {
         CouchDbClient client = Mockito.mock(CouchDbClient.class);
         QueryMethod queryMethod = Mockito.mock(QueryMethod.class);
         Parameter parameter = Mockito.mock(Parameter.class);
@@ -43,7 +43,7 @@ class CouchDbDirectQueryTest {
     }
 
     @Test
-    public void testNamedStringReplacement() throws IOException {
+    void testNamedStringReplacement() throws IOException {
         CouchDbClient client = Mockito.mock(CouchDbClient.class);
         QueryMethod queryMethod = Mockito.mock(QueryMethod.class);
         Parameter parameter = Mockito.mock(Parameter.class);
@@ -62,7 +62,7 @@ class CouchDbDirectQueryTest {
     }
 
     @Test
-    public void testNamedNonStringReplacement() throws IOException {
+    void testNamedNonStringReplacement() throws IOException {
         CouchDbClient client = Mockito.mock(CouchDbClient.class);
         QueryMethod queryMethod = Mockito.mock(QueryMethod.class);
         Parameter parameter = Mockito.mock(Parameter.class);
@@ -81,7 +81,7 @@ class CouchDbDirectQueryTest {
     }
 
     @Test
-    public void testNamedIterableReplacement() throws IOException {
+    void testNamedIterableReplacement() throws IOException {
         CouchDbClient client = Mockito.mock(CouchDbClient.class);
         QueryMethod queryMethod = Mockito.mock(QueryMethod.class);
         Parameter parameter = Mockito.mock(Parameter.class);
@@ -100,23 +100,22 @@ class CouchDbDirectQueryTest {
     }
 
     @Test
-    public void testFindException() {
-        assertThrows(CouchDbRuntimeException.class, () -> {
-            CouchDbClient client = Mockito.mock(CouchDbClient.class);
-            QueryMethod queryMethod = Mockito.mock(QueryMethod.class);
-            Parameter parameter = Mockito.mock(Parameter.class);
-            Parameters<?, ?> parameters = Mockito.mock(Parameters.class);
-            CouchDbDirectQuery query = new CouchDbDirectQuery("{\"selector\": {\"value\": {\"$eq\": :value}}}", client, queryMethod, TestDocument.class);
-            assertEquals(queryMethod, query.getQueryMethod(), "CouchDbDirectQuery do not remember given queryMethod");
-            Mockito.when(client.find(Mockito.any(String.class), Mockito.any())).thenThrow(new IOException());
-            Mockito.doReturn(Object.class).when(queryMethod).getReturnedObjectType();
-            Mockito.when(parameter.getName()).thenReturn(Optional.of("value"));
-            doReturn(String.class).when(parameter).getType();
-            Mockito.when(parameter.getIndex()).thenReturn(0);
-            Mockito.doReturn(Collections.singletonList(parameter).iterator()).when(parameters).iterator();
-            Mockito.doReturn(parameters).when(queryMethod).getParameters();
-            query.execute(new Object[]{"test"});
-        }, "Any issue must be reported as " + CouchDbRuntimeException.class);
+    void testFindException() throws IOException {
+        CouchDbClient client = Mockito.mock(CouchDbClient.class);
+        QueryMethod queryMethod = Mockito.mock(QueryMethod.class);
+        Parameter parameter = Mockito.mock(Parameter.class);
+        Parameters<?, ?> parameters = Mockito.mock(Parameters.class);
+        CouchDbDirectQuery query = new CouchDbDirectQuery("{\"selector\": {\"value\": {\"$eq\": :value}}}", client, queryMethod, TestDocument.class);
+        assertEquals(queryMethod, query.getQueryMethod(), "CouchDbDirectQuery do not remember given queryMethod");
+        Mockito.when(client.find(Mockito.any(String.class), Mockito.any())).thenThrow(new IOException());
+        Mockito.doReturn(Object.class).when(queryMethod).getReturnedObjectType();
+        Mockito.when(parameter.getName()).thenReturn(Optional.of("value"));
+        doReturn(String.class).when(parameter).getType();
+        Mockito.when(parameter.getIndex()).thenReturn(0);
+        Mockito.doReturn(Collections.singletonList(parameter).iterator()).when(parameters).iterator();
+        Mockito.doReturn(parameters).when(queryMethod).getParameters();
+        Object[] p = new Object[]{"test"};
+        assertThrows(CouchDbRuntimeException.class, () -> query.execute(p), "Any issue must be reported as " + CouchDbRuntimeException.class);
     }
 
 }

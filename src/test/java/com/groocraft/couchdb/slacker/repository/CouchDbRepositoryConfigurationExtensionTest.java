@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class CouchDbRepositoryConfigurationExtensionTest {
 
     @Test
-    public void test() {
+    void test() {
         CouchDbRepositoryConfigurationExtension extension = new CouchDbRepositoryConfigurationExtension();
         assertEquals("couchDb", extension.getModulePrefix(), "Extension must return couchDb as prefix of named queries lookup");
         assertEquals(CouchDbRepositoryFactoryBean.class.getName(), extension.getRepositoryFactoryBeanClassName(),

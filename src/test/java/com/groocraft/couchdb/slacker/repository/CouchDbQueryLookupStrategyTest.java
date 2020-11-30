@@ -25,7 +25,7 @@ import static org.mockito.Mockito.when;
 class CouchDbQueryLookupStrategyTest {
 
     @Test
-    public void testParsing() throws NoSuchMethodException {
+    void testParsing() throws NoSuchMethodException {
         Method method = CouchDbQueryLookupStrategyTest.class.getDeclaredMethod("findByValue", String.class);
         RepositoryMetadata repositoryMetadata = mock(RepositoryMetadata.class);
         ProjectionFactory projectionFactory = mock(ProjectionFactory.class);
@@ -47,7 +47,7 @@ class CouchDbQueryLookupStrategyTest {
     }
 
     @Test
-    public void testDirect() throws NoSuchMethodException {
+    void testDirect() throws NoSuchMethodException {
         Method method = CouchDbQueryLookupStrategyTest.class.getDeclaredMethod("queryAnnotated", String.class);
         RepositoryMetadata repositoryMetadata = mock(RepositoryMetadata.class);
         ProjectionFactory projectionFactory = mock(ProjectionFactory.class);

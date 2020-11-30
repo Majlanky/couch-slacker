@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 public class Benchmark {
 
-    private static final EntityMetadata<TestDocument> entityMetadata = new EntityMetadata<>(TestDocument.class);
+    private static final EntityMetadata entityMetadata = new EntityMetadata(TestDocument.class);
     private static final TestDocument testDocument = new TestDocument();
 
     public static void main(String[] args) throws Exception {

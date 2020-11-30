@@ -14,18 +14,19 @@
  * limitations under the License.
  */
 
-package com.groocraft.couchdb.slacker;
+package com.groocraft.couchdb.slacker.annotation;
 
-import org.junit.jupiter.api.Test;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
+public @interface ViewQuery {
 
-class IdGeneratorUUIDTest {
+    String design();
 
-    @Test
-    void testClass() {
-        IdGeneratorUUID idGeneratorUUID = new IdGeneratorUUID();
-        assertEquals(Object.class, idGeneratorUUID.getEntityClass(), IdGeneratorUUID.class.getName() + " must be applicable to every object");
-    }
+    String view();
 
 }

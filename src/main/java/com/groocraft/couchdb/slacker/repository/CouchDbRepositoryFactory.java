@@ -45,8 +45,8 @@ public class CouchDbRepositoryFactory extends RepositoryFactorySupport {
     private final CouchDbProperties properties;
 
     /**
-     * @param client must not be {@literal null}
-     * @param  properties must not be {@literal null}
+     * @param client     must not be {@literal null}
+     * @param properties must not be {@literal null}
      */
     public CouchDbRepositoryFactory(@NotNull CouchDbClient client, @NotNull CouchDbProperties properties) {
         Assert.notNull(client, "Client must not be null.");
@@ -59,7 +59,7 @@ public class CouchDbRepositoryFactory extends RepositoryFactorySupport {
      * {@inheritDoc}
      */
     @Override
-    public <T, ID> EntityInformation<T, ID> getEntityInformation(Class<T> domainClass) {
+    public <T, IdT> EntityInformation<T, IdT> getEntityInformation(Class<T> domainClass) {
         return client.getEntityInformation(domainClass);
     }
 

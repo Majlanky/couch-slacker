@@ -16,25 +16,25 @@ class FieldAccessorTest {
     private String field;
 
     @BeforeEach
-    public void setUp() throws NoSuchFieldException {
+    void setUp() throws NoSuchFieldException {
         field = "initial";
         accessor = new FieldAccessor<>(FieldAccessorTest.class.getDeclaredField("field"));
     }
 
     @Test
-    public void testRead() {
+    void testRead() {
         assertEquals(field, accessor.read(this), "Actual value of the accessed field was read improperly");
     }
 
     @Test
-    public void testWrite() {
+    void testWrite() {
         String newValue = "new";
         accessor.write(this, newValue);
         assertEquals(newValue, field, "Actual value of the accessed field do not match the thru accessor written value");
     }
 
     @Test
-    public void testIllegalAccessRead() throws IllegalAccessException {
+    void testIllegalAccessRead() throws IllegalAccessException {
         Field field = Mockito.mock(Field.class);
         Mockito.when(field.get(Mockito.any())).thenThrow(new IllegalAccessException());
         FieldAccessor<String> accessor = new FieldAccessor<>(field);
@@ -42,7 +42,7 @@ class FieldAccessorTest {
     }
 
     @Test
-    public void testIllegalAccessWrite() throws IllegalAccessException {
+    void testIllegalAccessWrite() throws IllegalAccessException {
         Field field = Mockito.mock(Field.class);
         Mockito.doThrow(new IllegalAccessException()).when(field).set(Mockito.any(), Mockito.any());
         FieldAccessor<String> accessor = new FieldAccessor<>(field);

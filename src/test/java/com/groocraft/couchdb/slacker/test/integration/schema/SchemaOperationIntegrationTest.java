@@ -41,13 +41,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @ActiveProfiles("schema-test")
 @EntityScan({"com.groocraft.couchdb.slacker.test.integration.schema"})
 @EnableCouchDbRepositories
-public class SchemaOperationIntegrationTest {
+class SchemaOperationIntegrationTest {
 
     @Autowired
     CouchDbClient client;
 
     @Test
-    public void testDatabaseExists() throws IOException {
+    void testDatabaseExists() throws IOException {
         assertTrue(client.databaseExists("schema-test"), "Database schema-test do not exists, but schema operation did not failed");
         DesignDocument design = assertDoesNotThrow(() -> client.readDesign("byType", "schema-test"), "It looks like schema processing " +
                 "did not create design document byType");

@@ -41,7 +41,7 @@ class CouchDbParsingQueryTest {
 
     @Test
     @SuppressWarnings({"unchecked", "null"})
-    public void testNoProjectionWithStringParameter() throws IOException {
+    void testNoProjectionWithStringParameter() throws IOException {
         ArgumentCaptor<DocumentFindRequest> captor = ArgumentCaptor.forClass(DocumentFindRequest.class);
         CouchDbClient client = mock(CouchDbClient.class);
         QueryMethod queryMethod = mock(QueryMethod.class);
@@ -52,7 +52,7 @@ class CouchDbParsingQueryTest {
         Parameters<?, ?> parameters = mock(Parameters.class);
 
         when(queryMethod.getName()).thenReturn("findByValue");
-        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata<>(TestDocument.class));
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(TestDocument.class));
         when(client.find(captor.capture(), eq(TestDocument.class))).
                 thenReturn(FindResult.of(Collections.singletonList(new TestDocument()), Collections.singletonMap(1, ""))).
                 thenThrow(new IOException("error"));
@@ -88,7 +88,7 @@ class CouchDbParsingQueryTest {
 
     @Test
     @SuppressWarnings({"unchecked", "null"})
-    public void testNoProjectionWithNonStringParameter() throws IOException {
+    void testNoProjectionWithNonStringParameter() throws IOException {
         ArgumentCaptor<DocumentFindRequest> captor = ArgumentCaptor.forClass(DocumentFindRequest.class);
         CouchDbClient client = mock(CouchDbClient.class);
         QueryMethod queryMethod = mock(QueryMethod.class);
@@ -99,7 +99,7 @@ class CouchDbParsingQueryTest {
         Parameters<?, ?> parameters = mock(Parameters.class);
 
         when(queryMethod.getName()).thenReturn("findByValue");
-        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata<>(TestDocument.class));
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(TestDocument.class));
         when(client.find(captor.capture(), eq(TestDocument.class))).
                 thenReturn(FindResult.of(Collections.singletonList(new TestDocument()), Collections.singletonMap(1, ""))).
                 thenThrow(new IOException("error"));
@@ -134,7 +134,7 @@ class CouchDbParsingQueryTest {
     }
 
     @Test
-    public void testCountProjection() throws IOException {
+    void testCountProjection() throws IOException {
         ArgumentCaptor<DocumentFindRequest> captor = ArgumentCaptor.forClass(DocumentFindRequest.class);
         CouchDbClient client = mock(CouchDbClient.class);
         QueryMethod queryMethod = mock(QueryMethod.class);
@@ -145,7 +145,7 @@ class CouchDbParsingQueryTest {
         Parameters<?, ?> parameters = mock(Parameters.class);
 
         when(queryMethod.getName()).thenReturn("countByValue");
-        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata<>(TestDocument.class));
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(TestDocument.class));
         when(client.find(captor.capture(), eq(TestDocument.class))).
                 thenReturn(FindResult.of(Collections.singletonList(new TestDocument()), Collections.singletonMap(1, ""))).
                 thenThrow(new IOException("error"));
@@ -175,7 +175,7 @@ class CouchDbParsingQueryTest {
     }
 
     @Test
-    public void testDeleteProjection() throws IOException {
+    void testDeleteProjection() throws IOException {
         ArgumentCaptor<DocumentFindRequest> captor = ArgumentCaptor.forClass(DocumentFindRequest.class);
         CouchDbClient client = mock(CouchDbClient.class);
         QueryMethod queryMethod = mock(QueryMethod.class);
@@ -186,7 +186,7 @@ class CouchDbParsingQueryTest {
         Parameters<?, ?> parameters = mock(Parameters.class);
 
         when(queryMethod.getName()).thenReturn("deleteByValue");
-        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata<>(TestDocument.class));
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(TestDocument.class));
         when(client.find(captor.capture(), eq(TestDocument.class))).
                 thenReturn(FindResult.of(Collections.singletonList(new TestDocument()), Collections.singletonMap(1, ""))).
                 thenThrow(new IOException("error"));
@@ -216,7 +216,7 @@ class CouchDbParsingQueryTest {
     }
 
     @Test
-    public void testExistsProjection() throws IOException {
+    void testExistsProjection() throws IOException {
         ArgumentCaptor<DocumentFindRequest> captor = ArgumentCaptor.forClass(DocumentFindRequest.class);
         CouchDbClient client = mock(CouchDbClient.class);
         QueryMethod queryMethod = mock(QueryMethod.class);
@@ -227,7 +227,7 @@ class CouchDbParsingQueryTest {
         Parameters<?, ?> parameters = mock(Parameters.class);
 
         when(queryMethod.getName()).thenReturn("existsByValue");
-        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata<>(TestDocument.class));
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(TestDocument.class));
         when(client.find(captor.capture(), eq(TestDocument.class))).
                 thenReturn(FindResult.of(Collections.singletonList(new TestDocument()), Collections.singletonMap(1, ""))).
                 thenThrow(new IOException("error"));
@@ -258,7 +258,7 @@ class CouchDbParsingQueryTest {
 
     @Test
     @SuppressWarnings({"unchecked", "null"})
-    public void testIndex() throws IOException {
+    void testIndex() throws IOException {
         ArgumentCaptor<DocumentFindRequest> captor = ArgumentCaptor.forClass(DocumentFindRequest.class);
         CouchDbClient client = mock(CouchDbClient.class);
         QueryMethod queryMethod = mock(QueryMethod.class);
@@ -270,7 +270,7 @@ class CouchDbParsingQueryTest {
         Index index = mock(Index.class);
 
         when(queryMethod.getName()).thenReturn("findByValue");
-        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata<>(TestDocument.class));
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(TestDocument.class));
         when(client.find(captor.capture(), eq(TestDocument.class))).
                 thenReturn(FindResult.of(Collections.singletonList(new TestDocument()), Collections.singletonMap(1, ""))).
                 thenThrow(new IOException("error"));
@@ -305,7 +305,7 @@ class CouchDbParsingQueryTest {
 
     @Test
     @SuppressWarnings({"unchecked", "null"})
-    public void testPaging() throws IOException {
+    void testPaging() throws IOException {
         TestDocument result = new TestDocument();
         ArgumentCaptor<DocumentFindRequest> captor = ArgumentCaptor.forClass(DocumentFindRequest.class);
         CouchDbClient client = mock(CouchDbClient.class);
@@ -318,7 +318,7 @@ class CouchDbParsingQueryTest {
         Parameters<?, ?> parameters = mock(Parameters.class);
 
         when(queryMethod.getName()).thenReturn("findByValue");
-        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata<>(TestDocument.class));
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(TestDocument.class));
         when(client.find(captor.capture(), eq(TestDocument.class))).
                 thenReturn(FindResult.of(Collections.singletonList(new TestDocument()), Collections.singletonMap(1, ""))).
                 thenThrow(new IOException("error"));
@@ -352,7 +352,7 @@ class CouchDbParsingQueryTest {
 
     @Test
     @SuppressWarnings({"unchecked", "null"})
-    public void testNoProjectionWithStringSubAttributeParameter() throws IOException {
+    void testNoProjectionWithStringSubAttributeParameter() throws IOException {
         TestDocument result = new TestDocument();
         ArgumentCaptor<DocumentFindRequest> captor = ArgumentCaptor.forClass(DocumentFindRequest.class);
         CouchDbClient client = mock(CouchDbClient.class);
@@ -364,7 +364,7 @@ class CouchDbParsingQueryTest {
         Parameters<?, ?> parameters = mock(Parameters.class);
 
         when(queryMethod.getName()).thenReturn("findByAddressStreet");
-        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata<>(TestDocument.class));
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(TestDocument.class));
         when(client.find(captor.capture(), eq(TestDocument.class))).
                 thenReturn(FindResult.of(Collections.singletonList(new TestDocument()), Collections.singletonMap(1, ""))).
                 thenThrow(new IOException("error"));

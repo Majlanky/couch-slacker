@@ -16,7 +16,7 @@ class BulkGetSerializerTest {
 
     @Test
     public void test() throws JsonProcessingException {
-        EntityMetadata<TestDocument> metadata = new EntityMetadata<>(TestDocument.class);
+        EntityMetadata metadata = new EntityMetadata(TestDocument.class);
         ObjectMapper localMapper = new ObjectMapper();
         SimpleModule module = new SimpleModule();
         localMapper.registerModule(module);

@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class IndexSerializerTest {
 
     @Test
-    public void test() throws JsonProcessingException {
+    void test() throws JsonProcessingException {
         IndexCreateRequest request = new IndexCreateRequest("test", Collections.singletonList(Sort.Order.asc("value")));
         assertEquals("{\"index\":{\"fields\":[{\"value\":\"asc\"}]},\"type\":\"json\",\"name\":\"test\"}",
                 new ObjectMapper().writeValueAsString(request), "Index request is not serialized properly");

@@ -131,13 +131,13 @@ public class CouchDbParsingQuery<EntityT> implements RepositoryQuery {
     public Object execute(Object[] parameters) {
         Pageable pageable = getPageableFrom(parameters);
         Sort sortParameter = getSortFrom(parameters);
-        List<Sort.Order> sort = null;
         try {
             Long skip = pageable.isPaged() ? pageable.getOffset() : null;
             //if there is hard max result in query method, than the max, if not it depends if slice is returned. If so, we need only find out if there is next
             // slice. In case of page, we need get everything to count total pages.
-            Integer limit = partTree.getMaxResults() != null ? partTree.getMaxResults() : queryMethod.isSliceQuery() ? pageable.getPageSize() + 1 :
-                    null;
+            Integer pageLimit = queryMethod.isSliceQuery() ? pageable.getPageSize() + 1 : null;
+            Integer limit = partTree.getMaxResults() != null ? partTree.getMaxResults() : pageLimit;
+
             DocumentFindRequest request = new DocumentFindRequest(new FindContext(partTree, initializeParameters(parameters),
                     client.getEntityMetadata(entityClass)), skip, limit, index != null ? index.value() : null,
                     sortParameter.and(partTree.getSort()).and(pageable.getSort()), returnExecutionStats);
@@ -195,7 +195,7 @@ public class CouchDbParsingQuery<EntityT> implements RepositoryQuery {
             };
         }
         if (partTree.isExistsProjection()) {
-            return (i, p) -> i.getEntities().size() > 0;
+            return (i, p) -> !i.getEntities().isEmpty();
         }
         if (queryMethod.isPageQuery()) {
             return this::wrapAsPage;

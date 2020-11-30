@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class DeleteDocumentSerializerTest {
 
     @Test
-    public void test() throws JsonProcessingException {
+    void test() throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
         SimpleModule module = new SimpleModule();
         module.addSerializer(new DeleteDocumentSerializer<>(TestDocument.class));

@@ -14,18 +14,8 @@
  * limitations under the License.
  */
 
-package com.groocraft.couchdb.slacker;
+package com.groocraft.couchdb.slacker.repository;
 
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-class IdGeneratorUUIDTest {
-
-    @Test
-    void testClass() {
-        IdGeneratorUUID idGeneratorUUID = new IdGeneratorUUID();
-        assertEquals(Object.class, idGeneratorUUID.getEntityClass(), IdGeneratorUUID.class.getName() + " must be applicable to every object");
-    }
+public class CouchDBViewQuery {
 
 }

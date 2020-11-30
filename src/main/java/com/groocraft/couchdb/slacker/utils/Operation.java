@@ -26,7 +26,7 @@ import org.springframework.util.Assert;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
@@ -44,22 +44,22 @@ public enum Operation {
     GREATER_THAN_OR_EQUALS(Part.Type.GREATER_THAN_EQUAL, (g, v) -> g.writeObjectField("$gte", v), (k, v, m) -> format("(%1$s >= %2$s)", k, v, m)),
     LESSER_THAN(Part.Type.LESS_THAN, (g, v) -> g.writeObjectField("$lt", v), (k, v, m) -> format("(%1$s < %2$s)", k, v, m)),
     LESSER_THAN_OR_EQUALS(Part.Type.LESS_THAN_EQUAL, (g, v) -> g.writeObjectField("$lte", v), (k, v, m) -> format("(%1$s <= %2$s)", k, v, m)),
-    REGEX(Part.Type.REGEX, (g, v) -> g.writeObjectField("$regex", v), Operation::formatRegex),
+    REGEX(Part.Type.REGEX, Operation::mangoRegex, Operation::formatRegex),
     NOT_NULL(Part.Type.IS_NOT_NULL, (g, v) -> g.writeObjectField("$ne", null), (k, v, m) -> format("(%1$s != null)", k, v, m)),
     NULL(Part.Type.IS_NULL, (g, v) -> g.writeObjectField("$eq", null), (k, v, m) -> format("(%1$s == null)", k, v, m)),
     BEFORE(Part.Type.BEFORE, (g, v) -> g.writeObjectField("$lt", v), (k, v, m) -> format("(%1$s < %2$s)", k, v, m)),
     AFTER(Part.Type.AFTER, (g, v) -> g.writeObjectField("$gt", v), (k, v, m) -> format("(%1$s > %2$s)", k, v, m)),
-    STARTING_WITH(Part.Type.STARTING_WITH, (g, v) -> g.writeObjectField("$regex", "^" + v), (k, v, m) -> format("(%1$s.startsWith(%2$s))", k, v, m)),
-    ENDING_WITH(Part.Type.ENDING_WITH, (g, v) -> g.writeObjectField("$regex", v + "$"), (k, v, m) -> format("(%1$s.endsWith(%2$s))", k, v, m)),
+    STARTING_WITH(Part.Type.STARTING_WITH, (g, v) -> mangoRegex(g, "^" + v), (k, v, m) -> format("(%1$s.startsWith(%2$s))", k, v, m)),
+    ENDING_WITH(Part.Type.ENDING_WITH, (g, v) -> mangoRegex(g, v + "$"), (k, v, m) -> format("(%1$s.endsWith(%2$s))", k, v, m)),
     EMPTY(Part.Type.IS_EMPTY, (g, v) -> g.writeObjectField("$size", 0), (k, v, m) -> format("(%1$s.length == 0)", k, v, m)),
     NOT_EMPTY(Part.Type.IS_NOT_EMPTY, (g, v) -> {
         g.writeFieldName("$not");
         g.writeRaw(":{\"$size\":0}");
     }, (k, v, m) -> format("(%1$s.length != 0)", k, v, m)),
-    CONTAINING(Part.Type.CONTAINING, (g, v) -> g.writeObjectField("$regex", v), (k, v, m) -> format("(%1$s.includes(%2$s))", k, v, m)),
-    NOT_CONTAINING(Part.Type.NOT_CONTAINING, (g, v) -> g.writeObjectField("$regex", "^((?!" + v + ").)*$"), (k, v, m) -> format("(!%1$s.includes(%2$s))", k, v, m)),
-    LIKE(Part.Type.LIKE, (g, v) -> g.writeObjectField("$regex", "^" + v), (k, v, m) -> format("(%1$s.startsWith(%2$s))", k, v, m)),
-    NOT_LIKE(Part.Type.NOT_LIKE, (g, v) -> g.writeObjectField("$regex", "^((?!" + v + ").)*$"), (k, v, m) -> format("(!%1$s.includes(%2$s))", k, v, m)),
+    CONTAINING(Part.Type.CONTAINING, Operation::mangoRegex, (k, v, m) -> format("(%1$s.includes(%2$s))", k, v, m)),
+    NOT_CONTAINING(Part.Type.NOT_CONTAINING, (g, v) -> mangoRegex(g, "^((?!" + v + ").)*$"), (k, v, m) -> format("(!%1$s.includes(%2$s))", k, v, m)),
+    LIKE(Part.Type.LIKE, (g, v) -> mangoRegex(g, "^" + v), (k, v, m) -> format("(%1$s.startsWith(%2$s))", k, v, m)),
+    NOT_LIKE(Part.Type.NOT_LIKE, (g, v) -> mangoRegex(g, "^((?!" + v + ").)*$"), (k, v, m) -> format("(!%1$s.includes(%2$s))", k, v, m)),
     IN(Part.Type.IN, (g, v) -> g.writeObjectField("$in", v), (k, v, m) -> format("(%2$s.includes(%1$s))", k, v, m)),
     NOT_IN(Part.Type.NOT_IN, (g, v) -> g.writeObjectField("$nin", v), (k, v, m) -> format("(!%2$s.includes(%1$s))", k, v, m)),
     TRUE(Part.Type.TRUE, (g, v) -> g.writeObjectField("$eq", true), (k, v, m) -> format("(%1$s == true)", k, v, m)),
@@ -81,7 +81,7 @@ public enum Operation {
         throw new IllegalArgumentException("NEAR is not implemented yet");
     });
 
-    private static final Map<Part.Type, Operation> translationMap = new HashMap<>();
+    private static final Map<Part.Type, Operation> translationMap = new EnumMap<>(Part.Type.class);
 
     static {
         Arrays.stream(Operation.values()).forEach(o -> translationMap.put(o.getType(), o));
@@ -183,6 +183,10 @@ public enum Operation {
      */
     private static String formatRegex(@NotNull String key, @Nullable Object value, @NotNull ObjectMapper objectMapper) {
         return String.format("(/%2$s/.test(%1$s))", "doc." + key, value);
+    }
+
+    private static void mangoRegex(JsonGenerator generator, Object value) throws IOException {
+        generator.writeObjectField("$regex", value);
     }
 
     /**

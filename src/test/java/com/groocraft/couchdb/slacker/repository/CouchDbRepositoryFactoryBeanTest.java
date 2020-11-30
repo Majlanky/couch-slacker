@@ -12,7 +12,7 @@ import static org.mockito.Mockito.when;
 class CouchDbRepositoryFactoryBeanTest {
 
     @Test
-    public void test() {
+    void test() {
         CouchDbClient client = mock(CouchDbClient.class);
         CouchDbProperties properties = mock(CouchDbProperties.class);
         when(properties.getBulkMaxSize()).thenReturn(100);

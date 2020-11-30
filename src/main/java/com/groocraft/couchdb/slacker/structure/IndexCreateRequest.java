@@ -31,7 +31,7 @@ public class IndexCreateRequest {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty("type")
-    private final String type = "json";
+    private final String type;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonProperty("name")
@@ -40,5 +40,6 @@ public class IndexCreateRequest {
     public IndexCreateRequest(String name, Iterable<Sort.Order> fields) {
         this.name = name;
         this.fields = fields;
+        this.type = "json";
     }
 }

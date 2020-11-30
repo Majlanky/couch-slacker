@@ -33,8 +33,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class FindContextSerializerTest {
 
     @Test
-    public void testViewed() throws JsonProcessingException {
-        EntityMetadata<?> metadata = new EntityMetadata<>(ViewedDocument.class);
+    void testViewed() throws JsonProcessingException {
+        EntityMetadata metadata = new EntityMetadata(ViewedDocument.class);
         PartTree partTree = new PartTree("findByField", ViewedDocument.class);
         FindContext findContext = new FindContext(partTree, Collections.singletonMap("field", "testValue"), metadata);
         DocumentFindRequest request = new DocumentFindRequest(findContext, null, 100, null, Sort.unsorted(), false);
@@ -44,8 +44,8 @@ class FindContextSerializerTest {
     }
 
     @Test
-    public void testNonViewed() throws JsonProcessingException {
-        EntityMetadata<?> metadata = new EntityMetadata<>(TestDocument.class);
+    void testNonViewed() throws JsonProcessingException {
+        EntityMetadata metadata = new EntityMetadata(TestDocument.class);
         PartTree partTree = new PartTree("findByValue", TestDocument.class);
         FindContext findContext = new FindContext(partTree, Collections.singletonMap("value", "testValue"), metadata);
         DocumentFindRequest request = new DocumentFindRequest(findContext, null, 100, null, Sort.unsorted(), false);

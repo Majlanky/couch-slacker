@@ -72,7 +72,7 @@ public enum SchemaOperation {
     }
 
     private static void drop(Class<?> clazz, CouchDbClient client) throws IOException {
-        EntityMetadata<?> metadata = client.getEntityMetadata(clazz);
+        EntityMetadata metadata = client.getEntityMetadata(clazz);
         if (client.databaseExists(clazz)) {
             log.info("Database {} exists and it will be deleted", metadata.getDatabaseName());
             client.deleteDatabase(clazz);
@@ -80,7 +80,7 @@ public enum SchemaOperation {
     }
 
     private static void create(Class<?> clazz, CouchDbClient client) throws IOException {
-        EntityMetadata<?> metadata = client.getEntityMetadata(clazz);
+        EntityMetadata metadata = client.getEntityMetadata(clazz);
         if (!client.databaseExists(clazz)) {
             log.info("Database {} not found and it will be created", metadata.getDatabaseName());
             client.createDatabase(clazz);
@@ -133,7 +133,7 @@ public enum SchemaOperation {
     }
 
     private static void validate(Class<?> clazz, CouchDbClient client) throws IOException, SchemaProcessingException {
-        EntityMetadata<?> metadata = client.getEntityMetadata(clazz);
+        EntityMetadata metadata = client.getEntityMetadata(clazz);
         log.info("Validating that database {} exists", metadata.getDatabaseName());
         if (!client.databaseExists(clazz)) {
             throw new SchemaProcessingException(String.format("Database %s does not exists", metadata.getDatabaseName()));

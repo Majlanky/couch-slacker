@@ -11,9 +11,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class EntityMetadataTest {
 
     @Test
-    public void testParsingFieldBased(){
+    void testParsingFieldBased() {
         FieldTestDocument testDocument = new FieldTestDocument();
-        EntityMetadata<FieldTestDocument> entityMetadata = new EntityMetadata<>(FieldTestDocument.class);
+        EntityMetadata entityMetadata = new EntityMetadata(FieldTestDocument.class);
         assertFalse(entityMetadata.isViewed(), "FieldTestDocument is not annotated as view accessed document");
         assertEquals("test", entityMetadata.getDatabaseName(), "Wrongly parsed Database annotation");
 
@@ -27,9 +27,9 @@ class EntityMetadataTest {
     }
 
     @Test
-    public void testParsingMethodBased(){
+    void testParsingMethodBased() {
         MethodTestDocument testDocument = new MethodTestDocument();
-        EntityMetadata<MethodTestDocument> entityMetadata = new EntityMetadata<>(MethodTestDocument.class);
+        EntityMetadata entityMetadata = new EntityMetadata(MethodTestDocument.class);
         assertFalse(entityMetadata.isViewed(), "MethodTestDocument is not annotated as view accessed document");
         assertEquals("test", entityMetadata.getDatabaseName(), "Wrongly parsed Database annotation");
 
@@ -49,9 +49,9 @@ class EntityMetadataTest {
     }
 
     @Test
-    public void testParsingFieldWithMethodBased(){
+    void testParsingFieldWithMethodBased() {
         FieldWithMethodTestDocument testDocument = new FieldWithMethodTestDocument();
-        EntityMetadata<FieldWithMethodTestDocument> entityMetadata = new EntityMetadata<>(FieldWithMethodTestDocument.class);
+        EntityMetadata entityMetadata = new EntityMetadata(FieldWithMethodTestDocument.class);
         assertFalse(entityMetadata.isViewed(), "FieldWithMethodTestDocument is not annotated as view accessed document");
         assertEquals("test", entityMetadata.getDatabaseName(), "Wrongly parsed Database annotation");
 
@@ -71,9 +71,9 @@ class EntityMetadataTest {
     }
 
     @Test
-    public void testParsingMixedBased(){
+    void testParsingMixedBased() {
         MixedTestDocument testDocument = new MixedTestDocument();
-        EntityMetadata<MixedTestDocument> entityMetadata = new EntityMetadata<>(MixedTestDocument.class);
+        EntityMetadata entityMetadata = new EntityMetadata(MixedTestDocument.class);
         assertFalse(entityMetadata.isViewed(), "MixedTestDocument is not annotated as view accessed document");
         assertEquals("test", entityMetadata.getDatabaseName(), "Wrongly parsed Database annotation");
 
@@ -92,9 +92,9 @@ class EntityMetadataTest {
     }
 
     @Test
-    public void testParsingInheritance(){
+    void testParsingInheritance() {
         InheritedTestDocument testDocument = new InheritedTestDocument();
-        EntityMetadata<InheritedTestDocument> entityMetadata = new EntityMetadata<>(InheritedTestDocument.class);
+        EntityMetadata entityMetadata = new EntityMetadata(InheritedTestDocument.class);
         assertFalse(entityMetadata.isViewed(), "InheritedTestDocument is not annotated as view accessed document");
         assertEquals("test", entityMetadata.getDatabaseName(), "Wrongly parsed Database annotation");
 
@@ -113,24 +113,24 @@ class EntityMetadataTest {
     }
 
     @Test()
-    public void testMissingId(){
-        assertThrows(IllegalStateException.class, () -> new EntityMetadata<>(NoIdTestDocument.class), "Absence of _id attribute must be reported by exception");
+    void testMissingId() {
+        assertThrows(IllegalStateException.class, () -> new EntityMetadata(NoIdTestDocument.class), "Absence of _id attribute must be reported by exception");
     }
 
     @Test()
-    public void testMissingRevision(){
-        assertThrows(IllegalStateException.class, () -> new EntityMetadata<>(NoRevisionTestDocument.class), "Absence of _rev attribute must be reported by " +
+    void testMissingRevision() {
+        assertThrows(IllegalStateException.class, () -> new EntityMetadata(NoRevisionTestDocument.class), "Absence of _rev attribute must be reported by " +
                 "exception");
     }
 
     @Test
-    public void testMissingDatabase(){
-        assertThrows(IllegalArgumentException.class, () -> new EntityMetadata<>(NoDatabaseTestDocument.class));
+    void testMissingDatabase() {
+        assertThrows(IllegalArgumentException.class, () -> new EntityMetadata(NoDatabaseTestDocument.class));
     }
 
     @Test
-    public void testDefaultViewed(){
-        EntityMetadata<?> em = new EntityMetadata<>(DefaultViewedDocument.class);
+    void testDefaultViewed() {
+        EntityMetadata em = new EntityMetadata(DefaultViewedDocument.class);
         assertTrue(em.isViewed(), "DefaultViewedDocument is annotated as view accessed document");
         assertEquals(Document.DEFAULT_DESIGN_NAME, em.getDesign(), "");
         assertEquals(Document.DEFAULT_TYPE_FIELD, em.getTypeField(), "");
@@ -139,8 +139,8 @@ class EntityMetadataTest {
     }
 
     @Test
-    public void testViewed(){
-        EntityMetadata<?> em = new EntityMetadata<>(ViewedDocument.class);
+    void testViewed() {
+        EntityMetadata em = new EntityMetadata(ViewedDocument.class);
         assertTrue(em.isViewed(), "ViewedDocument is annotated as view accessed document");
         assertEquals(Document.DEFAULT_DESIGN_NAME, em.getDesign(), "");
         assertEquals(Document.DEFAULT_TYPE_FIELD, em.getTypeField(), "");

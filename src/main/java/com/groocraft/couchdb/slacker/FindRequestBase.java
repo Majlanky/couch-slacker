@@ -69,8 +69,8 @@ public abstract class FindRequestBase implements FindRequest {
      * @param sort                      All order rules. Can be {@literal null} which means do not sort.
      * @param addExecutionStatsToResult setting if the result should container information about execution of Mango query
      */
-    public FindRequestBase(@Nullable Long skip, @Nullable Integer limit,
-                           @Nullable String[] index, @NotNull Sort sort, boolean addExecutionStatsToResult) {
+    protected FindRequestBase(@Nullable Long skip, @Nullable Integer limit,
+                              @Nullable String[] index, @NotNull Sort sort, boolean addExecutionStatsToResult) {
         Assert.isTrue(limit == null || limit > 0, "Limit must be positive number or null");
         if (index != null) {
             useIndex = index;

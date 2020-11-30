@@ -17,7 +17,7 @@ class OperationTest {
     final static String VIEW_MAP = "function(doc){if%1$s{emit(null);}}";
 
     @Test
-    public void testJs() throws JsonProcessingException {
+    void testJs() throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
         String str = "STR";
         assertEquals("function(doc){if(doc.data == \"STR\"){emit(null);}}", String.format(VIEW_MAP, Operation.EQUALS.jsCondition("data", str, mapper)));
@@ -80,7 +80,7 @@ class OperationTest {
     }
 
     @Test
-    public void test() {
+    void test() {
         assertAll(Arrays.stream(Part.Type.values()).filter(t -> !Part.Type.EXISTS.equals(t)).map(this::executable));
     }
 

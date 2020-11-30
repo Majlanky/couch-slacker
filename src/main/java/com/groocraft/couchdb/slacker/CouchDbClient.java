@@ -55,6 +55,7 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.HttpClientUtils;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HttpContext;
@@ -77,7 +78,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -89,19 +89,21 @@ import java.util.stream.StreamSupport;
 @Slf4j
 public class CouchDbClient {
 
-    final static String ALL_DESIGN = "all";
-    final static String ALL_DATA_VIEW = "data";
-    final static String VIEW_MAP = "function(doc){if(doc.%1$s == \"%2$s\"){emit(null);}}";
-    final static String ALL_DATA_MAP = "function(doc){emit(null);}";
-    final static String COUNT_REDUCE = "_count";
-    final static String SORTED_VIEW_MAP = "function(doc){emit([%1$s]);}";
-    final static String SORTED_TYPED_VIEW_MAP = "function(doc){if(doc.%1$s == \"%2$s\"){emit([%3$s]);}}";
-    final static String SORTED_FIND_VIEW_MAP = "function(doc){if%1$s{emit([%2$s]);}}";
-    final static String FIND_VIEW_MAP = "function(doc){if%1$s{emit(null);}}";
+    static final String ALL_DESIGN = "all";
+    static final String ALL_DATA_VIEW = "data";
+    static final String VIEW_MAP = "function(doc){if(doc.%1$s == \"%2$s\"){emit(null);}}";
+    static final String ALL_DATA_MAP = "function(doc){emit(null);}";
+    static final String COUNT_REDUCE = "_count";
+    static final String SORTED_VIEW_MAP = "function(doc){emit([%1$s]);}";
+    static final String SORTED_TYPED_VIEW_MAP = "function(doc){if(doc.%1$s == \"%2$s\"){emit([%3$s]);}}";
+    static final String SORTED_FIND_VIEW_MAP = "function(doc){if%1$s{emit([%2$s]);}}";
+    static final String FIND_VIEW_MAP = "function(doc){if%1$s{emit(null);}}";
 
-    private final static String VIEW_REDUCE_PARAMETER = "reduce";
-    private final static String VIEW_LIMIT_PARAMETER = "limit";
-    private final static String VIEW_SKIP_PARAMETER = "skip";
+    private static final String VIEW_REDUCE_PARAMETER = "reduce";
+    private static final String VIEW_LIMIT_PARAMETER = "limit";
+    private static final String VIEW_SKIP_PARAMETER = "skip";
+    private static final String DESIGN = "_design";
+    private static final String VIEW = "_view";
 
     private final HttpClient httpClient;
     private final HttpHost httpHost;
@@ -187,7 +189,7 @@ public class CouchDbClient {
      * @return {@link org.springframework.data.repository.core.EntityInformation} implementation for CouchDB entities.
      */
     public <EntityT, IdT> @NotNull CouchDbEntityInformation<EntityT, IdT> getEntityInformation(@NotNull Class<EntityT> clazz) {
-        return new CouchDbEntityInformation<>(getEntityMetadata(clazz));
+        return new CouchDbEntityInformation<>(clazz, getEntityMetadata(clazz));
     }
 
     /**
@@ -195,8 +197,7 @@ public class CouchDbClient {
      * @param <T>   type of class
      * @return {@link EntityMetadata} about passed class
      */
-    @SuppressWarnings("unchecked")
-    public <T> @NotNull EntityMetadata<T> getEntityMetadata(@NotNull Class<T> clazz) {
+    public <T> @NotNull EntityMetadata getEntityMetadata(@NotNull Class<T> clazz) {
         return entityMetadataCache.computeIfAbsent(clazz, EntityMetadata::new);
     }
 
@@ -270,7 +271,7 @@ public class CouchDbClient {
      */
     @SuppressWarnings({"unchecked"})
     public <EntityT> @NotNull EntityT save(@NotNull EntityT entity) throws IOException {
-        EntityMetadata<?> entityMetadata = getEntityMetadata(entity.getClass());
+        EntityMetadata entityMetadata = getEntityMetadata(entity.getClass());
         ObjectMapper localMapper = mapper;
         String id = entityMetadata.getIdReader().read(entity);
         log.debug("Saving document {} with id {} and revision {} to database {}", entity, id,
@@ -309,7 +310,7 @@ public class CouchDbClient {
      */
     @SuppressWarnings({"unchecked"})
     public <EntityT> @NotNull Iterable<EntityT> saveAll(@NotNull Iterable<EntityT> entities, @NotNull Class<?> clazz) throws IOException {
-        EntityMetadata<?> entityMetadata = getEntityMetadata(clazz);
+        EntityMetadata entityMetadata = getEntityMetadata(clazz);
         ObjectMapper localMapper = mapper;
         log.debug("Bulk save of {} documents to database {}", LazyLog.of(() -> StreamSupport.stream(entities.spliterator(), false).count()),
                 entityMetadata.getDatabaseName());
@@ -384,7 +385,7 @@ public class CouchDbClient {
      */
     public @NotNull DesignDocument readDesign(@NotNull String id, @NotNull String databaseName) throws IOException {
         log.debug("Read of design with ID {} from database {}", id, databaseName);
-        return get(getURI(baseURI, databaseName, "_design", id), r -> mapper.readValue(r.getEntity().getContent(), DesignDocument.class));
+        return get(getURI(baseURI, databaseName, DESIGN, id), r -> mapper.readValue(r.getEntity().getContent(), DesignDocument.class));
     }
 
     /**
@@ -453,7 +454,6 @@ public class CouchDbClient {
      * Method using view to get all document ids. If entity {@link EntityMetadata#isViewed()} than the configured view for the configured design is used. If
      * entity is not viewed, the expected data view from the all design is used. Method supports pagination. If design documents are needed, use
      * {@link #readAllDesign(Class)}.
-     * {@link #readAllDocsWithoutView(Class, Predicate)} can be used if no default view is present.
      *
      * @param clazz of wanted entity. Used to get database name {@link #getDatabaseName(Class)}. Must not be {@literal null}
      * @param skip  number of skipped documents. 0 means no document is skipped
@@ -465,7 +465,7 @@ public class CouchDbClient {
     public @NotNull List<String> readAll(@NotNull Class<?> clazz, Long skip, @Nullable Integer limit, @NotNull Sort sort) throws IOException {
         String design = ALL_DESIGN;
         String view = ALL_DATA_VIEW;
-        EntityMetadata<?> em = getEntityMetadata(clazz);
+        EntityMetadata em = getEntityMetadata(clazz);
         if (sort.isSorted()) {
             Sort.Direction direction = null;
             for (Sort.Order order : sort) {
@@ -482,12 +482,14 @@ public class CouchDbClient {
         return readFromView(em.getDatabaseName(), design, view, skip, limit, sort);
     }
 
-    @SuppressWarnings("OptionalGetWithoutIsPresent")
     private @NotNull List<String> readFromView(@NotNull String database, @NotNull String design, @NotNull String view, Long skip, @Nullable Integer limit,
                                                @NotNull Sort sort) throws IOException {
         List<NameValuePair> parameters = new ArrayList<>(4);
         if (sort.isSorted()) {
-            parameters.add(new BasicNameValuePair("descending", sort.stream().findFirst().get().getDirection() == Sort.Direction.DESC ? "true" : "false"));
+            parameters.add(new BasicNameValuePair("descending", sort.stream()
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("Sorted sort does no contain any order"))
+                    .getDirection() == Sort.Direction.DESC ? "true" : "false"));
         }
         if (skip != null) {
             parameters.add(new BasicNameValuePair(VIEW_SKIP_PARAMETER, skip + ""));
@@ -498,11 +500,11 @@ public class CouchDbClient {
 
         parameters.add(new BasicNameValuePair(VIEW_REDUCE_PARAMETER, Boolean.toString(false)));
 
-        return get(getURI(baseURI, Arrays.asList(database, "_design", design, "_view", view), parameters),
+        return get(getURI(baseURI, Arrays.asList(database, DESIGN, design, VIEW, view), parameters),
                 r -> mapper.readValue(r.getEntity().getContent(), AllDocumentResponse.class).getRows());
     }
 
-    private Pair<String, String> getSortedViewId(Sort sort, EntityMetadata<?> em) throws IOException {
+    private Pair<String, String> getSortedViewId(Sort sort, EntityMetadata em) throws IOException {
         String sortViewId = "sorted-by-" + (em.isViewed() ? em.getType() + "-" : "") +
                 sort.stream().map(o -> o.getProperty().replace(".", "-")).collect(Collectors.joining(":"));
         String designId = em.isViewed() ? em.getDesign() : ALL_DESIGN;
@@ -532,10 +534,8 @@ public class CouchDbClient {
      * @return everytime returns current. Can not be {@literal null}
      */
     public static @NotNull Sort.Direction assertSameDirection(@Nullable Sort.Direction expected, @NotNull Sort.Direction current) {
-        if (expected != null) {
-            if (expected != current) {
-                throw new IllegalStateException("CouchDB is not able to mix sort directions");
-            }
+        if (expected != null && expected != current) {
+            throw new IllegalStateException("CouchDB is not able to mix sort directions");
         }
         return current;
     }
@@ -550,14 +550,14 @@ public class CouchDbClient {
      * @see com.groocraft.couchdb.slacker.annotation.Document
      */
     public long countAll(@NotNull Class<?> clazz) throws IOException {
-        EntityMetadata<?> em = getEntityMetadata(clazz);
+        EntityMetadata em = getEntityMetadata(clazz);
         String design = ALL_DESIGN;
         String view = ALL_DATA_VIEW;
         if (em.isViewed()) {
             design = em.getDesign();
             view = em.getView();
         }
-        return get(getURI(baseURI, em.getDatabaseName(), "_design", design, "_view", view),
+        return get(getURI(baseURI, em.getDatabaseName(), DESIGN, design, VIEW, view),
                 r -> {
                     JsonNode rows = mapper.readValue(r.getEntity().getContent(), ObjectNode.class).get("rows");
                     if (rows.has(0)) {
@@ -582,9 +582,9 @@ public class CouchDbClient {
     }
 
     /**
-     * Method to get result of _design_docs which contains only design documents (If you need non-design documents use {@link #readAll(Class)} or
-     * {@link #readAllDocsWithoutView(Class, Predicate)} (Class, Predicate)} if you want both) to the database specified by
-     * {@link com.groocraft.couchdb.slacker.annotation.Document} from the passed entity class. Result is returned as Stream of documents ids, no full data.
+     * Method to get result of _design_docs which contains only design documents (If you need non-design documents use {@link #readAll(Class)} if you want
+     * both) to the database specified by {@link com.groocraft.couchdb.slacker.annotation.Document} from the passed entity class. Result is returned as
+     * Stream of documents ids, no full data.
      *
      * @param clazz of wanted entity. Used to get database name {@link #getDatabaseName(Class)}. Must not be {@literal null}
      * @return {@literal non-null} document ids
@@ -599,23 +599,6 @@ public class CouchDbClient {
     }
 
     /**
-     * Method to get result of _all_docs with possibility of id filtering (If you need non-design documents use {@link #readAll(Class)} or
-     * {@link #readAllDesign(Class)} if you want design document only) to the database specified by {@link com.groocraft.couchdb.slacker.annotation.Document}
-     * from the passed entity class. Result is returned as Stream of documents ids, no full data.
-     *
-     * @param clazz             of wanted entity. Used to get database name {@link #getDatabaseName(Class)}. Must not be {@literal null}
-     * @param idFilterPredicate with filtering rule to id. Must not be {@literal null}. Use {@code s -> true} to disable filtering.
-     * @return Stream of {@link String} which contain id.
-     * @throws IOException if http request is not successful or json processing fail
-     * @see #readAll(Class)
-     * @see #readAllDesign(Class)
-     */
-    public @NotNull List<String> readAllDocsWithoutView(@NotNull Class<?> clazz, @NotNull Predicate<String> idFilterPredicate) throws IOException {
-        return get(getURI(baseURI, getDatabaseName(clazz), "_all_docs"),
-                r -> mapper.readValue(r.getEntity().getContent(), AllDocumentResponse.class).getRows().stream().filter(idFilterPredicate).collect(Collectors.toList()));
-    }
-
-    /**
      * Deletes given entity. From entity id and revision is used.
      *
      * @param entity    to delete. Must not be {@literal null}
@@ -625,7 +608,7 @@ public class CouchDbClient {
      * @see DocumentBase
      */
     public <EntityT> @NotNull EntityT delete(@NotNull EntityT entity) throws IOException {
-        EntityMetadata<?> entityMetadata = getEntityMetadata(entity.getClass());
+        EntityMetadata entityMetadata = getEntityMetadata(entity.getClass());
         String id = entityMetadata.getIdReader().read(entity);
         String revision = entityMetadata.getRevisionReader().read(entity);
         log.debug("Delete of document with id {} and revision {} from database {}", id, revision, entityMetadata.getDatabaseName());
@@ -659,7 +642,7 @@ public class CouchDbClient {
      */
     @SuppressWarnings("DuplicatedCode")
     public <EntityT> @NotNull List<EntityT> deleteAll(@NotNull Iterable<EntityT> entities, @NotNull Class<?> clazz) throws IOException {
-        EntityMetadata<?> entityMetadata = getEntityMetadata(clazz);
+        EntityMetadata entityMetadata = getEntityMetadata(clazz);
         log.debug("Bulk delete of {} documents from database {}", LazyLog.of(() -> StreamSupport.stream(entities.spliterator(), false).count()),
                 entityMetadata.getDatabaseName());
         ObjectMapper localMapper = new ObjectMapper();
@@ -698,7 +681,7 @@ public class CouchDbClient {
      * @throws IOException if http request is not successful or json processing fail
      */
     public <EntityT> @NotNull EntityT deleteById(@NotNull String id, @NotNull Class<EntityT> clazz) throws IOException {
-        EntityMetadata<EntityT> entityMetadata = getEntityMetadata(clazz);
+        EntityMetadata entityMetadata = getEntityMetadata(clazz);
         EntityT entity = read(id, clazz);
         log.debug("Delete of document with id {} and revision {} from database {}", id, LazyLog.of(() -> entityMetadata.getRevisionReader().read(entity)),
                 entityMetadata.getDatabaseName());
@@ -819,7 +802,7 @@ public class CouchDbClient {
     public long countByView(@NotNull FindRequest request, @NotNull Class<?> clazz) throws IOException {
         String designId = ensureView(request.getSort(), request.getJavaScriptCondition(mapper), clazz);
         log.debug("Using design {} for counting {}", designId, request);
-        return get(getURI(baseURI, getDatabaseName(clazz), "_design", designId, "_view", ALL_DATA_VIEW),
+        return get(getURI(baseURI, getDatabaseName(clazz), DESIGN, designId, VIEW, ALL_DATA_VIEW),
                 r -> {
                     JsonNode rows = mapper.readValue(r.getEntity().getContent(), ObjectNode.class).get("rows");
                     if (rows.has(0)) {
@@ -957,11 +940,11 @@ public class CouchDbClient {
      * @param clazz as definition of database in which index should be created. Must not be {@literal null}
      * @throws IOException if http request is not successful or json processing fail
      */
-    @SuppressWarnings("OptionalGetWithoutIsPresent")
     private void createIndex(@NotNull Sort sort, @NotNull Class<?> clazz) throws IOException {
         Assert.isTrue(sort.isSorted(), "Sort must contain at leas one Order for creating index");
         String indexId = sort.stream().map(Sort.Order::getProperty).collect(Collectors.joining("-"))
-                + "-" + sort.stream().findFirst().get().toString().toLowerCase();
+                + "-" + sort.stream().findFirst().orElseThrow(() -> new IllegalStateException("Sorted sort does not contain any order"))
+                .toString().toLowerCase();
         log.debug("Creating index {} for sort {}", indexId, sort);
         if (!knownIndexes.contains(indexId)) {
             createIndex(indexId, clazz, sort);
@@ -1117,7 +1100,7 @@ public class CouchDbClient {
         try (AutoCloseableHttpResponse response = new AutoCloseableHttpResponse()) {
             final HttpPut put = new HttpPut(uri);
             StringEntity entity = new StringEntity(json, "UTF-8");
-            entity.setContentType("application/json");
+            entity.setContentType(ContentType.APPLICATION_JSON.getMimeType());
             put.setEntity(entity);
             response.set(execute(put));
             return responseProcessor.apply(response.get());
@@ -1139,7 +1122,7 @@ public class CouchDbClient {
         try (AutoCloseableHttpResponse response = new AutoCloseableHttpResponse()) {
             final HttpPost post = new HttpPost(uri);
             StringEntity entity = new StringEntity(json, "UTF-8");
-            entity.setContentType("application/json");
+            entity.setContentType(ContentType.APPLICATION_JSON.getMimeType());
             post.setEntity(entity);
             response.set(execute(post));
             return responseProcessor.apply(response.get());
@@ -1159,7 +1142,7 @@ public class CouchDbClient {
     private <DataT> DataT get(@NotNull URI uri, @NotNull ThrowingFunction<HttpResponse, DataT, IOException> responseProcessor) throws IOException {
         try (AutoCloseableHttpResponse response = new AutoCloseableHttpResponse()) {
             HttpGet get = new HttpGet(uri);
-            get.addHeader(HttpHeaders.ACCEPT, "application/json");
+            get.addHeader(HttpHeaders.ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
             response.set(execute(get));
             return responseProcessor.apply(response.get());
         }
@@ -1175,7 +1158,7 @@ public class CouchDbClient {
     private <DataT> DataT delete(@NotNull URI uri, @NotNull ThrowingFunction<HttpResponse, DataT, IOException> responseProcessor) throws IOException {
         try (AutoCloseableHttpResponse response = new AutoCloseableHttpResponse()) {
             final HttpDelete delete = new HttpDelete(uri);
-            delete.addHeader(HttpHeaders.ACCEPT, "application/json");
+            delete.addHeader(HttpHeaders.ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
             response.set(execute(delete));
             return responseProcessor.apply(response.get());
         }

@@ -18,7 +18,7 @@ import static org.mockito.Mockito.when;
 class CouchDbRepositoryFactoryTest {
 
     @Test
-    public void test() {
+    void test() {
         CouchDbClient client = mock(CouchDbClient.class);
         RepositoryMetadata repositoryMetadata = mock(RepositoryMetadata.class);
         QueryLookupStrategy.Key key = mock(QueryLookupStrategy.Key.class);

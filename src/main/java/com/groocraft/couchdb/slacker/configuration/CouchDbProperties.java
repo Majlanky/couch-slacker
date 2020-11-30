@@ -115,10 +115,6 @@ public class CouchDbProperties {
      */
     private QueryStrategy queryStrategy = QueryStrategy.MANGO;
 
-
-    public CouchDbProperties() {
-    }
-
     public String getUsername() {
         return username;
     }

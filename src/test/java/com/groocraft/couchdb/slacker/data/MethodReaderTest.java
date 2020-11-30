@@ -17,7 +17,7 @@ class MethodReaderTest {
     private final String value = "test";
 
     @Test
-    public void test() throws NoSuchMethodException {
+    void test() throws NoSuchMethodException {
         MethodReader<String> reader = new MethodReader<>(MethodReaderTest.class.getDeclaredMethod("read"));
         String read = reader.read(this);
         assertTrue(called, "The wrapped method was not called");
@@ -25,7 +25,7 @@ class MethodReaderTest {
     }
 
     @Test
-    public void testIllegalAccessWrite() throws IllegalAccessException, InvocationTargetException {
+    void testIllegalAccessWrite() throws IllegalAccessException, InvocationTargetException {
         Method method = Mockito.mock(Method.class);
         Mockito.when(method.invoke(Mockito.any())).thenThrow(new IllegalAccessException());
         MethodReader<String> reader = new MethodReader<>(method);
@@ -33,7 +33,7 @@ class MethodReaderTest {
     }
 
     @Test
-    public void testInvocationWrite() throws IllegalAccessException, InvocationTargetException {
+    void testInvocationWrite() throws IllegalAccessException, InvocationTargetException {
         Method method = Mockito.mock(Method.class);
         Mockito.when(method.invoke(Mockito.any())).thenThrow(new InvocationTargetException(new Exception()));
         MethodReader<String> reader = new MethodReader<>(method);

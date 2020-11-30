@@ -27,7 +27,7 @@ class AutoCloseableHttpResponseTest {
     InputStream stream;
 
     @Test
-    public void test() throws IOException {
+    void test() throws IOException {
         Mockito.when(response.getEntity()).thenReturn(entity);
         Mockito.when(entity.getContent()).thenReturn(stream);
         AutoCloseableHttpResponse autoResponse = new AutoCloseableHttpResponse();
@@ -38,7 +38,7 @@ class AutoCloseableHttpResponseTest {
     }
 
     @Test
-    public void testTryCatch() throws IOException {
+    void testTryCatch() throws IOException {
         Mockito.when(response.getEntity()).thenReturn(entity);
         Mockito.when(entity.getContent()).thenReturn(stream);
         try (AutoCloseableHttpResponse autoResponse = new AutoCloseableHttpResponse()) {
@@ -48,7 +48,7 @@ class AutoCloseableHttpResponseTest {
     }
 
     @Test
-    public void testNonClosable() throws IOException {
+    void testNonClosable() throws IOException {
         Mockito.when(response.getEntity()).thenReturn(entity);
         Mockito.when(entity.getContent()).thenReturn(stream);
         Mockito.doThrow(new IOException()).when(stream).close();

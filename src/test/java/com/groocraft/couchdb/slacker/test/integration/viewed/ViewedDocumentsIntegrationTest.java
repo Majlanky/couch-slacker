@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @ActiveProfiles("viewed-test")
 @EntityScan({"com.groocraft.couchdb.slacker.test.integration.viewed"})
 @EnableCouchDbRepositories
-public class ViewedDocumentsIntegrationTest {
+class ViewedDocumentsIntegrationTest {
 
     @Autowired
     ViewedDogRepository dogRepository;
@@ -53,13 +53,13 @@ public class ViewedDocumentsIntegrationTest {
     ViewedOverviewRepository overviewRepository;
 
     @BeforeEach
-    public void delete() {
+    void delete() {
         dogRepository.deleteAll();
         catRepository.deleteAll();
     }
 
     @Test
-    public void testSaveAndViewedFindAll() {
+    void testSaveAndViewedFindAll() {
         List<ViewedDog> dogs = new LinkedList<>();
         List<ViewedCat> cats = new LinkedList<>();
         IntStream.range(1, 21).forEach(i -> {
@@ -75,7 +75,7 @@ public class ViewedDocumentsIntegrationTest {
     }
 
     @Test
-    public void testSaveAllAndViewedFindAll() {
+    void testSaveAllAndViewedFindAll() {
         List<ViewedDog> dogs = new LinkedList<>();
         List<ViewedCat> cats = new LinkedList<>();
         IntStream.range(1, 21).forEach(i -> {

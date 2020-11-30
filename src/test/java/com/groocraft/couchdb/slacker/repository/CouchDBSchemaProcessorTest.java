@@ -43,10 +43,10 @@ import static org.mockito.Mockito.when;
 class CouchDBSchemaProcessorTest {
 
     @Mock
-    public CouchDbClient client;
+    CouchDbClient client;
 
     @Test
-    public void testNone() throws Exception {
+    void testNone() throws Exception {
         CouchDBSchemaProcessor schemaProcessor = new CouchDBSchemaProcessor(client, SchemaOperation.NONE);
         schemaProcessor.process(Collections.singletonList(TestDocument.class));
         verify(client, never().description("No test should be called if operation is NONE")).databaseExists(TestDocument.class);
@@ -55,8 +55,8 @@ class CouchDBSchemaProcessorTest {
     }
 
     @Test
-    public void testValidate() throws IOException {
-        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata<>(TestDocument.class));
+    void testValidate() throws IOException {
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(TestDocument.class));
         when(client.databaseExists(TestDocument.class)).thenReturn(true, false);
         when(client.readDesignSafely("all", "test")).thenReturn(Optional.of(
                 new DesignDocument("all", Collections.singleton(new View("data", "function(doc){emit(null);}", "_count")))));
@@ -66,8 +66,8 @@ class CouchDBSchemaProcessorTest {
     }
 
     @Test
-    public void testCreate() throws Exception {
-        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata<>(TestDocument.class));
+    void testCreate() throws Exception {
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(TestDocument.class));
         when(client.databaseExists(TestDocument.class)).thenReturn(true, true, false, true);
         when(client.readDesignSafely("all", "test")).thenReturn(Optional.of(
                 new DesignDocument("all", Collections.singleton(new View("data", "function(doc){emit(null);}", "_count")))));
@@ -79,8 +79,8 @@ class CouchDBSchemaProcessorTest {
     }
 
     @Test
-    public void testDrop() throws Exception {
-        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata<>(TestDocument.class));
+    void testDrop() throws Exception {
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(TestDocument.class));
         when(client.databaseExists(TestDocument.class)).thenReturn(true, false, true);
         when(client.readDesignSafely("all", "test")).thenReturn(Optional.of(
                 new DesignDocument("all", Collections.singleton(new View("data", "function(doc){emit(null);}", "_count")))));

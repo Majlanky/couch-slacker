@@ -41,7 +41,7 @@ public abstract class WrappingSerializer<EntityT> extends JsonSerializer<EntityT
     /**
      * @param clazz of wrapped entity. Must not be {@literal null}
      */
-    public WrappingSerializer(@NotNull Class<EntityT> clazz) {
+    protected WrappingSerializer(@NotNull Class<EntityT> clazz) {
         Assert.notNull(clazz, "Clazz must not be null");
         this.clazz = clazz;
     }

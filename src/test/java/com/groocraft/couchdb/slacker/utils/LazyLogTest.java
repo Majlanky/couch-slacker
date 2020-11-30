@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class LazyLogTest {
 
     @Test
-    public void test() {
+    void test() {
         AtomicBoolean called = new AtomicBoolean(false);
         LazyLog lazyLog = LazyLog.of(() -> {
             called.set(true);

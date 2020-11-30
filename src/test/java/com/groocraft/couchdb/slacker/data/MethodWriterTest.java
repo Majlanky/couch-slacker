@@ -17,7 +17,7 @@ class MethodWriterTest {
     private String value = "test";
 
     @Test
-    public void test() throws NoSuchMethodException {
+    void test() throws NoSuchMethodException {
         MethodWriter<String> writer = new MethodWriter<>(MethodWriterTest.class.getDeclaredMethod("write", String.class));
         String newValue = "new";
         writer.write(this, newValue);
@@ -26,7 +26,7 @@ class MethodWriterTest {
     }
 
     @Test
-    public void testIllegalAccessWrite() throws IllegalAccessException, InvocationTargetException {
+    void testIllegalAccessWrite() throws IllegalAccessException, InvocationTargetException {
         Method method = Mockito.mock(Method.class);
         Mockito.when(method.invoke(Mockito.any(), Mockito.any())).thenThrow(new IllegalAccessException());
         MethodWriter<String> writer = new MethodWriter<>(method);
@@ -34,14 +34,14 @@ class MethodWriterTest {
     }
 
     @Test
-    public void testInvocationWrite() throws IllegalAccessException, InvocationTargetException {
+    void testInvocationWrite() throws IllegalAccessException, InvocationTargetException {
         Method method = Mockito.mock(Method.class);
         Mockito.when(method.invoke(Mockito.any(), Mockito.any())).thenThrow(new InvocationTargetException(new Exception()));
         MethodWriter<String> writer = new MethodWriter<>(method);
         assertThrows(AccessException.class, () -> writer.write(this, "something"), "Invocation issues must be reported as AccessException");
     }
 
-    public void write(String value) {
+    void write(String value) {
         called = true;
         this.value = value;
     }

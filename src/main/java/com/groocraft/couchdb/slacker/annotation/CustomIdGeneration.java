@@ -23,8 +23,9 @@ import com.groocraft.couchdb.slacker.IdGenerator;
  *
  * @author Majlanky
  */
+@SuppressWarnings("rawtypes")
 public @interface CustomIdGeneration {
 
-    Class<? extends IdGenerator<?>> value();
+    Class<? extends IdGenerator> value();
 
 }

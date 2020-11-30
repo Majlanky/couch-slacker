@@ -36,14 +36,14 @@ public class FindContext {
 
     private final PartTree partTree;
     private final Map<String, Object> parameters;
-    private final EntityMetadata<?> entityMetadata;
+    private final EntityMetadata entityMetadata;
 
     /**
-     * @param partTree   must not be {@literal null}
-     * @param parameters must not be {@literal null}
+     * @param partTree       must not be {@literal null}
+     * @param parameters     must not be {@literal null}
      * @param entityMetadata must not be {@literal null}
      */
-    public FindContext(@NotNull PartTree partTree, @NotNull Map<String, Object> parameters, @NotNull EntityMetadata<?> entityMetadata) {
+    public FindContext(@NotNull PartTree partTree, @NotNull Map<String, Object> parameters, @NotNull EntityMetadata entityMetadata) {
         Assert.notNull(partTree, "PartTree must not be null");
         Assert.notNull(parameters, "Parameters must not be null");
         Assert.notNull(entityMetadata, "EntityMetadata must not be null");
@@ -60,7 +60,7 @@ public class FindContext {
         return partTree;
     }
 
-    public @NotNull EntityMetadata<?> getEntityMetadata(){
+    public @NotNull EntityMetadata getEntityMetadata() {
         return entityMetadata;
     }
 }

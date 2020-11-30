@@ -49,9 +49,8 @@ import java.util.function.Function;
  * @author Majlanky
  */
 @Slf4j
-public class EntityMetadata<DataT> {
+public class EntityMetadata {
 
-    private final Class<DataT> entityClass;
     private final String databaseName;
     private final Writer<String> idWriter;
     private final Reader<String> idReader;
@@ -67,9 +66,8 @@ public class EntityMetadata<DataT> {
      * @param entityClass of parsed document. Must not be {@literal null}
      * @throws IllegalStateException if there is missing _id or _rev access
      */
-    public EntityMetadata(@NotNull Class<DataT> entityClass) {
+    public EntityMetadata(@NotNull Class<?> entityClass) {
         Assert.notNull(entityClass, "EntityClass must not be null.");
-        this.entityClass = entityClass;
         Document document = entityClass.getAnnotation(Document.class);
         Assert.notNull(document, "Document annotation must not be null");
         document = AnnotationUtils.synthesizeAnnotation(document, Document.class);
@@ -217,10 +215,6 @@ public class EntityMetadata<DataT> {
             }
         }
         return clazz.getSuperclass() == null ? null : getAnnotatedMethod(prefixes, annotationValue, clazz.getSuperclass());
-    }
-
-    public Class<DataT> getEntityClass() {
-        return entityClass;
     }
 
     public String getDatabaseName() {

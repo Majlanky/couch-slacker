@@ -32,11 +32,12 @@ import java.io.Serializable;
  * @author Majlanky
  * @see RepositoryFactoryBeanSupport
  */
-public class CouchDbRepositoryFactoryBean<T extends Repository<S, ID>, S, ID extends Serializable>
-        extends RepositoryFactoryBeanSupport<T, S, ID> {
+public class CouchDbRepositoryFactoryBean<RepositoryT extends Repository<EntityT, IdT>, EntityT, IdT extends Serializable>
+        extends RepositoryFactoryBeanSupport<RepositoryT, EntityT, IdT> {
 
     private final CouchDbClient client;
     private final CouchDbProperties properties;
+
 
     /**
      * @param repositoryInterface must not be {@literal null}.
@@ -44,7 +45,7 @@ public class CouchDbRepositoryFactoryBean<T extends Repository<S, ID>, S, ID ext
      * @param properties          must not be {@literal null}.
      */
     @SuppressWarnings("SameParameterValue")
-    protected CouchDbRepositoryFactoryBean(@NotNull Class<? extends T> repositoryInterface, @NotNull CouchDbClient client, @NotNull CouchDbProperties properties) {
+    protected CouchDbRepositoryFactoryBean(@NotNull Class<? extends RepositoryT> repositoryInterface, @NotNull CouchDbClient client, @NotNull CouchDbProperties properties) {
         super(repositoryInterface);
         Assert.notNull(client, "Client must not be null.");
         Assert.notNull(properties, "Properties must not be null.");

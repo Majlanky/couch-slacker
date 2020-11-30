@@ -43,9 +43,9 @@ public class CouchDbEntityInformation<EntityT, IdT> implements EntityInformation
     /**
      * @param entityMetadata {@link EntityMetadata} for the entity class. Used to get {@link Reader} for revision and id. Must not be {@literal null}.
      */
-    public CouchDbEntityInformation(@NotNull EntityMetadata<EntityT> entityMetadata) {
+    public CouchDbEntityInformation(@NotNull Class<EntityT> clazz, @NotNull EntityMetadata entityMetadata) {
         Assert.notNull(entityMetadata, "EntityMetadata must not be null.");
-        this.clazz = entityMetadata.getEntityClass();
+        this.clazz = clazz;
         idReader = entityMetadata.getIdReader();
         revisionReader = entityMetadata.getRevisionReader();
     }

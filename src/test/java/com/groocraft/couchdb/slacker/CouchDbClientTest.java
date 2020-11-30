@@ -68,21 +68,21 @@ class CouchDbClientTest {
     private CouchDbClient client;
 
     @BeforeEach
-    public void setUp() throws URISyntaxException {
+    void setUp() throws URISyntaxException {
         baseURI = new URI("http://localhost:5984/");
         client = new CouchDbClient(httpClient, httpHost, httpContext, baseURI, Collections.emptyList(),
                 8, 3, false, 10000, QueryStrategy.MANGO, new ObjectMapper());
     }
 
     @Test
-    public void testGetEntityInformation() {
+    void testGetEntityInformation() {
         CouchDbEntityInformation<TestDocument, String> information = client.getEntityInformation(TestDocument.class);
         assertNotNull(information, "Returned entity information must not be null");
         assertEquals(TestDocument.class, information.getJavaType(), "Returned entity information must match to entity class");
     }
 
     @Test
-    public void testSaveNew() throws IOException {
+    void testSaveNew() throws IOException {
         IOException thrown = new IOException("error");
         InputStream content = new ByteArrayInputStream("{\"id\":\"unique\",\"rev\":\"revision\",\"ok\":\"true\"}".getBytes());
         ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
@@ -112,7 +112,7 @@ class CouchDbClientTest {
     }
 
     @Test
-    public void testSave() throws IOException {
+    void testSave() throws IOException {
         IOException thrown = new IOException("error");
         TestDocument testDocument = new TestDocument("test");
         String uuid = UUID.randomUUID().toString();
@@ -145,7 +145,7 @@ class CouchDbClientTest {
     }
 
     @Test
-    public void testSaveAll() throws IOException {
+    void testSaveAll() throws IOException {
         IOException thrown = new IOException("error");
         InputStream content = new ByteArrayInputStream(("[{\"id\": \"a\",\"ok\": true,\"rev\": \"rev1\"},{\"id\": \"b\",\"ok\": true,\"rev\": \"rev1\"}]").getBytes());
         ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
@@ -181,7 +181,7 @@ class CouchDbClientTest {
     }
 
     @Test
-    public void testRead() throws IOException {
+    void testRead() throws IOException {
         IOException thrown = new IOException("error");
         String id = "unique";
         String revision = "123";
@@ -214,7 +214,7 @@ class CouchDbClientTest {
     }
 
     @Test
-    public void testReadAllByIds() throws IOException {
+    void testReadAllByIds() throws IOException {
         IOException thrown = new IOException("error");
         InputStream content = new ByteArrayInputStream(("{\"results\": [{\"id\": \"a\", \"docs\": [{\"ok\":{\"_id\":\"a\",\"_rev\":\"revA\",\"value\":\"valueA\"," +
                 "\"value2\":\"value2a\"}}]},{\"id\": \"b\", \"docs\": [{\"ok\":{\"_id\":\"b\",\"_rev\":\"revB\",\"value\":\"valueB\",\"value2\":\"value2b\"}}]}]}").getBytes());
@@ -247,7 +247,7 @@ class CouchDbClientTest {
     }
 
     @Test
-    public void testDelete() throws IOException {
+    void testDelete() throws IOException {
         IOException thrown = new IOException("error");
         InputStream content = new ByteArrayInputStream(("").getBytes());
         ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
@@ -276,7 +276,7 @@ class CouchDbClientTest {
     }
 
     @Test
-    public void testFind() throws IOException {
+    void testFind() throws IOException {
         IOException thrown = new IOException("error");
         InputStream content = new ByteArrayInputStream(("{\"docs\":[{\"_id\":\"unique1\",\"_rev\":\"1231\",\"value\":\"value1\"},{\"_id\":\"unique2\"," +
                 "\"_rev\":\"1232\",\"value\":\"value2\"},{\"_id\":\"unique3\",\"_rev\":\"1233\",\"value\":\"value3\"}],\"bookmark\": \"1234\",\"warning\": " +
@@ -313,7 +313,7 @@ class CouchDbClientTest {
     }
 
     @Test
-    public void testClose() throws IOException {
+    void testClose() throws IOException {
         CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
         client = new CouchDbClient(httpClient, httpHost, httpContext, baseURI, Collections.emptyList(),
                 8, 3, false, 10000, QueryStrategy.MANGO, new ObjectMapper());
@@ -322,7 +322,7 @@ class CouchDbClientTest {
     }
 
     @Test
-    public void testReadAll() throws IOException {
+    void testReadAll() throws IOException {
         IOException thrown = new IOException("error");
         InputStream content = new ByteArrayInputStream(("{\"total_rows\":3,\"offset\":0,\"rows\":[{\"id\":\"1\",\"key\":\"1\",\"value\":{\"rev\":\"1-0\"}}," +
                 "{\"id\":\"2\",\"key\":\"2\",\"value\":{\"rev\":\"2-0\"}},{\"id\":\"3\",\"key\":\"3\",\"value\":{\"rev\":\"3-0\"}}]}\n").getBytes());
@@ -361,7 +361,7 @@ class CouchDbClientTest {
     }
 
     @Test
-    public void testCountAll() throws IOException {
+    void testCountAll() throws IOException {
         IOException thrown = new IOException("error");
         InputStream content = new ByteArrayInputStream(("{\"rows\": [{\"key\": null,\"value\": 40}]}").getBytes());
         ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
@@ -386,7 +386,7 @@ class CouchDbClientTest {
     }
 
     @Test
-    public void testDeleteById() throws IOException {
+    void testDeleteById() throws IOException {
         IOException thrown = new IOException("error");
 
         InputStream getContent = new ByteArrayInputStream(("{\"_id\":\"unique\",\"_rev\":\"1\",\"value\":\"value\",\"value2\":\"value2\"}").getBytes());
@@ -417,22 +417,22 @@ class CouchDbClientTest {
     }
 
     @Test
-    public void testCreateDatabase() throws IOException {
+    void testCreateDatabase() throws IOException {
         createDatabaseTestWrapper(c -> c.createDatabase(TestDocument.class));
     }
 
     @Test
-    public void testCreateDatabase2() throws IOException {
+    void testCreateDatabase2() throws IOException {
         createDatabaseTestWrapper(c -> c.createDatabase("test"));
     }
 
     @Test
-    public void testCreateDatabase3() throws IOException {
+    void testCreateDatabase3() throws IOException {
         createDatabaseTestWrapper(c -> c.createDatabase(TestDocument.class, 8, 3, false));
     }
 
     @Test
-    public void testCreateDatabase4() throws IOException {
+    void testCreateDatabase4() throws IOException {
         createDatabaseTestWrapper(c -> c.createDatabase("test", 8, 3, false));
     }
 
@@ -461,12 +461,12 @@ class CouchDbClientTest {
     }
 
     @Test
-    public void testDatabaseExistsClass() throws IOException {
+    void testDatabaseExistsClass() throws IOException {
         testDatabaseExistsWrapper(c -> c.databaseExists(TestDocument.class));
     }
 
     @Test
-    public void testDatabaseExistsString() throws IOException {
+    void testDatabaseExistsString() throws IOException {
         testDatabaseExistsWrapper(c -> c.databaseExists("test"));
     }
 
@@ -494,12 +494,12 @@ class CouchDbClientTest {
     }
 
     @Test
-    public void testDeleteDatabaseClass() throws IOException {
+    void testDeleteDatabaseClass() throws IOException {
         testDeleteDatabaseWrapper(c -> c.deleteDatabase(TestDocument.class));
     }
 
     @Test
-    public void testDeleteDatabaseString() throws IOException {
+    void testDeleteDatabaseString() throws IOException {
         testDeleteDatabaseWrapper(c -> c.deleteDatabase("test"));
     }
 
@@ -528,17 +528,17 @@ class CouchDbClientTest {
 
 
     @Test
-    public void testCreateIndex() throws IOException {
+    void testCreateIndex() throws IOException {
         createIndexTestWrapper(c -> c.createIndex("test", "test", Collections.singletonList(Sort.Order.asc("value"))));
     }
 
     @Test
-    public void testCreateIndex2() throws IOException {
+    void testCreateIndex2() throws IOException {
         createIndexTestWrapper(c -> c.createIndex("test", TestDocument.class, Collections.singletonList(Sort.Order.asc("value"))));
     }
 
     @Test
-    public void testCreateIndex3() throws IOException {
+    void testCreateIndex3() throws IOException {
         createIndexTestWrapper(c -> c.createIndex("test", TestDocument.class, Sort.Order.asc("value")));
     }
 
@@ -570,7 +570,7 @@ class CouchDbClientTest {
     }
 
     @Test
-    public void testRequestFindWithSort() throws IOException {
+    void testRequestFindWithSort() throws IOException {
         Sort sort = Sort.by(Sort.Order.asc("value"));
 
         InputStream indexContent = new ByteArrayInputStream(("}").getBytes());
@@ -613,7 +613,7 @@ class CouchDbClientTest {
     }
 
     @Test
-    public void testRequestFind() throws IOException {
+    void testRequestFind() throws IOException {
         CouchDbClient client = new CouchDbClient(httpClient, httpHost, httpContext, baseURI, Collections.emptyList(),
                 8, 3, false, 3, QueryStrategy.MANGO, new ObjectMapper());
         IOException thrown = new IOException("error");
@@ -642,7 +642,7 @@ class CouchDbClientTest {
         when(httpClient.execute(eq(httpHost), requestCaptor.capture(), eq(httpContext))).thenReturn(response, response2, response3).thenThrow(thrown);
 
         PartTree partTree = new PartTree("findByValue", TestDocument.class);
-        FindContext context = new FindContext(partTree, Collections.singletonMap("value", "test"), new EntityMetadata<>(TestDocument.class));
+        FindContext context = new FindContext(partTree, Collections.singletonMap("value", "test"), new EntityMetadata(TestDocument.class));
         DocumentFindRequest findRequest = new DocumentFindRequest(context, null, null, null, Sort.unsorted(), false);
         FindResult<TestDocument> result = client.find(findRequest, TestDocument.class);
         assertEquals(3, result.getBookmarks().size(), "For 8 documents read in 3 request (because max bulk size), there should be 3 bookmarks");
@@ -670,7 +670,7 @@ class CouchDbClientTest {
     }
 
     @Test
-    public void testRequestFindWithLimitAndBookmarkBy() throws IOException {
+    void testRequestFindWithLimitAndBookmarkBy() throws IOException {
         CouchDbClient client = new CouchDbClient(httpClient, httpHost, httpContext, baseURI, Collections.emptyList(),
                 8, 3, false, 3, QueryStrategy.MANGO, new ObjectMapper());
         IOException thrown = new IOException("error");
@@ -699,7 +699,7 @@ class CouchDbClientTest {
         when(httpClient.execute(eq(httpHost), requestCaptor.capture(), eq(httpContext))).thenReturn(response, response2, response3).thenThrow(thrown);
 
         PartTree partTree = new PartTree("findByValue", TestDocument.class);
-        FindContext context = new FindContext(partTree, Collections.singletonMap("value", "test"), new EntityMetadata<>(TestDocument.class));
+        FindContext context = new FindContext(partTree, Collections.singletonMap("value", "test"), new EntityMetadata(TestDocument.class));
         DocumentFindRequest findRequest = new DocumentFindRequest(context, null, 8, null, Sort.unsorted(), false);
         List<TestDocument> result = client.find(findRequest, TestDocument.class, 3).getEntities();
         assertEquals(8, result.size(), "Three content responses contains 8 documents");

@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class TrustAllStrategyTest {
 
     @Test
-    public void test() {
+    void test() {
         assertDoesNotThrow(() -> {
             TrustAllStrategy strategy = new TrustAllStrategy();
             assertTrue(strategy.isTrusted(null, null), "The strategy must return always true");
