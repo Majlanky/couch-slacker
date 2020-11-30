@@ -1,8 +1,10 @@
 # Couch Slacker 
-[![Build Status](https://travis-ci.com/Majlanky/couch-slacker.svg?branch=master)](https://travis-ci.com/Majlanky/couch-slacker) 
-[![codecov](https://codecov.io/gh/Majlanky/couch-slacker/branch/v2.1.0/graph/badge.svg)](https://codecov.io/gh/Majlanky/couch-slacker)
-[![Code Climate](https://api.codeclimate.com/v1/badges/715d011fb89fe741b777/maintainability.svg)](https://codeclimate.com/github/Majlanky/couch-slacker)
-[![Known Vulnerabilities](https://snyk.io/test/github/majlanky/couch-slacker/badge.svg)](https://snyk.io/test/github/majlanky/couch-slacker)
+[![Build Status](https://travis-ci.com/Majlanky/couch-slacker.svg?branch=master)](https://travis-ci.com/Majlanky/couch-slacker)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=com.groocraft%3Acouch-slacker&metric=alert_status)](https://sonarcloud.io/dashboard?id=com.groocraft%3Acouch-slacker) 
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=com.groocraft%3Acouch-slacker&metric=coverage)](https://sonarcloud.io/dashboard?id=com.groocraft%3Acouch-slacker)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=com.groocraft%3Acouch-slacker&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=com.groocraft%3Acouch-slacker)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=com.groocraft%3Acouch-slacker&metric=security_rating)](https://sonarcloud.io/dashboard?id=com.groocraft%3Acouch-slacker)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=com.groocraft%3Acouch-slacker&metric=reliability_rating)](https://sonarcloud.io/dashboard?id=com.groocraft%3Acouch-slacker)
 ![](https://img.shields.io/badge/compatibility-JDK8%20and%20higher-purple)
 
 Couch Slacker project started in 2020. Basic idea and motivation was to create [Spring Data](https://spring.io/projects/spring-data) support for 
