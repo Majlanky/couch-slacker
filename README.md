@@ -1,6 +1,5 @@
 # Couch Slacker 
 [![Build Status](https://travis-ci.com/Majlanky/couch-slacker.svg?branch=master)](https://travis-ci.com/Majlanky/couch-slacker)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=com.groocraft%3Acouch-slacker&metric=alert_status)](https://sonarcloud.io/dashboard?id=com.groocraft%3Acouch-slacker) 
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=com.groocraft%3Acouch-slacker&metric=coverage)](https://sonarcloud.io/dashboard?id=com.groocraft%3Acouch-slacker)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=com.groocraft%3Acouch-slacker&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=com.groocraft%3Acouch-slacker)
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=com.groocraft%3Acouch-slacker&metric=security_rating)](https://sonarcloud.io/dashboard?id=com.groocraft%3Acouch-slacker)

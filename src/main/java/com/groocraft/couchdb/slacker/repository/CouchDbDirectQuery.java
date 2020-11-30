@@ -30,6 +30,7 @@ import org.springframework.data.repository.query.RepositoryQuery;
 import org.springframework.util.Assert;
 
 import java.io.IOException;
+import java.util.Optional;
 
 /**
  * Implementation of {@link RepositoryQuery} used to process {@link com.groocraft.couchdb.slacker.annotation.Query} annotated method of
@@ -81,8 +82,9 @@ public class CouchDbDirectQuery implements RepositoryQuery {
             if (!parameter.isDynamicProjectionParameter() && !parameter.isSpecialParameter()) {
                 try {
                     specified = specified.replace("?" + (parameter.getIndex() + 1), mapper.writeValueAsString(parameters[parameter.getIndex()]));
-                    if (parameter.getName().isPresent()) {
-                        specified = specified.replace(":" + parameter.getName().get(), mapper.writeValueAsString(parameters[parameter.getIndex()]));
+                    Optional<String> parameterName = parameter.getName();
+                    if (parameterName.isPresent()) {
+                        specified = specified.replace(":" + parameterName.get(), mapper.writeValueAsString(parameters[parameter.getIndex()]));
                     }
                 } catch (JsonProcessingException ex) {
                     throw new QueryException(String.format("Unable to create json representation %s. parameter", parameter.getIndex()), ex);
