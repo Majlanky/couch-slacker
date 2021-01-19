@@ -5,6 +5,8 @@ import com.groocraft.couchdb.slacker.TestDocument;
 import com.groocraft.couchdb.slacker.TestDocumentAddress;
 import com.groocraft.couchdb.slacker.exception.CouchDbRuntimeException;
 import com.groocraft.couchdb.slacker.exception.QueryException;
+import com.groocraft.couchdb.slacker.structure.DesignDocument;
+import com.groocraft.couchdb.slacker.structure.View;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -21,6 +23,7 @@ import org.springframework.data.domain.Sort;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -610,6 +613,40 @@ class TestDocumentRepositoryBase {
         }
         Map<String, TestDocument> mapped = merged.stream().collect(Collectors.toMap(TestDocument::getValue, t -> t));
         IntStream.range(1, 501).forEach(i -> assertTrue(mapped.containsKey("value" + i), "Result does not contain document with value = value" + i));
+    }
+
+    @Test
+    void testViewQuery() throws IOException {
+        DesignDocument allDesign = client.readDesignSafely("view-query-test", "test").
+                orElseGet(() -> new DesignDocument("view-query-test", new HashSet<>()));
+        View dataView = allDesign.getViews().get("sum");
+        if (dataView == null) {
+            dataView = new View("sum", "function(doc){emit(doc._id, 1);}", "_sum");
+            allDesign.addView(dataView);
+            client.saveDesign(allDesign, "test");
+        }
+        List<TestDocument> toSave = new LinkedList<>();
+        IntStream.range(1, 501).forEach(i -> toSave.add(new TestDocument("value" + i, "value")));
+        repository.saveAll(toSave);
+        List<TestDocument> result = repository.viewQueryBased(Pageable.unpaged());
+        assertEquals(500, result.size(), "Used view should return all existing (500 created) documents");
+    }
+
+    @Test
+    void testReducingViewQuery() throws IOException {
+        DesignDocument allDesign = client.readDesignSafely("view-query-test", "test").
+                orElseGet(() -> new DesignDocument("view-query-test", new HashSet<>()));
+        View dataView = allDesign.getViews().get("sum");
+        if (dataView == null) {
+            dataView = new View("sum", "function(doc){emit(doc._id, 1);}", "_sum");
+            allDesign.addView(dataView);
+            client.saveDesign(allDesign, "test");
+        }
+        List<TestDocument> toSave = new LinkedList<>();
+        IntStream.range(1, 501).forEach(i -> toSave.add(new TestDocument("value" + i, "value")));
+        repository.saveAll(toSave);
+        int result = repository.viewQueryBasedWithReducing();
+        assertEquals(500, result, "Used view should return sum of all existing (500 created) documents");
     }
 
 }

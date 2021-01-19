@@ -21,12 +21,28 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Annotation to specify source view for query method in a repository. Method annotated by the annotation is processed as view call.
+ *
+ * @author Majlanky
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
 public @interface ViewQuery {
 
+    /**
+     * @return name of design in that the requested view is stored
+     */
     String design();
 
+    /**
+     * @return name of the requested view
+     */
     String view();
+
+    /**
+     * @return flag if the requested result is a result of view reduce function or not. Default is false.
+     */
+    boolean reducing() default false;
 
 }

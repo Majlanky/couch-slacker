@@ -18,6 +18,7 @@ package com.groocraft.couchdb.slacker.repository;
 
 import com.groocraft.couchdb.slacker.CouchDbClient;
 import com.groocraft.couchdb.slacker.annotation.Query;
+import com.groocraft.couchdb.slacker.annotation.ViewQuery;
 import com.groocraft.couchdb.slacker.configuration.CouchDbProperties;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.projection.ProjectionFactory;
@@ -61,15 +62,22 @@ public class CouchDbQueryLookupStrategy implements QueryLookupStrategy {
                                                  @NotNull NamedQueries namedQueries) {
         String namedQueryName = String.format("%s.%s", metadata.getDomainType().getSimpleName(), method.getName());
         QueryMethod queryMethod = new QueryMethod(method, metadata, factory);
-        Optional<String> query;
-        if (namedQueries.hasQuery(namedQueryName)) {
-            query = Optional.of(namedQueries.getQuery(namedQueryName));
+        RepositoryQuery repositoryQuery;
+        Optional<ViewQuery> viewQuery = Optional.ofNullable(method.getAnnotation(ViewQuery.class));
+        if (viewQuery.isPresent()) {
+            repositoryQuery = viewQuery.map(vq -> new CouchDbViewQuery<>(client, vq, queryMethod, metadata.getDomainType())).get();
         } else {
-            Optional<Query> queryAnnotation = Optional.ofNullable(method.getAnnotation(Query.class));
-            query = queryAnnotation.map(Query::value);
+            Optional<String> query;
+            if (namedQueries.hasQuery(namedQueryName)) {
+                query = Optional.of(namedQueries.getQuery(namedQueryName));
+            } else {
+                Optional<Query> queryAnnotation = Optional.ofNullable(method.getAnnotation(Query.class));
+                query = queryAnnotation.map(Query::value);
+            }
+            repositoryQuery = query.map(s -> (RepositoryQuery) new CouchDbDirectQuery(s, client, queryMethod, metadata.getDomainType()))
+                    .orElseGet(() -> new CouchDbParsingQuery<>(client, properties.isFindExecutionStats(), method, queryMethod,
+                            metadata.getDomainType()));
         }
-        return query.map(s -> (RepositoryQuery) new CouchDbDirectQuery(s, client, queryMethod, metadata.getDomainType()))
-                .orElseGet(() -> new CouchDbParsingQuery<>(client, properties.isFindExecutionStats(), method, queryMethod,
-                        metadata.getDomainType()));
+        return repositoryQuery;
     }
 }

@@ -2,6 +2,7 @@ package com.groocraft.couchdb.slacker.test.integration;
 
 import com.groocraft.couchdb.slacker.TestDocument;
 import com.groocraft.couchdb.slacker.annotation.Query;
+import com.groocraft.couchdb.slacker.annotation.ViewQuery;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -19,6 +20,12 @@ public interface TestDocumentRepository extends PagingAndSortingRepository<TestD
 
     @Query("{\"selector\": {\"value\": {\"$eq\": :value}}}")
     List<TestDocument> queryBasedWithNamed(@Param("value") String value);
+
+    @ViewQuery(design = "view-query-test", view = "sum")
+    List<TestDocument> viewQueryBased(Pageable p);
+
+    @ViewQuery(design = "view-query-test", view = "sum", reducing = true)
+    int viewQueryBasedWithReducing();
 
     List<TestDocument> findByValueAndValue2(@Param("value") String value, @Param("value2") String value2);
 

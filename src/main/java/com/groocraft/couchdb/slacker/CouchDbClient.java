@@ -482,13 +482,25 @@ public class CouchDbClient {
         return readFromView(em.getDatabaseName(), design, view, skip, limit, sort);
     }
 
-    private @NotNull List<String> readFromView(@NotNull String database, @NotNull String design, @NotNull String view, Long skip, @Nullable Integer limit,
-                                               @NotNull Sort sort) throws IOException {
+    /**
+     * Method executed the given view with reduce=false parameter and the given skip and sort.
+     *
+     * @param database name in that design is stored. Must not be {@literal null}
+     * @param design   name in that view is stored. Must not be {@literal null}
+     * @param view     name in that reduce function is declared. Must not be {@literal null}
+     * @param skip     can be null, hence no skipping is applied.
+     * @param limit    can be null, hence no skipping is applied.
+     * @param sort     must not be {@literal null}.
+     * @return Result of view call, means ID listing.
+     * @throws IOException if http request is not successful or json processing fail
+     */
+    public @NotNull List<String> readFromView(@NotNull String database, @NotNull String design, @NotNull String view, @Nullable Long skip, @Nullable Integer limit,
+                                              @NotNull Sort sort) throws IOException {
         List<NameValuePair> parameters = new ArrayList<>(4);
         if (sort.isSorted()) {
             parameters.add(new BasicNameValuePair("descending", sort.stream()
                     .findFirst()
-                    .orElseThrow(() -> new IllegalStateException("Sorted sort does no contain any order"))
+                    .orElseThrow(() -> new IllegalStateException("Sorted sort does not contain any order"))
                     .getDirection() == Sort.Direction.DESC ? "true" : "false"));
         }
         if (skip != null) {
@@ -565,6 +577,24 @@ public class CouchDbClient {
                     } else {
                         return 0L;
                     }
+                });
+    }
+
+    /**
+     * Method using view reduce function to return the reduced result.
+     *
+     * @param database    name in that design is stored. Must not be {@literal null}
+     * @param design      name in that view is stored. Must not be {@literal null}
+     * @param view        name in that reduce function is declared. Must not be {@literal null}
+     * @param resultClass class in that the result can be mapped. Must not be {@literal null}
+     * @return instance of the given {@code resultClass} with mapped result of the requested reduce function.
+     * @throws IOException if http request is not successful or json processing fail
+     */
+    public <ResultT> ResultT reduce(@NotNull String database, @NotNull String design, @NotNull String view, Class<ResultT> resultClass) throws IOException {
+        return get(getURI(baseURI, database, DESIGN, design, VIEW, view),
+                r -> {
+                    JsonNode rows = mapper.readValue(r.getEntity().getContent(), ObjectNode.class).get("rows");
+                    return mapper.readValue(rows.get(0).get("value").asText(), resultClass);
                 });
     }
 
