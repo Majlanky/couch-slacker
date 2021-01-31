@@ -7,7 +7,6 @@ import com.groocraft.couchdb.slacker.exception.CouchDbRuntimeException;
 import com.groocraft.couchdb.slacker.exception.QueryException;
 import com.groocraft.couchdb.slacker.structure.DesignDocument;
 import com.groocraft.couchdb.slacker.structure.View;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -52,15 +51,6 @@ class TestDocumentRepositoryBase {
 
     @Autowired
     TestDocumentRepository repository;
-
-    @BeforeAll
-    void setUp() {
-        try {
-            client.createDatabase("_users");
-            client.createDatabase("_replicator");
-        } catch (IOException ex) {
-        }
-    }
 
     @BeforeEach
     void clear() {

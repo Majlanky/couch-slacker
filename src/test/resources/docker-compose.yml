@@ -1,0 +1,65 @@
+version: "2.4"
+networks:
+  couch-cluster:
+    name: "couch-cluster"
+    driver: "bridge"
+  couch-single:
+    name: "couch-single"
+    driver: "bridge"
+services:
+  server-0:
+    environment:
+      COUCHDB_PASSWORD: -pbkdf2-2a4bb055c2a66b28158523b86afcd7f63bc67ef1,WnMIf5ph/d+jVJDA4WjXdw==,10
+      COUCHDB_SECRET: 0123456789abcdef0123456789abcdef
+      COUCHDB_USER: admin
+      NODENAME: couchdb-0.docker.com
+    image: couchdb:latest
+    networks:
+      couch-cluster:
+        aliases:
+          - couchdb-0.docker.com
+    ports:
+      - "11000:5984"
+      - "12000:5986"
+  server-1:
+    environment:
+      COUCHDB_PASSWORD: -pbkdf2-2a4bb055c2a66b28158523b86afcd7f63bc67ef1,WnMIf5ph/d+jVJDA4WjXdw==,10
+      COUCHDB_SECRET: 0123456789abcdef0123456789abcdef
+      COUCHDB_USER: admin
+      NODENAME: couchdb-1.docker.com
+    image: couchdb:latest
+    networks:
+      couch-cluster:
+        aliases:
+          - couchdb-1.docker.com
+    ports:
+      - "11001:5984"
+      - "12001:5986"
+  server-2:
+    environment:
+      COUCHDB_PASSWORD: -pbkdf2-2a4bb055c2a66b28158523b86afcd7f63bc67ef1,WnMIf5ph/d+jVJDA4WjXdw==,10
+      COUCHDB_SECRET: 0123456789abcdef0123456789abcdef
+      COUCHDB_USER: admin
+      NODENAME: couchdb-2.docker.com
+    image: couchdb:latest
+    networks:
+      couch-cluster:
+        aliases:
+          - couchdb-2.docker.com
+    ports:
+      - "11002:5984"
+      - "12002:5986"
+  single-0:
+    environment:
+      COUCHDB_PASSWORD: -pbkdf2-2a4bb055c2a66b28158523b86afcd7f63bc67ef1,WnMIf5ph/d+jVJDA4WjXdw==,10
+      COUCHDB_SECRET: 0123456789abcdef0123456789abcdef
+      COUCHDB_USER: admin
+      NODENAME: couchdb-single.docker.com
+    image: couchdb:latest
+    networks:
+      couch-single:
+        aliases:
+          - couchdb.docker.com
+    ports:
+      - "10000:5984"
+      - "10001:5986"

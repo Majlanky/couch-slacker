@@ -41,6 +41,7 @@ public class CouchDbEntityInformation<EntityT, IdT> implements EntityInformation
     private final Reader<String> revisionReader;
 
     /**
+     * @param clazz          of entity type about which information is needed. Must not be {@literal null}
      * @param entityMetadata {@link EntityMetadata} for the entity class. Used to get {@link Reader} for revision and id. Must not be {@literal null}.
      */
     public CouchDbEntityInformation(@NotNull Class<EntityT> clazz, @NotNull EntityMetadata entityMetadata) {

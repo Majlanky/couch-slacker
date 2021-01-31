@@ -16,6 +16,7 @@
 
 package com.groocraft.couchdb.slacker.test.integration;
 
+import com.groocraft.couchdb.slacker.CouchDbInitializer;
 import com.groocraft.couchdb.slacker.annotation.EnableCouchDbRepositories;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,7 +27,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = {SpringTestConfiguration.class, TestDocumentRepository.class},
+@ContextConfiguration(classes = {SpringTestConfiguration.class, TestDocumentRepository.class, CouchDbInitializer.class},
         initializers = ConfigFileApplicationContextInitializer.class)
 @ActiveProfiles("test-mango-strategy")
 @EnableCouchDbRepositories

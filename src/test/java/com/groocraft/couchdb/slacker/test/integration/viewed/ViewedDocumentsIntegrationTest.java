@@ -16,6 +16,7 @@
 
 package com.groocraft.couchdb.slacker.test.integration.viewed;
 
+import com.groocraft.couchdb.slacker.CouchDbInitializer;
 import com.groocraft.couchdb.slacker.annotation.EnableCouchDbRepositories;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,7 +37,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = {ViewedTestConfiguration.class, ViewedCatRepository.class, ViewedDogRepository.class, ViewedOverviewRepository.class},
+@ContextConfiguration(classes = {ViewedTestConfiguration.class, ViewedCatRepository.class, ViewedDogRepository.class,
+        ViewedOverviewRepository.class, CouchDbInitializer.class},
         initializers = ConfigFileApplicationContextInitializer.class)
 @ActiveProfiles("viewed-test")
 @EntityScan({"com.groocraft.couchdb.slacker.test.integration.viewed"})

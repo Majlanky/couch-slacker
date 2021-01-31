@@ -41,10 +41,11 @@ public class CouchDbViewQuery<EntityT> extends PageableAndSortableQuery {
 
     private final CouchDbClient client;
     private final Class<EntityT> entityClass;
-    private ViewQuery viewQuery;
+    private final ViewQuery viewQuery;
 
     /**
      * @param client      must not be {@literal null}.
+     * @param viewQuery   annotation obtained from the involved query method. Must not be {@literal null}.
      * @param queryMethod on which is based the query. Must not be {@literal null}.
      * @param entityClass repository domain class. Must not be {@literal null}.
      */

@@ -344,17 +344,24 @@
                 <version>0.34.1</version>
                 <configuration>
                     <skip>${skipITs}</skip>
+                    <autoCreateCustomNetworks>true</autoCreateCustomNetworks>
                     <images>
                         <image>
-                            <alias>database</alias>
-                            <name>majlanky/couch-slacker-test-db:1.0</name>
+                            <alias>single-and-cluster</alias>
+                            <external>
+                                <type>compose</type>
+                                <basedir>src/test/resources</basedir>
+                                <composeFile>docker-compose.yml</composeFile>
+                            </external>
                             <run>
-                                <ports>
-                                    <port>10000:5984</port>
-                                </ports>
-                                <wait>
-                                    <time>1000</time>
-                                </wait>
+                                <network>
+                                    <mode>bridge</mode>
+                                    <name>couch-cluster</name>
+                                </network>
+                                <network>
+                                    <mode>bridge</mode>
+                                    <name>couch-single</name>
+                                </network>
                             </run>
                         </image>
                     </images>

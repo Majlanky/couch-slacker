@@ -16,15 +16,21 @@
 
 package com.groocraft.couchdb.slacker.configuration;
 
+import com.groocraft.couchdb.slacker.CouchDbInitializationStrategy;
 import com.groocraft.couchdb.slacker.QueryStrategy;
 import com.groocraft.couchdb.slacker.SchemaOperation;
 import org.hibernate.validator.constraints.URL;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.validation.annotation.Validated;
 
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotEmpty;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Properties pojo class for Couch Slacker configuration. It is used in {@link CouchSlackerConfiguration} class
@@ -115,6 +121,21 @@ public class CouchDbProperties {
      */
     private QueryStrategy queryStrategy = QueryStrategy.MANGO;
 
+    /**
+     * Initialization strategy defines what is done during startup of application. DB can be initialized as a single node or node in a CouchDB cluster. If
+     * initialization of a single node is configured, no more data is needed. If the cluster initialization is configured, there is need to configure
+     * additional data {@link Cluster}. Default value is NONE, means no initialization is done by the application.
+     */
+    private CouchDbInitializationStrategy initializationStrategy = CouchDbInitializationStrategy.NONE;
+
+    /**
+     * Sub-node of all cluster information. The node is mandatory when initialization-strategy ({@link #initializationStrategy}) is se to cluster
+     * ({@link CouchDbInitializationStrategy#CLUSTER}).
+     * Default value is null.
+     */
+    @NestedConfigurationProperty
+    private Cluster cluster;
+
     public String getUsername() {
         return username;
     }
@@ -195,6 +216,22 @@ public class CouchDbProperties {
         this.queryStrategy = queryStrategy;
     }
 
+    public CouchDbInitializationStrategy getInitializationStrategy() {
+        return initializationStrategy;
+    }
+
+    public void setInitializationStrategy(CouchDbInitializationStrategy initializationStrategy) {
+        this.initializationStrategy = initializationStrategy;
+    }
+
+    public Cluster getCluster() {
+        return cluster;
+    }
+
+    public void setCluster(Cluster cluster) {
+        this.cluster = cluster;
+    }
+
     public void copy(CouchDbProperties properties) {
         setPassword(properties.getPassword());
         setUsername(properties.getUsername());
@@ -206,6 +243,57 @@ public class CouchDbProperties {
         setDefaultReplicas(properties.getDefaultReplicas());
         setDefaultPartitioned(properties.isDefaultPartitioned());
         setQueryStrategy(properties.getQueryStrategy());
+        setInitializationStrategy(properties.getInitializationStrategy());
+        setCluster(new Cluster(properties.getCluster()));
+    }
+
+    public static class Cluster {
+
+        /**
+         * The flag indicates if the connected CouchDB should coordinate cluster initialization
+         * Default value is false;
+         */
+        private boolean coordinator = false;
+
+        /**
+         * List of all nodes of the cluster includes the connected one.
+         * Default value is empty list.
+         */
+        private Set<String> nodes = Collections.emptySet();
+
+        /**
+         * Default constructor required by Spring to parse configuration file properly.
+         */
+        public Cluster() {
+        }
+
+        /**
+         * Copy constructor
+         *
+         * @param cluster can be null.
+         */
+        public Cluster(@Nullable Cluster cluster) {
+            if (cluster != null) {
+                this.coordinator = cluster.isCoordinator();
+                this.nodes = new HashSet<>(cluster.getNodes());
+            }
+        }
+
+        public boolean isCoordinator() {
+            return coordinator;
+        }
+
+        public void setCoordinator(boolean coordinator) {
+            this.coordinator = coordinator;
+        }
+
+        public Set<String> getNodes() {
+            return new HashSet<>(nodes);
+        }
+
+        public void setNodes(Set<String> nodes) {
+            this.nodes = new HashSet<>(nodes);
+        }
     }
 
 }

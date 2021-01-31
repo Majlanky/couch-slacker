@@ -14,22 +14,36 @@
  * limitations under the License.
  */
 
-package com.groocraft.couchdb.slacker.test.integration;
+package com.groocraft.couchdb.slacker.test.integration.initialization;
 
+import com.groocraft.couchdb.slacker.CouchDbClient;
 import com.groocraft.couchdb.slacker.CouchDbInitializer;
 import com.groocraft.couchdb.slacker.annotation.EnableCouchDbRepositories;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.ConfigFileApplicationContextInitializer;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = {SpringTestConfiguration.class, TestDocumentRepository.class, CouchDbInitializer.class},
+@ContextConfiguration(classes = {CusterInitializationConfiguration.class, CouchDbInitializer.class},
         initializers = ConfigFileApplicationContextInitializer.class)
-@ActiveProfiles("test-view-strategy")
+@ActiveProfiles("test-cluster-initialization")
 @EnableCouchDbRepositories
-public class TestDocumentRepositoryViewStrategyIntegrationTest extends TestDocumentRepositoryBase {
+public class ClusterInitializationIntegrationTest {
+
+    @Autowired
+    CouchDbClient client;
+
+    @Test
+    void initializedTest() {
+        assertDoesNotThrow(() -> client.verifyCluster());
+    }
+
 }

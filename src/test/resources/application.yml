@@ -11,6 +11,7 @@ couchdb:
     find-execution-stats: true
     schema-operation: drop
     query-strategy: view
+    initialization-strategy: single
 
 ---
 
@@ -25,6 +26,7 @@ couchdb:
     find-execution-stats: true
     schema-operation: drop
     query-strategy: mango
+    initialization-strategy: single
 
 ---
 
@@ -38,6 +40,7 @@ couchdb:
     bulk-max-size: 50
     find-execution-stats: true
     schema-operation: drop
+    initialization-strategy: single
 
 ---
 
@@ -51,3 +54,25 @@ couchdb:
     bulk-max-size: 50
     find-execution-stats: true
     schema-operation: drop
+    initialization-strategy: single
+
+---
+
+spring:
+  profiles: test-cluster-initialization
+couchdb:
+  client:
+    url: http://localhost:11000/
+    username: admin
+    password: password
+    bulk-max-size: 50
+    find-execution-stats: true
+    schema-operation: drop
+    query-strategy: view
+    initialization-strategy: cluster
+    cluster:
+      coordinator: true
+      nodes:
+        - couchdb-0.docker.com:5984
+        - couchdb-1.docker.com:5984
+        - couchdb-2.docker.com:5984

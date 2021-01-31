@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.groocraft.couchdb.slacker.exception.ClusterException;
 import com.groocraft.couchdb.slacker.exception.CouchDbException;
 import com.groocraft.couchdb.slacker.http.AutoCloseableHttpResponse;
 import com.groocraft.couchdb.slacker.repository.CouchDbEntityInformation;
@@ -587,6 +588,7 @@ public class CouchDbClient {
      * @param design      name in that view is stored. Must not be {@literal null}
      * @param view        name in that reduce function is declared. Must not be {@literal null}
      * @param resultClass class in that the result can be mapped. Must not be {@literal null}
+     * @param <ResultT>   type of expected result.
      * @return instance of the given {@code resultClass} with mapped result of the requested reduce function.
      * @throws IOException if http request is not successful or json processing fail
      */
@@ -1113,6 +1115,93 @@ public class CouchDbClient {
         designDocument.setRevision(response.getRev());
         log.debug("Saved design with id {} and revision {}", response.getId(), response.getRev());
         return designDocument;
+    }
+
+    /**
+     * @return {@link Optional#of(Object)} an UUID of the connected CouchDB. If no UUID is set, {@link Optional#empty()} is returned.
+     * @throws IOException if http request is not successful
+     */
+    public @NotNull Optional<String> getUUID() throws IOException {
+        Optional<String> uuid = Optional.empty();
+        try {
+            uuid = Optional.of(get(getURI(baseURI, "_node", "_local", "_config", "couchdb", "uuid"),
+                    r -> mapper.readValue(r.getEntity().getContent(), String.class)));
+        } catch (CouchDbException ex) {
+            if (ex.getStatusCode() != HttpStatus.SC_NOT_FOUND) {
+                throw ex;
+            }
+        }
+        return uuid;
+    }
+
+    /**
+     * Method sets the given {@code uuid} as UUID of the connected CouchDB.
+     *
+     * @param uuid that be set
+     * @throws IOException if http request is not successful
+     */
+    public void setUUID(@NotNull String uuid) throws IOException {
+        put(getURI(baseURI, "_node", "_local", "_config", "couchdb", "uuid"), mapper.writeValueAsString(uuid), r -> null);
+    }
+
+    /**
+     * Method joins node of the given host and port to the cluster thru the connected CouchDB. This can be used only if the connected CouchDB is coordinator
+     * of the cluster.
+     *
+     * @param host     of the candidate node. Must not be {@literal null}
+     * @param port     of the candidate node
+     * @param username of admin used as request authorization parameter. Must not be {@literal null}
+     * @param password of admin used as request authorization parameter. Must not be {@literal null}
+     * @throws IOException if http request is not successful
+     */
+    public void joinNodeToCluster(@NotNull String host, int port, @NotNull String username, @NotNull String password) throws IOException {
+        log.debug("Joining {}:{} to the cluster", host, port);
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("action", "add_node");
+        parameters.put("host", host);
+        parameters.put("port", port);
+        parameters.put("username", username);
+        parameters.put("password", password);
+        post(getURI(baseURI, "_cluster_setup"), mapper.writeValueAsString(parameters), r -> null);
+    }
+
+    /**
+     * Method sends request to finish cluster setting. This can be used only if the connected CouchDB is coordinator of the cluster.
+     *
+     * @throws IOException if http request is not successful
+     */
+    public void finishClusterSetting() throws IOException {
+        log.debug("Finishing the cluster setup");
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("action", "finish_cluster");
+        post(getURI(baseURI, "_cluster_setup"), mapper.writeValueAsString(parameters), r -> null);
+    }
+
+    /**
+     * Method to get node id (name) of the connected CouchDB. Used as recognition of the connected CouchDB during cluster setup.
+     *
+     * @return node id/name of the connected CouchDB.
+     * @throws IOException if http request is not successful
+     */
+    public @NotNull String getNodeId() throws IOException {
+        return get(getURI(baseURI, "_node", "_local"), r -> mapper.readValue(r.getEntity().getContent(), JsonNode.class).get("name").asText());
+    }
+
+    /**
+     * Method verifies all node of the connected cluster are working properly.
+     *
+     * @throws IOException      if http request is not successful
+     * @throws ClusterException if the cluster has an issue.
+     */
+    public void verifyCluster() throws IOException, ClusterException {
+        log.info("Verifying cluster");
+        Map<String, List<String>> membership = get(getURI(baseURI, "_membership"), r -> mapper.readValue(r.getEntity().getContent(),
+                mapper.getTypeFactory().constructMapType(HashMap.class, String.class, List.class)));
+        List<String> allNodes = membership.get("all_nodes");
+        List<String> clusterNodes = membership.get("cluster_nodes");
+        if (!clusterNodes.equals(allNodes)) {
+            throw new ClusterException("Cluster is not running OK");
+        }
     }
 
     /**

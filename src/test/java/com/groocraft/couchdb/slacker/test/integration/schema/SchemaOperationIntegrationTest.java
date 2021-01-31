@@ -17,6 +17,7 @@
 package com.groocraft.couchdb.slacker.test.integration.schema;
 
 import com.groocraft.couchdb.slacker.CouchDbClient;
+import com.groocraft.couchdb.slacker.CouchDbInitializer;
 import com.groocraft.couchdb.slacker.annotation.EnableCouchDbRepositories;
 import com.groocraft.couchdb.slacker.structure.DesignDocument;
 import org.junit.jupiter.api.Test;
@@ -36,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = {SchemaOperationTestConfiguration.class},
+@ContextConfiguration(classes = {SchemaOperationTestConfiguration.class, CouchDbInitializer.class},
         initializers = ConfigFileApplicationContextInitializer.class)
 @ActiveProfiles("schema-test")
 @EntityScan({"com.groocraft.couchdb.slacker.test.integration.schema"})

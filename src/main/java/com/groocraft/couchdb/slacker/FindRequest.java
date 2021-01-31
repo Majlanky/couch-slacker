@@ -57,7 +57,7 @@ public interface FindRequest {
     @Nullable Long getSkip();
 
     /**
-     * @return Sort information about the reqeust
+     * @return Sort information about the request
      */
     @NotNull Sort getSort();
 

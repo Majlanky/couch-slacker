@@ -110,7 +110,6 @@ public class CouchDbParsingQuery<EntityT> extends PageableAndSortableQuery {
                     client.getEntityMetadata(entityClass)), skip, limit, index != null ? index.value() : null,
                     sort.and(partTree.getSort()).and(pageable.getSort()), returnExecutionStats);
             if (strategy != null) {
-                //TODO test
                 request.setQueryStrategy(strategy.value());
             }
 
