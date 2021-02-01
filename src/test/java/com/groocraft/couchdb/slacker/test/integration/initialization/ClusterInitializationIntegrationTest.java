@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
         initializers = ConfigFileApplicationContextInitializer.class)
 @ActiveProfiles("test-cluster-initialization")
 @EnableCouchDbRepositories
-public class ClusterInitializationIntegrationTest {
+class ClusterInitializationIntegrationTest {
 
     @Autowired
     CouchDbClient client;

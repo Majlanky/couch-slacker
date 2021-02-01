@@ -17,6 +17,7 @@
 package com.groocraft.couchdb.slacker;
 
 import com.groocraft.couchdb.slacker.configuration.CouchDbProperties;
+import com.groocraft.couchdb.slacker.exception.ClusterException;
 import com.groocraft.couchdb.slacker.utils.ThrowingBiConsumer;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -102,9 +103,10 @@ public enum CouchDbInitializationStrategy {
     /**
      * @param client     must not be {@literal null}
      * @param properties must not be {@literal null}
-     * @throws Exception if the initialization fails.
+     * @throws IOException      if the initialization fails
+     * @throws ClusterException when cluster is finished but not working properly
      */
-    private static void initializeCluster(CouchDbClient client, CouchDbProperties properties) throws Exception {
+    private static void initializeCluster(CouchDbClient client, CouchDbProperties properties) throws IOException, ClusterException {
         if (!client.databaseExists(USERS_DATABASE_NAME) && !client.databaseExists(REPLICATOR_DATABASE_NAME)) {
             log.info("Going to initialize DB as cluster node");
             if (properties.getCluster().isCoordinator()) {

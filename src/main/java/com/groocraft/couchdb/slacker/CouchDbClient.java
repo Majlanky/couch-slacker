@@ -106,6 +106,10 @@ public class CouchDbClient {
     private static final String DESIGN = "_design";
     private static final String VIEW = "_view";
 
+    private static final String VALUE = "value";
+    private static final String LOCAL = "_local";
+    private static final String NODE = "_node";
+
     private final HttpClient httpClient;
     private final HttpHost httpHost;
     private final HttpContext httpContext;
@@ -574,7 +578,7 @@ public class CouchDbClient {
                 r -> {
                     JsonNode rows = mapper.readValue(r.getEntity().getContent(), ObjectNode.class).get("rows");
                     if (rows.has(0)) {
-                        return rows.get(0).get("value").asLong();
+                        return rows.get(0).get(VALUE).asLong();
                     } else {
                         return 0L;
                     }
@@ -596,7 +600,7 @@ public class CouchDbClient {
         return get(getURI(baseURI, database, DESIGN, design, VIEW, view),
                 r -> {
                     JsonNode rows = mapper.readValue(r.getEntity().getContent(), ObjectNode.class).get("rows");
-                    return mapper.readValue(rows.get(0).get("value").asText(), resultClass);
+                    return mapper.readValue(rows.get(0).get(VALUE).asText(), resultClass);
                 });
     }
 
@@ -838,7 +842,7 @@ public class CouchDbClient {
                 r -> {
                     JsonNode rows = mapper.readValue(r.getEntity().getContent(), ObjectNode.class).get("rows");
                     if (rows.has(0)) {
-                        return rows.get(0).get("value").asLong();
+                        return rows.get(0).get(VALUE).asLong();
                     } else {
                         return 0L;
                     }
@@ -1124,7 +1128,7 @@ public class CouchDbClient {
     public @NotNull Optional<String> getUUID() throws IOException {
         Optional<String> uuid = Optional.empty();
         try {
-            uuid = Optional.of(get(getURI(baseURI, "_node", "_local", "_config", "couchdb", "uuid"),
+            uuid = Optional.of(get(getURI(baseURI, NODE, LOCAL, "_config", "couchdb", "uuid"),
                     r -> mapper.readValue(r.getEntity().getContent(), String.class)));
         } catch (CouchDbException ex) {
             if (ex.getStatusCode() != HttpStatus.SC_NOT_FOUND) {
@@ -1141,7 +1145,7 @@ public class CouchDbClient {
      * @throws IOException if http request is not successful
      */
     public void setUUID(@NotNull String uuid) throws IOException {
-        put(getURI(baseURI, "_node", "_local", "_config", "couchdb", "uuid"), mapper.writeValueAsString(uuid), r -> null);
+        put(getURI(baseURI, NODE, LOCAL, "_config", "couchdb", "uuid"), mapper.writeValueAsString(uuid), r -> null);
     }
 
     /**
@@ -1184,7 +1188,7 @@ public class CouchDbClient {
      * @throws IOException if http request is not successful
      */
     public @NotNull String getNodeId() throws IOException {
-        return get(getURI(baseURI, "_node", "_local"), r -> mapper.readValue(r.getEntity().getContent(), JsonNode.class).get("name").asText());
+        return get(getURI(baseURI, NODE, LOCAL), r -> mapper.readValue(r.getEntity().getContent(), JsonNode.class).get("name").asText());
     }
 
     /**

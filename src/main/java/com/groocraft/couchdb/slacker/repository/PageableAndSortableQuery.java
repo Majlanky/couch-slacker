@@ -42,7 +42,7 @@ public abstract class PageableAndSortableQuery implements RepositoryQuery {
     /**
      * @param queryMethod must not be {@literal null}
      */
-    public PageableAndSortableQuery(@NotNull QueryMethod queryMethod) {
+    protected PageableAndSortableQuery(@NotNull QueryMethod queryMethod) {
         Assert.notNull(queryMethod, "QueryMethod must not be null");
         this.queryMethod = queryMethod;
     }
