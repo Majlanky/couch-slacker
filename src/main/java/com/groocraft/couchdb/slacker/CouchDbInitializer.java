@@ -18,7 +18,6 @@ package com.groocraft.couchdb.slacker;
 
 import com.groocraft.couchdb.slacker.configuration.CouchDbProperties;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.stereotype.Component;
 
 /**
  * Bean provides automated way how to initialize the connected CouchDB on of the {@link CouchDbInitializationStrategy}.
@@ -26,7 +25,6 @@ import org.springframework.stereotype.Component;
  *
  * @author Majlanky
  */
-@Component
 public class CouchDbInitializer {
 
     /**
