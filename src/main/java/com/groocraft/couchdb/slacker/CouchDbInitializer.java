@@ -20,34 +20,21 @@ import com.groocraft.couchdb.slacker.configuration.CouchDbProperties;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
-
 /**
  * Bean provides automated way how to initialize the connected CouchDB on of the {@link CouchDbInitializationStrategy}.
- * Bean should be discovered and execute {@link #init()} after construction.
+ * Bean should be discovered and execute the configured initialization strategy.
  *
  * @author Majlanky
  */
 @Component
 public class CouchDbInitializer {
 
-    private final CouchDbClient client;
-    private final CouchDbProperties properties;
-
     /**
      * @param client     must not be {@literal null}
      * @param properties must not be {@literal null}
-     */
-    public CouchDbInitializer(@NotNull CouchDbClient client, @NotNull CouchDbProperties properties) {
-        this.client = client;
-        this.properties = properties;
-    }
-
-    /**
      * @throws Exception if the initialization of the selected strategy fail
      */
-    @PostConstruct
-    public void init() throws Exception {
+    public CouchDbInitializer(@NotNull CouchDbClient client, @NotNull CouchDbProperties properties) throws Exception {
         properties.getInitializationStrategy().initialize(client, properties);
     }
 
