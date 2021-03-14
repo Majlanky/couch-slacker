@@ -1,8 +1,8 @@
 package com.groocraft.couchdb.slacker.repository;
 
 import com.groocraft.couchdb.slacker.EntityMetadata;
-import com.groocraft.couchdb.slacker.TestDocument;
 import com.groocraft.couchdb.slacker.data.Reader;
+import com.groocraft.couchdb.slacker.test.integration.TestDocument;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 

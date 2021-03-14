@@ -17,13 +17,21 @@
 package com.groocraft.couchdb.slacker;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@ExtendWith(MockitoExtension.class)
 class CouchDbClientBuilderTest {
 
+    @Mock
+    CouchDbContext dbContext;
+
     @Test
-    public void testInvalid(){
+    public void testInvalid() {
         CouchDbClientBuilder builder = new CouchDbClientBuilder();
         assertThrows(IllegalArgumentException.class, builder::build, "Non-configured URL must be reported");
         builder.url("http://localhost:5984");
@@ -31,6 +39,8 @@ class CouchDbClientBuilderTest {
         builder.username("admin");
         assertThrows(IllegalArgumentException.class, builder::build, "Non-configured password must be reposted");
         builder.password("password");
+        assertThrows(IllegalArgumentException.class, builder::build, "Non-configured database context must be reposted");
+        builder.dbContext(dbContext);
         assertDoesNotThrow(builder::build, "URL, username, password are configured, the rest of configuration has default values");
     }
 

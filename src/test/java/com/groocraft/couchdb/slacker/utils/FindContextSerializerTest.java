@@ -18,10 +18,11 @@ package com.groocraft.couchdb.slacker.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.groocraft.couchdb.slacker.DocumentDescriptor;
 import com.groocraft.couchdb.slacker.EntityMetadata;
-import com.groocraft.couchdb.slacker.TestDocument;
 import com.groocraft.couchdb.slacker.ViewedDocument;
 import com.groocraft.couchdb.slacker.structure.DocumentFindRequest;
+import com.groocraft.couchdb.slacker.test.integration.TestDocument;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.query.parser.PartTree;
@@ -34,7 +35,7 @@ class FindContextSerializerTest {
 
     @Test
     void testViewed() throws JsonProcessingException {
-        EntityMetadata metadata = new EntityMetadata(ViewedDocument.class);
+        EntityMetadata metadata = new EntityMetadata(DocumentDescriptor.of(ViewedDocument.class));
         PartTree partTree = new PartTree("findByField", ViewedDocument.class);
         FindContext findContext = new FindContext(partTree, Collections.singletonMap("field", "testValue"), metadata);
         DocumentFindRequest request = new DocumentFindRequest(findContext, null, 100, null, Sort.unsorted(), false);
@@ -45,7 +46,7 @@ class FindContextSerializerTest {
 
     @Test
     void testNonViewed() throws JsonProcessingException {
-        EntityMetadata metadata = new EntityMetadata(TestDocument.class);
+        EntityMetadata metadata = new EntityMetadata(DocumentDescriptor.of(TestDocument.class));
         PartTree partTree = new PartTree("findByValue", TestDocument.class);
         FindContext findContext = new FindContext(partTree, Collections.singletonMap("value", "testValue"), metadata);
         DocumentFindRequest request = new DocumentFindRequest(findContext, null, 100, null, Sort.unsorted(), false);

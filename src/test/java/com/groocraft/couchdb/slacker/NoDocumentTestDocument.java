@@ -2,7 +2,7 @@ package com.groocraft.couchdb.slacker;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class NoDatabaseTestDocument {
+public class NoDocumentTestDocument {
 
     @JsonProperty("_id")
     String a;

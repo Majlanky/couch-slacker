@@ -1,7 +1,6 @@
 package com.groocraft.couchdb.slacker.test.integration;
 
 import com.groocraft.couchdb.slacker.CouchDbClient;
-import com.groocraft.couchdb.slacker.TestDocument;
 import com.groocraft.couchdb.slacker.TestDocumentAddress;
 import com.groocraft.couchdb.slacker.exception.CouchDbRuntimeException;
 import com.groocraft.couchdb.slacker.exception.QueryException;

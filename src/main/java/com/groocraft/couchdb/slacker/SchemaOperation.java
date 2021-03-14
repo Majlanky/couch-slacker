@@ -50,9 +50,9 @@ public enum SchemaOperation {
     DROP(CREATE, SchemaOperation::drop);
 
     private final SchemaOperation following;
-    private final ThrowingBiConsumer<Class<?>, CouchDbClient, Exception> action;
+    private final ThrowingBiConsumer<EntityMetadata, CouchDbClient, Exception> action;
 
-    SchemaOperation(SchemaOperation following, ThrowingBiConsumer<Class<?>, CouchDbClient, Exception> action) {
+    SchemaOperation(SchemaOperation following, ThrowingBiConsumer<EntityMetadata, CouchDbClient, Exception> action) {
         this.following = following;
         this.action = action;
     }
@@ -65,25 +65,23 @@ public enum SchemaOperation {
         return following;
     }
 
-    public void accept(Class<?> clazz, CouchDbClient client) throws Exception {
+    public void accept(EntityMetadata metadata, CouchDbClient client) throws Exception {
         if (action != null) {
-            action.accept(clazz, client);
+            action.accept(metadata, client);
         }
     }
 
-    private static void drop(Class<?> clazz, CouchDbClient client) throws IOException {
-        EntityMetadata metadata = client.getEntityMetadata(clazz);
-        if (client.databaseExists(clazz)) {
+    private static void drop(EntityMetadata metadata, CouchDbClient client) throws IOException {
+        if (client.databaseExists(metadata.getDatabaseName())) {
             log.info("Database {} exists and it will be deleted", metadata.getDatabaseName());
-            client.deleteDatabase(clazz);
+            client.deleteDatabase(metadata.getDatabaseName());
         }
     }
 
-    private static void create(Class<?> clazz, CouchDbClient client) throws IOException {
-        EntityMetadata metadata = client.getEntityMetadata(clazz);
-        if (!client.databaseExists(clazz)) {
+    private static void create(EntityMetadata metadata, CouchDbClient client) throws IOException {
+        if (!client.databaseExists(metadata.getDatabaseName())) {
             log.info("Database {} not found and it will be created", metadata.getDatabaseName());
-            client.createDatabase(clazz);
+            client.createDatabase(metadata.getDatabaseName());
         }
         log.info("Checking design {} for {} database", CouchDbClient.ALL_DESIGN, metadata.getDatabaseName());
         DesignDocument allDesign = client.readDesignSafely(CouchDbClient.ALL_DESIGN, metadata.getDatabaseName()).
@@ -107,7 +105,7 @@ public enum SchemaOperation {
             }
         }
         if (metadata.isViewed()) {
-            log.info("Entities of {} should be accessed by views and types, going to create design and views if necessary", clazz.getSimpleName());
+            log.info("Entities in database {} should be accessed by views and types, going to create design and views if necessary", metadata.getDatabaseName());
             DesignDocument design = client.readDesignSafely(metadata.getDesign(), metadata.getDatabaseName()).
                     orElseGet(() -> {
                         log.info("Design {} not found, creating new", metadata.getDesign());
@@ -132,10 +130,9 @@ public enum SchemaOperation {
         }
     }
 
-    private static void validate(Class<?> clazz, CouchDbClient client) throws IOException, SchemaProcessingException {
-        EntityMetadata metadata = client.getEntityMetadata(clazz);
+    private static void validate(EntityMetadata metadata, CouchDbClient client) throws IOException, SchemaProcessingException {
         log.info("Validating that database {} exists", metadata.getDatabaseName());
-        if (!client.databaseExists(clazz)) {
+        if (!client.databaseExists(metadata.getDatabaseName())) {
             throw new SchemaProcessingException(String.format("Database %s does not exists", metadata.getDatabaseName()));
         }
         log.info("Validating that all expected basic design document and views exists");
@@ -153,7 +150,7 @@ public enum SchemaOperation {
                     CouchDbClient.ALL_DATA_VIEW, CouchDbClient.ALL_DESIGN, metadata.getDatabaseName()));
         }
         if (metadata.isViewed()) {
-            log.info("Entities of {} should be accessed by views and types, validating design and views", clazz.getSimpleName());
+            log.info("Entities in database {} should be accessed by views and types, validating design and views", metadata.getDatabaseName());
             Optional<DesignDocument> design = client.readDesignSafely(metadata.getDesign(), metadata.getDatabaseName());
             if (!design.isPresent()) {
                 throw new SchemaProcessingException(String.format("Design '%s' does not exist in %s database", metadata.getDesign(), metadata.getDatabaseName()));
@@ -168,7 +165,7 @@ public enum SchemaOperation {
                 throw new SchemaProcessingException(String.format("View %s in design %s of %s database contains improper functions",
                         CouchDbClient.ALL_DATA_VIEW, CouchDbClient.ALL_DESIGN, metadata.getDatabaseName()));
             }
-            log.info("All designs and view exits for {}", clazz.getSimpleName());
+            log.info("All designs and view exits in {} database", metadata.getDatabaseName());
         }
         log.info("Database {} exists", metadata.getDatabaseName());
     }

@@ -20,7 +20,7 @@ import com.groocraft.couchdb.slacker.CouchDbInitializationStrategy;
 import com.groocraft.couchdb.slacker.QueryStrategy;
 import com.groocraft.couchdb.slacker.SchemaOperation;
 import org.hibernate.validator.constraints.URL;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.validation.annotation.Validated;
@@ -28,8 +28,12 @@ import org.springframework.validation.annotation.Validated;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotEmpty;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -134,7 +138,14 @@ public class CouchDbProperties {
      * Default value is null.
      */
     @NestedConfigurationProperty
-    private Cluster cluster;
+    private Cluster cluster = new Cluster();
+
+    /**
+     * Map of entity mapping override/extension. The map is keyed by name of a context. Values of the map are lists of {@link Document}
+     * Default value is empty map meaning no overriding/extending is done.
+     */
+    @NestedConfigurationProperty
+    private Map<String, List<Document>> mapping = Collections.emptyMap();
 
     public String getUsername() {
         return username;
@@ -232,6 +243,15 @@ public class CouchDbProperties {
         this.cluster = cluster;
     }
 
+    public Map<String, List<Document>> getMapping() {
+        return mapping;
+    }
+
+    public void setMapping(Map<String, List<Document>> mapping) {
+        this.mapping = new HashMap<>();
+        mapping.forEach((k, v) -> this.mapping.put(k, new ArrayList<>(v)));
+    }
+
     public void copy(CouchDbProperties properties) {
         setPassword(properties.getPassword());
         setUsername(properties.getUsername());
@@ -245,6 +265,7 @@ public class CouchDbProperties {
         setQueryStrategy(properties.getQueryStrategy());
         setInitializationStrategy(properties.getInitializationStrategy());
         setCluster(new Cluster(properties.getCluster()));
+        setMapping(properties.getMapping());
     }
 
     public static class Cluster {
@@ -270,13 +291,11 @@ public class CouchDbProperties {
         /**
          * Copy constructor
          *
-         * @param cluster can be null.
+         * @param cluster must not be {@literal null}
          */
-        public Cluster(@Nullable Cluster cluster) {
-            if (cluster != null) {
-                this.coordinator = cluster.isCoordinator();
-                this.nodes = new HashSet<>(cluster.getNodes());
-            }
+        public Cluster(@NotNull Cluster cluster) {
+            this.coordinator = cluster.isCoordinator();
+            this.nodes = new HashSet<>(cluster.getNodes());
         }
 
         public boolean isCoordinator() {
@@ -293,6 +312,43 @@ public class CouchDbProperties {
 
         public void setNodes(Set<String> nodes) {
             this.nodes = new HashSet<>(nodes);
+        }
+    }
+
+    public static class Document {
+
+        /**
+         * Fully qualified class name of entity
+         */
+        private String entityClass;
+
+        /**
+         * Name of database used for the {@code entityClass}
+         */
+        private String database;
+
+        public Document() {
+        }
+
+        public Document(String entityClass, String database) {
+            this.entityClass = entityClass;
+            this.database = database;
+        }
+
+        public String getEntityClass() {
+            return entityClass;
+        }
+
+        public void setEntityClass(String entityClass) {
+            this.entityClass = entityClass;
+        }
+
+        public String getDatabase() {
+            return database;
+        }
+
+        public void setDatabase(String database) {
+            this.database = database;
         }
     }
 

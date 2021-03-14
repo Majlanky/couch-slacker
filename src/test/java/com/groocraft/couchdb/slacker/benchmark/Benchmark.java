@@ -16,8 +16,9 @@
 
 package com.groocraft.couchdb.slacker.benchmark;
 
+import com.groocraft.couchdb.slacker.DocumentDescriptor;
 import com.groocraft.couchdb.slacker.EntityMetadata;
-import com.groocraft.couchdb.slacker.TestDocument;
+import com.groocraft.couchdb.slacker.test.integration.TestDocument;
 import com.groocraft.couchdb.slacker.utils.LazyLog;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -40,7 +41,7 @@ import java.util.concurrent.TimeUnit;
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 public class Benchmark {
 
-    private static final EntityMetadata entityMetadata = new EntityMetadata(TestDocument.class);
+    private static final EntityMetadata entityMetadata = new EntityMetadata(DocumentDescriptor.of(TestDocument.class));
     private static final TestDocument testDocument = new TestDocument();
 
     public static void main(String[] args) throws Exception {

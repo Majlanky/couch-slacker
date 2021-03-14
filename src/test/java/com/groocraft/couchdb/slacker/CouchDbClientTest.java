@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.groocraft.couchdb.slacker.repository.CouchDbEntityInformation;
 import com.groocraft.couchdb.slacker.structure.DocumentFindRequest;
 import com.groocraft.couchdb.slacker.structure.FindResult;
+import com.groocraft.couchdb.slacker.test.integration.TestDocument;
 import com.groocraft.couchdb.slacker.utils.FindContext;
 import com.groocraft.couchdb.slacker.utils.ThrowingConsumer;
 import org.apache.commons.io.IOUtils;
@@ -64,6 +65,9 @@ class CouchDbClientTest {
     @Mock
     private HttpContext httpContext;
 
+    @Mock
+    private CouchDbContext dbContext;
+
     private URI baseURI;
     private CouchDbClient client;
 
@@ -71,11 +75,12 @@ class CouchDbClientTest {
     void setUp() throws URISyntaxException {
         baseURI = new URI("http://localhost:5984/");
         client = new CouchDbClient(httpClient, httpHost, httpContext, baseURI, Collections.emptyList(),
-                8, 3, false, 10000, QueryStrategy.MANGO, new ObjectMapper());
+                8, 3, false, 10000, QueryStrategy.MANGO, new ObjectMapper(), dbContext);
     }
 
     @Test
     void testGetEntityInformation() {
+        when(dbContext.get(TestDocument.class)).thenReturn(new EntityMetadata(DocumentDescriptor.of(TestDocument.class)));
         CouchDbEntityInformation<TestDocument, String> information = client.getEntityInformation(TestDocument.class);
         assertNotNull(information, "Returned entity information must not be null");
         assertEquals(TestDocument.class, information.getJavaType(), "Returned entity information must match to entity class");
@@ -91,6 +96,7 @@ class CouchDbClientTest {
         when(entity.getContent()).thenReturn(content);
         when(response.getEntity()).thenReturn(entity);
         when(httpClient.execute(eq(httpHost), requestCaptor.capture(), eq(httpContext))).thenReturn(response).thenThrow(thrown);
+        when(dbContext.get(TestDocument.class)).thenReturn(new EntityMetadata(DocumentDescriptor.of(TestDocument.class)));
 
         TestDocument saved = client.save(new TestDocument("test"));
 
@@ -124,6 +130,7 @@ class CouchDbClientTest {
         when(entity.getContent()).thenReturn(content);
         when(response.getEntity()).thenReturn(entity);
         when(httpClient.execute(eq(httpHost), requestCaptor.capture(), eq(httpContext))).thenReturn(response).thenThrow(thrown);
+        when(dbContext.get(TestDocument.class)).thenReturn(new EntityMetadata(DocumentDescriptor.of(TestDocument.class)));
 
         TestDocument saved = client.save(testDocument);
 
@@ -154,6 +161,7 @@ class CouchDbClientTest {
         when(entity.getContent()).thenReturn(content);
         when(response.getEntity()).thenReturn(entity);
         when(httpClient.execute(eq(httpHost), requestCaptor.capture(), eq(httpContext))).thenReturn(response).thenThrow(thrown);
+        when(dbContext.get(TestDocument.class)).thenReturn(new EntityMetadata(DocumentDescriptor.of(TestDocument.class)));
 
         TestDocument a = new TestDocument("a", null, "a", "a");
         TestDocument b = new TestDocument("b", null, "b", "b");
@@ -194,6 +202,7 @@ class CouchDbClientTest {
         when(entity.getContent()).thenReturn(content);
         when(response.getEntity()).thenReturn(entity);
         when(httpClient.execute(eq(httpHost), requestCaptor.capture(), eq(httpContext))).thenReturn(response).thenThrow(thrown);
+        when(dbContext.get(TestDocument.class)).thenReturn(new EntityMetadata(DocumentDescriptor.of(TestDocument.class)));
 
         TestDocument read = client.read(id, TestDocument.class);
 
@@ -224,6 +233,7 @@ class CouchDbClientTest {
         when(entity.getContent()).thenReturn(content);
         when(response.getEntity()).thenReturn(entity);
         when(httpClient.execute(eq(httpHost), requestCaptor.capture(), eq(httpContext))).thenReturn(response).thenThrow(thrown);
+        when(dbContext.get(TestDocument.class)).thenReturn(new EntityMetadata(DocumentDescriptor.of(TestDocument.class)));
 
         Iterable<TestDocument> read = client.readAll(Arrays.asList("a", "b"), TestDocument.class);
 
@@ -256,6 +266,7 @@ class CouchDbClientTest {
         when(entity.getContent()).thenReturn(content);
         when(response.getEntity()).thenReturn(entity);
         when(httpClient.execute(eq(httpHost), requestCaptor.capture(), eq(httpContext))).thenReturn(response).thenThrow(thrown);
+        when(dbContext.get(TestDocument.class)).thenReturn(new EntityMetadata(DocumentDescriptor.of(TestDocument.class)));
 
         String id = "unique";
         String revision = "123";
@@ -287,6 +298,7 @@ class CouchDbClientTest {
         when(entity.getContent()).thenReturn(content);
         when(response.getEntity()).thenReturn(entity);
         when(httpClient.execute(eq(httpHost), requestCaptor.capture(), eq(httpContext))).thenReturn(response).thenThrow(thrown);
+        when(dbContext.get(TestDocument.class)).thenReturn(new EntityMetadata(DocumentDescriptor.of(TestDocument.class)));
 
         Iterable<TestDocument> read = client.find("", TestDocument.class).getFirst();
 
@@ -316,7 +328,7 @@ class CouchDbClientTest {
     void testClose() throws IOException {
         CloseableHttpClient httpClient = mock(CloseableHttpClient.class);
         client = new CouchDbClient(httpClient, httpHost, httpContext, baseURI, Collections.emptyList(),
-                8, 3, false, 10000, QueryStrategy.MANGO, new ObjectMapper());
+                8, 3, false, 10000, QueryStrategy.MANGO, new ObjectMapper(), dbContext);
         client.close();
         verify(httpClient, only().description("Http client must be closed")).close();
     }
@@ -332,6 +344,8 @@ class CouchDbClientTest {
         when(entity.getContent()).thenReturn(content);
         when(response.getEntity()).thenReturn(entity);
         when(httpClient.execute(eq(httpHost), requestCaptor.capture(), eq(httpContext))).thenReturn(response, response).thenThrow(thrown);
+        when(dbContext.get(TestDocument.class)).thenReturn(new EntityMetadata(DocumentDescriptor.of(TestDocument.class)));
+
         Iterable<String> all = client.readAll(TestDocument.class);
         HttpRequest request = requestCaptor.getValue();
         assertEquals(HttpGet.class, request.getClass(), "Find has to be done as GET request");
@@ -370,6 +384,8 @@ class CouchDbClientTest {
         when(entity.getContent()).thenReturn(content);
         when(response.getEntity()).thenReturn(entity);
         when(httpClient.execute(eq(httpHost), requestCaptor.capture(), eq(httpContext))).thenReturn(response).thenThrow(thrown);
+        when(dbContext.get(TestDocument.class)).thenReturn(new EntityMetadata(DocumentDescriptor.of(TestDocument.class)));
+
         long count = client.countAll(TestDocument.class);
         HttpRequest request = requestCaptor.getValue();
         assertEquals(HttpGet.class, request.getClass(), "Find has to be done as GET request");
@@ -397,6 +413,8 @@ class CouchDbClientTest {
         when(entity.getContent()).thenReturn(getContent).thenReturn(deleteContent);
         when(response.getEntity()).thenReturn(entity);
         when(httpClient.execute(eq(httpHost), requestCaptor.capture(), eq(httpContext))).thenReturn(response, response).thenThrow(thrown);
+        when(dbContext.get(TestDocument.class)).thenReturn(new EntityMetadata(DocumentDescriptor.of(TestDocument.class)));
+
         TestDocument deleted = client.deleteById("unique", TestDocument.class);
         HttpRequest request = requestCaptor.getValue();
         assertEquals(HttpDelete.class, request.getClass(), "Find has to be done as DELETE request");
@@ -418,6 +436,7 @@ class CouchDbClientTest {
 
     @Test
     void testCreateDatabase() throws IOException {
+        when(dbContext.get(TestDocument.class)).thenReturn(new EntityMetadata(DocumentDescriptor.of(TestDocument.class)));
         createDatabaseTestWrapper(c -> c.createDatabase(TestDocument.class));
     }
 
@@ -428,6 +447,7 @@ class CouchDbClientTest {
 
     @Test
     void testCreateDatabase3() throws IOException {
+        when(dbContext.get(TestDocument.class)).thenReturn(new EntityMetadata(DocumentDescriptor.of(TestDocument.class)));
         createDatabaseTestWrapper(c -> c.createDatabase(TestDocument.class, 8, 3, false));
     }
 
@@ -462,6 +482,7 @@ class CouchDbClientTest {
 
     @Test
     void testDatabaseExistsClass() throws IOException {
+        when(dbContext.get(TestDocument.class)).thenReturn(new EntityMetadata(DocumentDescriptor.of(TestDocument.class)));
         testDatabaseExistsWrapper(c -> c.databaseExists(TestDocument.class));
     }
 
@@ -495,6 +516,7 @@ class CouchDbClientTest {
 
     @Test
     void testDeleteDatabaseClass() throws IOException {
+        when(dbContext.get(TestDocument.class)).thenReturn(new EntityMetadata(DocumentDescriptor.of(TestDocument.class)));
         testDeleteDatabaseWrapper(c -> c.deleteDatabase(TestDocument.class));
     }
 
@@ -534,11 +556,13 @@ class CouchDbClientTest {
 
     @Test
     void testCreateIndex2() throws IOException {
+        when(dbContext.get(TestDocument.class)).thenReturn(new EntityMetadata(DocumentDescriptor.of(TestDocument.class)));
         createIndexTestWrapper(c -> c.createIndex("test", TestDocument.class, Collections.singletonList(Sort.Order.asc("value"))));
     }
 
     @Test
     void testCreateIndex3() throws IOException {
+        when(dbContext.get(TestDocument.class)).thenReturn(new EntityMetadata(DocumentDescriptor.of(TestDocument.class)));
         createIndexTestWrapper(c -> c.createIndex("test", TestDocument.class, Sort.Order.asc("value")));
     }
 
@@ -587,6 +611,7 @@ class CouchDbClientTest {
         when(indexResponse.getEntity()).thenReturn(indexEntity);
         when(response.getEntity()).thenReturn(entity);
         when(httpClient.execute(eq(httpHost), requestCaptor.capture(), eq(httpContext))).thenReturn(indexResponse, response);
+        when(dbContext.get(TestDocument.class)).thenReturn(new EntityMetadata(DocumentDescriptor.of(TestDocument.class)));
 
         TestFindRequest findRequest = new TestFindRequest(null, null, null, sort, false);
         List<TestDocument> read = client.find(findRequest, TestDocument.class, null).getEntities();
@@ -615,7 +640,7 @@ class CouchDbClientTest {
     @Test
     void testRequestFind() throws IOException {
         CouchDbClient client = new CouchDbClient(httpClient, httpHost, httpContext, baseURI, Collections.emptyList(),
-                8, 3, false, 3, QueryStrategy.MANGO, new ObjectMapper());
+                8, 3, false, 3, QueryStrategy.MANGO, new ObjectMapper(), dbContext);
         IOException thrown = new IOException("error");
         InputStream content = new ByteArrayInputStream(("{\"docs\":[{\"_id\":\"unique1\",\"_rev\":\"1231\",\"value\":\"value1\"},{\"_id\":\"unique2\"," +
                 "\"_rev\":\"1232\",\"value\":\"value2\"},{\"_id\":\"unique3\",\"_rev\":\"1233\",\"value\":\"value3\"}],\"bookmark\": \"1234\",\"warning\": " +
@@ -640,9 +665,11 @@ class CouchDbClientTest {
         when(response2.getEntity()).thenReturn(entity2);
         when(response3.getEntity()).thenReturn(entity3);
         when(httpClient.execute(eq(httpHost), requestCaptor.capture(), eq(httpContext))).thenReturn(response, response2, response3).thenThrow(thrown);
+        when(dbContext.get(TestDocument.class)).thenReturn(new EntityMetadata(DocumentDescriptor.of(TestDocument.class)));
 
         PartTree partTree = new PartTree("findByValue", TestDocument.class);
-        FindContext context = new FindContext(partTree, Collections.singletonMap("value", "test"), new EntityMetadata(TestDocument.class));
+        FindContext context = new FindContext(partTree, Collections.singletonMap("value", "test"),
+                new EntityMetadata(DocumentDescriptor.of(TestDocument.class)));
         DocumentFindRequest findRequest = new DocumentFindRequest(context, null, null, null, Sort.unsorted(), false);
         FindResult<TestDocument> result = client.find(findRequest, TestDocument.class);
         assertEquals(3, result.getBookmarks().size(), "For 8 documents read in 3 request (because max bulk size), there should be 3 bookmarks");
@@ -672,7 +699,7 @@ class CouchDbClientTest {
     @Test
     void testRequestFindWithLimitAndBookmarkBy() throws IOException {
         CouchDbClient client = new CouchDbClient(httpClient, httpHost, httpContext, baseURI, Collections.emptyList(),
-                8, 3, false, 3, QueryStrategy.MANGO, new ObjectMapper());
+                8, 3, false, 3, QueryStrategy.MANGO, new ObjectMapper(), dbContext);
         IOException thrown = new IOException("error");
         InputStream content = new ByteArrayInputStream(("{\"docs\":[{\"_id\":\"unique1\",\"_rev\":\"1231\",\"value\":\"value1\"},{\"_id\":\"unique2\"," +
                 "\"_rev\":\"1232\",\"value\":\"value2\"},{\"_id\":\"unique3\",\"_rev\":\"1233\",\"value\":\"value3\"}],\"bookmark\": \"1234\",\"warning\": " +
@@ -697,9 +724,11 @@ class CouchDbClientTest {
         when(response2.getEntity()).thenReturn(entity2);
         when(response3.getEntity()).thenReturn(entity3);
         when(httpClient.execute(eq(httpHost), requestCaptor.capture(), eq(httpContext))).thenReturn(response, response2, response3).thenThrow(thrown);
+        when(dbContext.get(TestDocument.class)).thenReturn(new EntityMetadata(DocumentDescriptor.of(TestDocument.class)));
 
         PartTree partTree = new PartTree("findByValue", TestDocument.class);
-        FindContext context = new FindContext(partTree, Collections.singletonMap("value", "test"), new EntityMetadata(TestDocument.class));
+        FindContext context = new FindContext(partTree, Collections.singletonMap("value", "test"),
+                new EntityMetadata(DocumentDescriptor.of(TestDocument.class)));
         DocumentFindRequest findRequest = new DocumentFindRequest(context, null, 8, null, Sort.unsorted(), false);
         List<TestDocument> result = client.find(findRequest, TestDocument.class, 3).getEntities();
         assertEquals(8, result.size(), "Three content responses contains 8 documents");

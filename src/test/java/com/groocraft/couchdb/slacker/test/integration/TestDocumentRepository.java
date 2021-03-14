@@ -1,6 +1,5 @@
 package com.groocraft.couchdb.slacker.test.integration;
 
-import com.groocraft.couchdb.slacker.TestDocument;
 import com.groocraft.couchdb.slacker.annotation.Query;
 import com.groocraft.couchdb.slacker.annotation.ViewQuery;
 import org.springframework.data.domain.Page;

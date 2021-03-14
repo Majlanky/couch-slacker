@@ -13,7 +13,7 @@ class EntityMetadataTest {
     @Test
     void testParsingFieldBased() {
         FieldTestDocument testDocument = new FieldTestDocument();
-        EntityMetadata entityMetadata = new EntityMetadata(FieldTestDocument.class);
+        EntityMetadata entityMetadata = new EntityMetadata(DocumentDescriptor.of(FieldTestDocument.class));
         assertFalse(entityMetadata.isViewed(), "FieldTestDocument is not annotated as view accessed document");
         assertEquals("test", entityMetadata.getDatabaseName(), "Wrongly parsed Database annotation");
 
@@ -29,7 +29,7 @@ class EntityMetadataTest {
     @Test
     void testParsingMethodBased() {
         MethodTestDocument testDocument = new MethodTestDocument();
-        EntityMetadata entityMetadata = new EntityMetadata(MethodTestDocument.class);
+        EntityMetadata entityMetadata = new EntityMetadata(DocumentDescriptor.of(MethodTestDocument.class));
         assertFalse(entityMetadata.isViewed(), "MethodTestDocument is not annotated as view accessed document");
         assertEquals("test", entityMetadata.getDatabaseName(), "Wrongly parsed Database annotation");
 
@@ -51,7 +51,7 @@ class EntityMetadataTest {
     @Test
     void testParsingFieldWithMethodBased() {
         FieldWithMethodTestDocument testDocument = new FieldWithMethodTestDocument();
-        EntityMetadata entityMetadata = new EntityMetadata(FieldWithMethodTestDocument.class);
+        EntityMetadata entityMetadata = new EntityMetadata(DocumentDescriptor.of(FieldWithMethodTestDocument.class));
         assertFalse(entityMetadata.isViewed(), "FieldWithMethodTestDocument is not annotated as view accessed document");
         assertEquals("test", entityMetadata.getDatabaseName(), "Wrongly parsed Database annotation");
 
@@ -73,7 +73,7 @@ class EntityMetadataTest {
     @Test
     void testParsingMixedBased() {
         MixedTestDocument testDocument = new MixedTestDocument();
-        EntityMetadata entityMetadata = new EntityMetadata(MixedTestDocument.class);
+        EntityMetadata entityMetadata = new EntityMetadata(DocumentDescriptor.of(MixedTestDocument.class));
         assertFalse(entityMetadata.isViewed(), "MixedTestDocument is not annotated as view accessed document");
         assertEquals("test", entityMetadata.getDatabaseName(), "Wrongly parsed Database annotation");
 
@@ -94,7 +94,7 @@ class EntityMetadataTest {
     @Test
     void testParsingInheritance() {
         InheritedTestDocument testDocument = new InheritedTestDocument();
-        EntityMetadata entityMetadata = new EntityMetadata(InheritedTestDocument.class);
+        EntityMetadata entityMetadata = new EntityMetadata(DocumentDescriptor.of(InheritedTestDocument.class));
         assertFalse(entityMetadata.isViewed(), "InheritedTestDocument is not annotated as view accessed document");
         assertEquals("test", entityMetadata.getDatabaseName(), "Wrongly parsed Database annotation");
 
@@ -114,23 +114,24 @@ class EntityMetadataTest {
 
     @Test()
     void testMissingId() {
-        assertThrows(IllegalStateException.class, () -> new EntityMetadata(NoIdTestDocument.class), "Absence of _id attribute must be reported by exception");
+        assertThrows(IllegalStateException.class, () -> new EntityMetadata(DocumentDescriptor.of(NoIdTestDocument.class)),
+                "Absence of _id attribute must be reported by exception");
     }
 
     @Test()
     void testMissingRevision() {
-        assertThrows(IllegalStateException.class, () -> new EntityMetadata(NoRevisionTestDocument.class), "Absence of _rev attribute must be reported by " +
-                "exception");
+        assertThrows(IllegalStateException.class, () -> new EntityMetadata(DocumentDescriptor.of(NoRevisionTestDocument.class)),
+                "Absence of _rev attribute must be reported by exception");
     }
 
     @Test
     void testMissingDatabase() {
-        assertThrows(IllegalArgumentException.class, () -> new EntityMetadata(NoDatabaseTestDocument.class));
+        assertThrows(IllegalArgumentException.class, () -> new EntityMetadata(DocumentDescriptor.of(NoDocumentTestDocument.class)));
     }
 
     @Test
     void testDefaultViewed() {
-        EntityMetadata em = new EntityMetadata(DefaultViewedDocument.class);
+        EntityMetadata em = new EntityMetadata(DocumentDescriptor.of(DefaultViewedDocument.class));
         assertTrue(em.isViewed(), "DefaultViewedDocument is annotated as view accessed document");
         assertEquals(Document.DEFAULT_DESIGN_NAME, em.getDesign(), "");
         assertEquals(Document.DEFAULT_TYPE_FIELD, em.getTypeField(), "");
@@ -140,7 +141,7 @@ class EntityMetadataTest {
 
     @Test
     void testViewed() {
-        EntityMetadata em = new EntityMetadata(ViewedDocument.class);
+        EntityMetadata em = new EntityMetadata(DocumentDescriptor.of(ViewedDocument.class));
         assertTrue(em.isViewed(), "ViewedDocument is annotated as view accessed document");
         assertEquals(Document.DEFAULT_DESIGN_NAME, em.getDesign(), "");
         assertEquals(Document.DEFAULT_TYPE_FIELD, em.getTypeField(), "");

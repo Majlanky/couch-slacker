@@ -3,8 +3,8 @@ package com.groocraft.couchdb.slacker.utils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.groocraft.couchdb.slacker.TestDocument;
 import com.groocraft.couchdb.slacker.structure.BulkRequest;
+import com.groocraft.couchdb.slacker.test.integration.TestDocument;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;

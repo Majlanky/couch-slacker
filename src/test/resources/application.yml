@@ -76,3 +76,27 @@ couchdb:
         - couchdb-0.docker.com:5984
         - couchdb-1.docker.com:5984
         - couchdb-2.docker.com:5984
+
+---
+
+spring:
+  profiles: mapping-test
+couchdb:
+  client:
+    url: http://localhost:10000/
+    username: admin
+    password: password
+    bulk-max-size: 50
+    find-execution-stats: true
+    schema-operation: drop
+    initialization-strategy: single
+    mapping:
+      context1:
+        - entityClass: "com.groocraft.couchdb.slacker.test.integration.TestDocument"
+          database: "test1"
+      context2:
+        - entityClass: "com.groocraft.couchdb.slacker.test.integration.TestDocument"
+          database: "test2"
+      context3:
+        - entityClass: "com.groocraft.couchdb.slacker.test.integration.TestDocument"
+          database: "test3"

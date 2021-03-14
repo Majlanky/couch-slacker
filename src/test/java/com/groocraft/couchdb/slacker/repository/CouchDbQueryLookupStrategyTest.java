@@ -1,9 +1,9 @@
 package com.groocraft.couchdb.slacker.repository;
 
 import com.groocraft.couchdb.slacker.CouchDbClient;
-import com.groocraft.couchdb.slacker.TestDocument;
 import com.groocraft.couchdb.slacker.annotation.Query;
 import com.groocraft.couchdb.slacker.configuration.CouchDbProperties;
+import com.groocraft.couchdb.slacker.test.integration.TestDocument;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.repository.core.NamedQueries;

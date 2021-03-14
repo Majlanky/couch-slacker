@@ -26,7 +26,6 @@ import com.groocraft.couchdb.slacker.data.Reader;
 import com.groocraft.couchdb.slacker.data.Writer;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.Assert;
 
 import java.lang.reflect.Field;
@@ -63,34 +62,31 @@ public class EntityMetadata {
     private final boolean isViewed;
 
     /**
-     * @param entityClass of parsed document. Must not be {@literal null}
+     * @param descriptor of parsed document. Must not be {@literal null}
      * @throws IllegalStateException if there is missing _id or _rev access
      */
-    public EntityMetadata(@NotNull Class<?> entityClass) {
-        Assert.notNull(entityClass, "EntityClass must not be null.");
-        Document document = entityClass.getAnnotation(Document.class);
-        Assert.notNull(document, "Document annotation must not be null");
-        document = AnnotationUtils.synthesizeAnnotation(document, Document.class);
-        databaseName = "".equals(document.value()) ? entityClass.getSimpleName().toLowerCase() : document.value();
-        log.debug("Database with name {} will be used for all documents of class {}", databaseName, entityClass.getName());
-        idWriter = getWriter(CouchDbProperties.COUCH_ID_NAME, entityClass);
-        idReader = getReader(CouchDbProperties.COUCH_ID_NAME, entityClass);
-        revisionWriter = getWriter(CouchDbProperties.COUCH_REVISION_NAME, entityClass);
-        revisionReader = getReader(CouchDbProperties.COUCH_REVISION_NAME, entityClass);
-        isViewed = document.accessByView()
-                || !Document.DEFAULT_DESIGN_NAME.equals(document.design())
-                || !Document.DEFAULT_TYPE_FIELD.equals(document.typeField())
-                || !"".equals(document.view())
-                || !"".equals(document.type());
-        design = document.design();
-        view = "".equals(document.view()) ? entityClass.getSimpleName().toLowerCase() : document.view();
-        type = "".equals(document.type()) ? entityClass.getSimpleName().toLowerCase() : document.type();
-        typeField = document.typeField();
+    public EntityMetadata(@NotNull DocumentDescriptor descriptor) {
+        Assert.notNull(descriptor, "Descriptor must not be nul");
+        databaseName = "".equals(descriptor.value()) ? descriptor.getEntityClass().getSimpleName().toLowerCase() : descriptor.value();
+        log.debug("Database with name {} will be used for all documents of class {}", databaseName, descriptor.getEntityClass().getName());
+        idWriter = getWriter(CouchDbProperties.COUCH_ID_NAME, descriptor.getEntityClass());
+        idReader = getReader(CouchDbProperties.COUCH_ID_NAME, descriptor.getEntityClass());
+        revisionWriter = getWriter(CouchDbProperties.COUCH_REVISION_NAME, descriptor.getEntityClass());
+        revisionReader = getReader(CouchDbProperties.COUCH_REVISION_NAME, descriptor.getEntityClass());
+        isViewed = descriptor.accessByView()
+                || !Document.DEFAULT_DESIGN_NAME.equals(descriptor.design())
+                || !Document.DEFAULT_TYPE_FIELD.equals(descriptor.typeField())
+                || !"".equals(descriptor.view())
+                || !"".equals(descriptor.type());
+        design = descriptor.design();
+        view = "".equals(descriptor.view()) ? descriptor.getEntityClass().getSimpleName().toLowerCase() : descriptor.view();
+        type = "".equals(descriptor.type()) ? descriptor.getEntityClass().getSimpleName().toLowerCase() : descriptor.type();
+        typeField = descriptor.typeField();
         if (isViewed) {
             log.debug("Documents of class {} will be processed by view ({}) and type ({}) where design is {} and typeField is {}",
-                    entityClass.getSimpleName(), view, type, design, typeField);
+                    descriptor.getEntityClass().getSimpleName(), view, type, design, typeField);
         } else {
-            log.debug("Documents of class {} will be stored in exclusive database", entityClass.getSimpleName());
+            log.debug("Documents of class {} will be stored in exclusive database", descriptor.getEntityClass().getSimpleName());
         }
     }
 

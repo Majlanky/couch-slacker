@@ -17,6 +17,8 @@
 package com.groocraft.couchdb.slacker.repository;
 
 import com.groocraft.couchdb.slacker.CouchDbClient;
+import com.groocraft.couchdb.slacker.CouchDbContext;
+import com.groocraft.couchdb.slacker.DocumentDescriptor;
 import com.groocraft.couchdb.slacker.EntityMetadata;
 import com.groocraft.couchdb.slacker.SchemaOperation;
 import com.groocraft.couchdb.slacker.configuration.CouchDbProperties;
@@ -28,7 +30,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationContext;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -37,7 +38,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -53,28 +54,29 @@ class CouchDBSchemaProcessorTest {
     CouchDbProperties properties;
 
     @Mock
-    ApplicationContext context;
+    CouchDbContext context;
 
     @Test
     void testNone() throws Exception {
         when(properties.getSchemaOperation()).thenReturn(SchemaOperation.NONE);
-        Map<String, Object> beans = new HashMap<>();
-        beans.put("test", new SchemaUnitTestDocument());
-        when(context.getBeansWithAnnotation(any())).thenReturn(beans);
+        Map<String, Map<Class<?>, EntityMetadata>> mapping = new HashMap<>();
+        mapping.computeIfAbsent("default", k -> new HashMap<>()).put(SchemaUnitTestDocument.class,
+                new EntityMetadata(DocumentDescriptor.of(SchemaUnitTestDocument.class)));
+        when(context.getAll()).thenReturn(mapping);
         new CouchDBSchemaProcessor(client, properties, context, null);
-        verify(client, never().description("No test should be called if operation is NONE")).databaseExists(SchemaUnitTestDocument.class);
-        verify(client, never().description("No create should be called if operation is NONE")).createDatabase(SchemaUnitTestDocument.class);
-        verify(client, never().description("No delete should be called if operation is NONE")).deleteDatabase(SchemaUnitTestDocument.class);
+        verify(client, never().description("No test should be called if operation is NONE")).databaseExists("test");
+        verify(client, never().description("No create should be called if operation is NONE")).createDatabase("test");
+        verify(client, never().description("No delete should be called if operation is NONE")).deleteDatabase("test");
     }
 
     @Test
     void testValidate() throws Exception {
         when(properties.getSchemaOperation()).thenReturn(SchemaOperation.VALIDATE);
-        Map<String, Object> beans = new HashMap<>();
-        beans.put("test", new SchemaUnitTestDocument());
-        when(context.getBeansWithAnnotation(any())).thenReturn(beans);
-        when(client.getEntityMetadata(SchemaUnitTestDocument.class)).thenReturn(new EntityMetadata(SchemaUnitTestDocument.class));
-        when(client.databaseExists(SchemaUnitTestDocument.class)).thenReturn(true, false);
+        Map<String, Map<Class<?>, EntityMetadata>> mapping = new HashMap<>();
+        mapping.computeIfAbsent("default", k -> new HashMap<>()).put(SchemaUnitTestDocument.class,
+                new EntityMetadata(DocumentDescriptor.of(SchemaUnitTestDocument.class)));
+        when(context.getAll()).thenReturn(mapping);
+        when(client.databaseExists("test")).thenReturn(true, false);
         when(client.readDesignSafely("all", "test")).thenReturn(Optional.of(
                 new DesignDocument("all", Collections.singleton(new View("data", "function(doc){emit(null);}", "_count")))));
         assertDoesNotThrow(() -> new CouchDBSchemaProcessor(client, properties, context, null));
@@ -84,31 +86,153 @@ class CouchDBSchemaProcessorTest {
     @Test
     void testCreate() throws Exception {
         when(properties.getSchemaOperation()).thenReturn(SchemaOperation.CREATE);
-        Map<String, Object> beans = new HashMap<>();
-        beans.put("test", new SchemaUnitTestDocument());
-        when(context.getBeansWithAnnotation(any())).thenReturn(beans);
-        when(client.getEntityMetadata(SchemaUnitTestDocument.class)).thenReturn(new EntityMetadata(SchemaUnitTestDocument.class));
-        when(client.databaseExists(SchemaUnitTestDocument.class)).thenReturn(true, true, false, true);
+        Map<String, Map<Class<?>, EntityMetadata>> mapping = new HashMap<>();
+        mapping.computeIfAbsent("default", k -> new HashMap<>()).put(SchemaUnitTestDocument.class,
+                new EntityMetadata(DocumentDescriptor.of(SchemaUnitTestDocument.class)));
+        when(context.getAll()).thenReturn(mapping);
+        when(client.databaseExists("test")).thenReturn(true, true, false, true);
         when(client.readDesignSafely("all", "test")).thenReturn(Optional.of(
                 new DesignDocument("all", Collections.singleton(new View("data", "function(doc){emit(null);}", "_count")))));
         new CouchDBSchemaProcessor(client, properties, context, null);
-        verify(client, never().description("Create must no be called when database already exists")).createDatabase(SchemaUnitTestDocument.class);
+        verify(client, never().description("Create must no be called when database already exists")).createDatabase("test");
         new CouchDBSchemaProcessor(client, properties, context, null);
-        verify(client, times(1).description("Missing database must be created")).createDatabase(SchemaUnitTestDocument.class);
+        verify(client, times(1).description("Missing database must be created")).createDatabase("test");
     }
 
     @Test
     void testDrop() throws Exception {
         when(properties.getSchemaOperation()).thenReturn(SchemaOperation.DROP);
-        Map<String, Object> beans = new HashMap<>();
-        beans.put("test", new SchemaUnitTestDocument());
-        when(context.getBeansWithAnnotation(any())).thenReturn(beans);
-        when(client.getEntityMetadata(SchemaUnitTestDocument.class)).thenReturn(new EntityMetadata(SchemaUnitTestDocument.class));
-        when(client.databaseExists(SchemaUnitTestDocument.class)).thenReturn(true, false, true);
+        Map<String, Map<Class<?>, EntityMetadata>> mapping = new HashMap<>();
+        mapping.computeIfAbsent("default", k -> new HashMap<>()).put(SchemaUnitTestDocument.class,
+                new EntityMetadata(DocumentDescriptor.of(SchemaUnitTestDocument.class)));
+        when(context.getAll()).thenReturn(mapping);
+        when(client.databaseExists("test")).thenReturn(true, false, true);
         when(client.readDesignSafely("all", "test")).thenReturn(Optional.of(
                 new DesignDocument("all", Collections.singleton(new View("data", "function(doc){emit(null);}", "_count")))));
         new CouchDBSchemaProcessor(client, properties, context, null);
-        verify(client, times(1).description("Database must be deleted when DROP")).deleteDatabase(SchemaUnitTestDocument.class);
-        verify(client, times(1).description("Database must be created when DROP")).createDatabase(SchemaUnitTestDocument.class);
+        verify(client, times(1).description("Database must be deleted when DROP")).deleteDatabase("test");
+        verify(client, times(1).description("Database must be created when DROP")).createDatabase("test");
+    }
+
+    @Test
+    void testContextualNone() throws Exception {
+        when(properties.getSchemaOperation()).thenReturn(SchemaOperation.NONE);
+        Map<String, Map<Class<?>, EntityMetadata>> mapping = new HashMap<>();
+        mapping.computeIfAbsent("default", k -> new HashMap<>()).put(SchemaUnitTestDocument.class,
+                new EntityMetadata(DocumentDescriptor.of(SchemaUnitTestDocument.class)));
+        mapping.computeIfAbsent("context1", k -> new HashMap<>()).put(SchemaUnitTestDocument.class,
+                new EntityMetadata(DocumentDescriptor.of(SchemaUnitTestDocument.class, "context1Test")));
+        mapping.computeIfAbsent("context2", k -> new HashMap<>()).put(SchemaUnitTestDocument.class,
+                new EntityMetadata(DocumentDescriptor.of(SchemaUnitTestDocument.class, "context2Test")));
+        mapping.computeIfAbsent("context3", k -> new HashMap<>()).put(SchemaUnitTestDocument.class,
+                new EntityMetadata(DocumentDescriptor.of(SchemaUnitTestDocument.class, "context3Test")));
+        when(context.getAll()).thenReturn(mapping);
+        new CouchDBSchemaProcessor(client, properties, context, null);
+        verify(client, never().description("No test should be called if operation is NONE")).databaseExists("test");
+        verify(client, never().description("No create should be called if operation is NONE")).createDatabase("test");
+        verify(client, never().description("No delete should be called if operation is NONE")).deleteDatabase("test");
+        verify(client, never().description("No test should be called if operation is NONE")).databaseExists("context1Test");
+        verify(client, never().description("No create should be called if operation is NONE")).createDatabase("context1Test");
+        verify(client, never().description("No delete should be called if operation is NONE")).deleteDatabase("context1Test");
+        verify(client, never().description("No test should be called if operation is NONE")).databaseExists("context2Test");
+        verify(client, never().description("No create should be called if operation is NONE")).createDatabase("context2Test");
+        verify(client, never().description("No delete should be called if operation is NONE")).deleteDatabase("context2Test");
+        verify(client, never().description("No test should be called if operation is NONE")).databaseExists("context3Test");
+        verify(client, never().description("No create should be called if operation is NONE")).createDatabase("context3Test");
+        verify(client, never().description("No delete should be called if operation is NONE")).deleteDatabase("context3Test");
+    }
+
+    @Test
+    void testContextualValidate() throws Exception {
+        when(properties.getSchemaOperation()).thenReturn(SchemaOperation.VALIDATE);
+        Map<String, Map<Class<?>, EntityMetadata>> mapping = new HashMap<>();
+        mapping.computeIfAbsent("default", k -> new HashMap<>()).put(SchemaUnitTestDocument.class,
+                new EntityMetadata(DocumentDescriptor.of(SchemaUnitTestDocument.class)));
+        mapping.computeIfAbsent("context1", k -> new HashMap<>()).put(SchemaUnitTestDocument.class,
+                new EntityMetadata(DocumentDescriptor.of(SchemaUnitTestDocument.class, "context1Test")));
+        mapping.computeIfAbsent("context2", k -> new HashMap<>()).put(SchemaUnitTestDocument.class,
+                new EntityMetadata(DocumentDescriptor.of(SchemaUnitTestDocument.class, "context2Test")));
+        mapping.computeIfAbsent("context3", k -> new HashMap<>()).put(SchemaUnitTestDocument.class,
+                new EntityMetadata(DocumentDescriptor.of(SchemaUnitTestDocument.class, "context3Test")));
+        when(context.getAll()).thenReturn(mapping);
+        when(client.databaseExists(anyString())).thenReturn(true, true, true, true, false, false, false, false);
+        when(client.readDesignSafely("all", "test")).thenReturn(Optional.of(
+                new DesignDocument("all", Collections.singleton(new View("data", "function(doc){emit(null);}", "_count")))));
+        when(client.readDesignSafely("all", "context1Test")).thenReturn(Optional.of(
+                new DesignDocument("all", Collections.singleton(new View("data", "function(doc){emit(null);}", "_count")))));
+        when(client.readDesignSafely("all", "context2Test")).thenReturn(Optional.of(
+                new DesignDocument("all", Collections.singleton(new View("data", "function(doc){emit(null);}", "_count")))));
+        when(client.readDesignSafely("all", "context3Test")).thenReturn(Optional.of(
+                new DesignDocument("all", Collections.singleton(new View("data", "function(doc){emit(null);}", "_count")))));
+        assertDoesNotThrow(() -> new CouchDBSchemaProcessor(client, properties, context, null));
+        assertThrows(SchemaProcessingException.class, () -> new CouchDBSchemaProcessor(client, properties, context, null));
+    }
+
+    @Test
+    void testContextualCreate() throws Exception {
+        when(properties.getSchemaOperation()).thenReturn(SchemaOperation.CREATE);
+        Map<String, Map<Class<?>, EntityMetadata>> mapping = new HashMap<>();
+        mapping.computeIfAbsent("default", k -> new HashMap<>()).put(SchemaUnitTestDocument.class,
+                new EntityMetadata(DocumentDescriptor.of(SchemaUnitTestDocument.class)));
+        mapping.computeIfAbsent("context1", k -> new HashMap<>()).put(SchemaUnitTestDocument.class,
+                new EntityMetadata(DocumentDescriptor.of(SchemaUnitTestDocument.class, "context1Test")));
+        mapping.computeIfAbsent("context2", k -> new HashMap<>()).put(SchemaUnitTestDocument.class,
+                new EntityMetadata(DocumentDescriptor.of(SchemaUnitTestDocument.class, "context2Test")));
+        mapping.computeIfAbsent("context3", k -> new HashMap<>()).put(SchemaUnitTestDocument.class,
+                new EntityMetadata(DocumentDescriptor.of(SchemaUnitTestDocument.class, "context3Test")));
+        when(context.getAll()).thenReturn(mapping);
+        when(client.databaseExists(anyString())).thenReturn(true, true, true, true, true, true, true, true,
+                false, false, false, false, true, true, true, true);
+        when(client.readDesignSafely("all", "test")).thenReturn(Optional.of(
+                new DesignDocument("all", Collections.singleton(new View("data", "function(doc){emit(null);}", "_count")))));
+        when(client.readDesignSafely("all", "context1Test")).thenReturn(Optional.of(
+                new DesignDocument("all", Collections.singleton(new View("data", "function(doc){emit(null);}", "_count")))));
+        when(client.readDesignSafely("all", "context2Test")).thenReturn(Optional.of(
+                new DesignDocument("all", Collections.singleton(new View("data", "function(doc){emit(null);}", "_count")))));
+        when(client.readDesignSafely("all", "context3Test")).thenReturn(Optional.of(
+                new DesignDocument("all", Collections.singleton(new View("data", "function(doc){emit(null);}", "_count")))));
+        new CouchDBSchemaProcessor(client, properties, context, null);
+        verify(client, never().description("Create must no be called when database already exists")).createDatabase("test");
+        verify(client, never().description("Create must no be called when database already exists")).createDatabase("context1Test");
+        verify(client, never().description("Create must no be called when database already exists")).createDatabase("context2Test");
+        verify(client, never().description("Create must no be called when database already exists")).createDatabase("context3Test");
+        new CouchDBSchemaProcessor(client, properties, context, null);
+        verify(client, times(1).description("Missing database must be created")).createDatabase("test");
+        verify(client, times(1).description("Missing database must be created")).createDatabase("context1Test");
+        verify(client, times(1).description("Missing database must be created")).createDatabase("context2Test");
+        verify(client, times(1).description("Missing database must be created")).createDatabase("context3Test");
+    }
+
+    @Test
+    void testContextualDrop() throws Exception {
+        when(properties.getSchemaOperation()).thenReturn(SchemaOperation.DROP);
+        Map<String, Map<Class<?>, EntityMetadata>> mapping = new HashMap<>();
+        mapping.computeIfAbsent("default", k -> new HashMap<>()).put(SchemaUnitTestDocument.class,
+                new EntityMetadata(DocumentDescriptor.of(SchemaUnitTestDocument.class)));
+        mapping.computeIfAbsent("context1", k -> new HashMap<>()).put(SchemaUnitTestDocument.class,
+                new EntityMetadata(DocumentDescriptor.of(SchemaUnitTestDocument.class, "context1Test")));
+        mapping.computeIfAbsent("context2", k -> new HashMap<>()).put(SchemaUnitTestDocument.class,
+                new EntityMetadata(DocumentDescriptor.of(SchemaUnitTestDocument.class, "context2Test")));
+        mapping.computeIfAbsent("context3", k -> new HashMap<>()).put(SchemaUnitTestDocument.class,
+                new EntityMetadata(DocumentDescriptor.of(SchemaUnitTestDocument.class, "context3Test")));
+        when(context.getAll()).thenReturn(mapping);
+        when(client.databaseExists(anyString())).thenReturn(true, true, true, true, false, false, false, false, true, true, true, true);
+        when(client.readDesignSafely("all", "test")).thenReturn(Optional.of(
+                new DesignDocument("all", Collections.singleton(new View("data", "function(doc){emit(null);}", "_count")))));
+        when(client.readDesignSafely("all", "context1Test")).thenReturn(Optional.of(
+                new DesignDocument("all", Collections.singleton(new View("data", "function(doc){emit(null);}", "_count")))));
+        when(client.readDesignSafely("all", "context2Test")).thenReturn(Optional.of(
+                new DesignDocument("all", Collections.singleton(new View("data", "function(doc){emit(null);}", "_count")))));
+        when(client.readDesignSafely("all", "context3Test")).thenReturn(Optional.of(
+                new DesignDocument("all", Collections.singleton(new View("data", "function(doc){emit(null);}", "_count")))));
+        new CouchDBSchemaProcessor(client, properties, context, null);
+        verify(client, times(1).description("Database must be deleted when DROP")).deleteDatabase("test");
+        verify(client, times(1).description("Database must be created when DROP")).createDatabase("test");
+        verify(client, times(1).description("Database must be deleted when DROP")).deleteDatabase("context1Test");
+        verify(client, times(1).description("Database must be created when DROP")).createDatabase("context1Test");
+        verify(client, times(1).description("Database must be deleted when DROP")).deleteDatabase("context2Test");
+        verify(client, times(1).description("Database must be created when DROP")).createDatabase("context2Test");
+        verify(client, times(1).description("Database must be deleted when DROP")).deleteDatabase("context3Test");
+        verify(client, times(1).description("Database must be created when DROP")).createDatabase("context3Test");
     }
 }

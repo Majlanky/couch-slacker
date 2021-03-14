@@ -113,8 +113,6 @@ public class CouchDbClient {
     private final HttpClient httpClient;
     private final HttpHost httpHost;
     private final HttpContext httpContext;
-    @SuppressWarnings({"rawtypes"})
-    private final Map<Class, EntityMetadata> entityMetadataCache;
     private final Set<String> knownIndexes;
     private final Set<String> knownSortedViews;
     private final URI baseURI;
@@ -127,6 +125,7 @@ public class CouchDbClient {
     private final boolean defaultPartitioned;
     private final int bulkMaxSize;
     private final QueryStrategy queryStrategy;
+    private final CouchDbContext dbContext;
 
     /**
      * @param httpClient         must not be {@literal null}
@@ -141,6 +140,7 @@ public class CouchDbClient {
      * @param bulkMaxSize        maximal size of bulk operations
      * @param queryStrategy      default query strategy for find method
      * @param objectMapper       object mapper used for all json serializations
+     * @param dbContext must not be {@literal null}
      */
     CouchDbClient(@NotNull HttpClient httpClient,
                   @NotNull HttpHost httpHost,
@@ -152,7 +152,8 @@ public class CouchDbClient {
                   boolean defaultPartitioned,
                   int bulkMaxSize,
                   @NotNull QueryStrategy queryStrategy,
-                  @NotNull ObjectMapper objectMapper) {
+                  @NotNull ObjectMapper objectMapper,
+                  @NotNull CouchDbContext dbContext) {
         Assert.notNull(httpClient, "HttpClient must not be null.");
         Assert.notNull(httpHost, "HttpHost must not be null.");
         Assert.notNull(httpContext, "HttpContext must not be null.");
@@ -164,7 +165,6 @@ public class CouchDbClient {
         this.baseURI = baseURI;
         this.httpHost = httpHost;
         this.httpContext = httpContext;
-        entityMetadataCache = new HashMap<>();
         knownIndexes = new HashSet<>();
         knownSortedViews = new HashSet<>();
         this.mapper = objectMapper;
@@ -175,6 +175,7 @@ public class CouchDbClient {
         this.defaultPartitioned = defaultPartitioned;
         this.bulkMaxSize = bulkMaxSize;
         this.queryStrategy = queryStrategy;
+        this.dbContext = dbContext;
         idGenerators.forEach(g -> this.idGenerators.put(g.getEntityClass(), g));
     }
 
@@ -203,7 +204,7 @@ public class CouchDbClient {
      * @return {@link EntityMetadata} about passed class
      */
     public <T> @NotNull EntityMetadata getEntityMetadata(@NotNull Class<T> clazz) {
-        return entityMetadataCache.computeIfAbsent(clazz, EntityMetadata::new);
+        return dbContext.get(clazz);
     }
 
     /**
@@ -214,7 +215,7 @@ public class CouchDbClient {
      * @param clazz     Class of the given entity
      * @param <EntityT> Entity type
      * @return Generated ID for the given entity. Can not be {@literal null}
-     * @see #CouchDbClient(HttpClient, HttpHost, HttpContext, URI, Iterable, int, int, boolean, int, QueryStrategy, ObjectMapper)
+     * @see #CouchDbClient(HttpClient, HttpHost, HttpContext, URI, Iterable, int, int, boolean, int, QueryStrategy, ObjectMapper, CouchDbContext)
      */
     @SuppressWarnings("unchecked")
     private <EntityT> @NotNull String generateId(@NotNull EntityT entity, Class<EntityT> clazz) {

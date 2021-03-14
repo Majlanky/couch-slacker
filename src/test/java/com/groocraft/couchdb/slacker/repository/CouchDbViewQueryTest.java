@@ -17,9 +17,10 @@
 package com.groocraft.couchdb.slacker.repository;
 
 import com.groocraft.couchdb.slacker.CouchDbClient;
+import com.groocraft.couchdb.slacker.DocumentDescriptor;
 import com.groocraft.couchdb.slacker.EntityMetadata;
-import com.groocraft.couchdb.slacker.TestDocument;
 import com.groocraft.couchdb.slacker.annotation.ViewQuery;
+import com.groocraft.couchdb.slacker.test.integration.TestDocument;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -41,7 +42,7 @@ class CouchDbViewQueryTest {
     @Test
     void testNoReducing() throws IOException {
         CouchDbClient client = mock(CouchDbClient.class);
-        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(TestDocument.class));
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(DocumentDescriptor.of(TestDocument.class)));
         ViewQuery viewQuery = mock(ViewQuery.class);
         when(viewQuery.reducing()).thenReturn(false);
         when(viewQuery.design()).thenReturn("testDes");
@@ -61,7 +62,7 @@ class CouchDbViewQueryTest {
     @Test
     void testNoReducingWithPageableAndSort() throws IOException {
         CouchDbClient client = mock(CouchDbClient.class);
-        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(TestDocument.class));
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(DocumentDescriptor.of(TestDocument.class)));
         ViewQuery viewQuery = mock(ViewQuery.class);
         when(viewQuery.reducing()).thenReturn(false);
         when(viewQuery.design()).thenReturn("testDes");
@@ -85,7 +86,7 @@ class CouchDbViewQueryTest {
     @Test
     void testReducing() throws IOException {
         CouchDbClient client = mock(CouchDbClient.class);
-        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(TestDocument.class));
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(DocumentDescriptor.of(TestDocument.class)));
         ViewQuery viewQuery = mock(ViewQuery.class);
         when(viewQuery.reducing()).thenReturn(true);
         when(viewQuery.design()).thenReturn("testDes");
@@ -106,7 +107,7 @@ class CouchDbViewQueryTest {
     @Test
     void testReducingWithPageableAndSort() throws IOException {
         CouchDbClient client = mock(CouchDbClient.class);
-        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(TestDocument.class));
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(DocumentDescriptor.of(TestDocument.class)));
         ViewQuery viewQuery = mock(ViewQuery.class);
         when(viewQuery.reducing()).thenReturn(true);
         when(viewQuery.design()).thenReturn("testDes");

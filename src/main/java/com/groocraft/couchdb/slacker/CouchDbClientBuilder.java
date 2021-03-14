@@ -67,6 +67,7 @@ public class CouchDbClientBuilder {
 
     private final CouchDbProperties properties;
     private final List<IdGenerator<?>> idGenerators;
+    private CouchDbContext dbContext;
     private ObjectMapper objectMapper;
 
     CouchDbClientBuilder() {
@@ -140,12 +141,18 @@ public class CouchDbClientBuilder {
         return this;
     }
 
+    public @NotNull CouchDbClientBuilder dbContext(@NotNull CouchDbContext dbContext) {
+        this.dbContext = dbContext;
+        return this;
+    }
+
     /**
      * Method to build new instance of {@link CouchDbClient} by the given setting.
      *
      * @return {@link CouchDbClient}
      */
     public @NotNull CouchDbClient build() {
+        Assert.notNull(dbContext, "CouchDbContext must be set to build client up");
         if (objectMapper == null) {
             objectMapper = new ObjectMapper();
         }
@@ -157,7 +164,8 @@ public class CouchDbClientBuilder {
                 ifNotNull(properties.getPassword(), "Password must be configured, (can not be null)"));
         HttpClient client = getHttpClient();
         return new CouchDbClient(client, host, context, uri, idGenerators, properties.getDefaultShards(),
-                properties.getDefaultReplicas(), properties.isDefaultPartitioned(), properties.getBulkMaxSize(), properties.getQueryStrategy(), objectMapper);
+                properties.getDefaultReplicas(), properties.isDefaultPartitioned(),
+                properties.getBulkMaxSize(), properties.getQueryStrategy(), objectMapper, dbContext);
     }
 
     /**

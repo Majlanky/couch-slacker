@@ -2,12 +2,13 @@ package com.groocraft.couchdb.slacker.repository;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.groocraft.couchdb.slacker.CouchDbClient;
+import com.groocraft.couchdb.slacker.DocumentDescriptor;
 import com.groocraft.couchdb.slacker.EntityMetadata;
-import com.groocraft.couchdb.slacker.TestDocument;
 import com.groocraft.couchdb.slacker.annotation.Index;
 import com.groocraft.couchdb.slacker.exception.CouchDbRuntimeException;
 import com.groocraft.couchdb.slacker.structure.DocumentFindRequest;
 import com.groocraft.couchdb.slacker.structure.FindResult;
+import com.groocraft.couchdb.slacker.test.integration.TestDocument;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.data.domain.PageRequest;
@@ -52,7 +53,7 @@ class CouchDbParsingQueryTest {
         Parameters<?, ?> parameters = mock(Parameters.class);
 
         when(queryMethod.getName()).thenReturn("findByValue");
-        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(TestDocument.class));
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(DocumentDescriptor.of(TestDocument.class)));
         when(client.find(captor.capture(), eq(TestDocument.class))).
                 thenReturn(FindResult.of(Collections.singletonList(new TestDocument()), Collections.singletonMap(1, ""))).
                 thenThrow(new IOException("error"));
@@ -99,7 +100,7 @@ class CouchDbParsingQueryTest {
         Parameters<?, ?> parameters = mock(Parameters.class);
 
         when(queryMethod.getName()).thenReturn("findByValue");
-        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(TestDocument.class));
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(DocumentDescriptor.of(TestDocument.class)));
         when(client.find(captor.capture(), eq(TestDocument.class))).
                 thenReturn(FindResult.of(Collections.singletonList(new TestDocument()), Collections.singletonMap(1, ""))).
                 thenThrow(new IOException("error"));
@@ -145,7 +146,7 @@ class CouchDbParsingQueryTest {
         Parameters<?, ?> parameters = mock(Parameters.class);
 
         when(queryMethod.getName()).thenReturn("countByValue");
-        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(TestDocument.class));
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(DocumentDescriptor.of(TestDocument.class)));
         when(client.find(captor.capture(), eq(TestDocument.class))).
                 thenReturn(FindResult.of(Collections.singletonList(new TestDocument()), Collections.singletonMap(1, ""))).
                 thenThrow(new IOException("error"));
@@ -186,7 +187,7 @@ class CouchDbParsingQueryTest {
         Parameters<?, ?> parameters = mock(Parameters.class);
 
         when(queryMethod.getName()).thenReturn("deleteByValue");
-        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(TestDocument.class));
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(DocumentDescriptor.of(TestDocument.class)));
         when(client.find(captor.capture(), eq(TestDocument.class))).
                 thenReturn(FindResult.of(Collections.singletonList(new TestDocument()), Collections.singletonMap(1, ""))).
                 thenThrow(new IOException("error"));
@@ -227,7 +228,7 @@ class CouchDbParsingQueryTest {
         Parameters<?, ?> parameters = mock(Parameters.class);
 
         when(queryMethod.getName()).thenReturn("existsByValue");
-        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(TestDocument.class));
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(DocumentDescriptor.of(TestDocument.class)));
         when(client.find(captor.capture(), eq(TestDocument.class))).
                 thenReturn(FindResult.of(Collections.singletonList(new TestDocument()), Collections.singletonMap(1, ""))).
                 thenThrow(new IOException("error"));
@@ -270,7 +271,7 @@ class CouchDbParsingQueryTest {
         Index index = mock(Index.class);
 
         when(queryMethod.getName()).thenReturn("findByValue");
-        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(TestDocument.class));
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(DocumentDescriptor.of(TestDocument.class)));
         when(client.find(captor.capture(), eq(TestDocument.class))).
                 thenReturn(FindResult.of(Collections.singletonList(new TestDocument()), Collections.singletonMap(1, ""))).
                 thenThrow(new IOException("error"));
@@ -318,7 +319,7 @@ class CouchDbParsingQueryTest {
         Parameters<?, ?> parameters = mock(Parameters.class);
 
         when(queryMethod.getName()).thenReturn("findByValue");
-        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(TestDocument.class));
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(DocumentDescriptor.of(TestDocument.class)));
         when(client.find(captor.capture(), eq(TestDocument.class))).
                 thenReturn(FindResult.of(Collections.singletonList(new TestDocument()), Collections.singletonMap(1, ""))).
                 thenThrow(new IOException("error"));
@@ -364,7 +365,7 @@ class CouchDbParsingQueryTest {
         Parameters<?, ?> parameters = mock(Parameters.class);
 
         when(queryMethod.getName()).thenReturn("findByAddressStreet");
-        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(TestDocument.class));
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(DocumentDescriptor.of(TestDocument.class)));
         when(client.find(captor.capture(), eq(TestDocument.class))).
                 thenReturn(FindResult.of(Collections.singletonList(new TestDocument()), Collections.singletonMap(1, ""))).
                 thenThrow(new IOException("error"));
