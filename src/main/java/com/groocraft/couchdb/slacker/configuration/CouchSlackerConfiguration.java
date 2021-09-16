@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.util.Assert;
 
 import java.util.List;
@@ -43,11 +44,10 @@ public class CouchSlackerConfiguration {
      * @param dbContext    must not be {@literal null}
      * @return {@link CouchDbClient} with the given properties
      */
-    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Bean(destroyMethod = "close")
     public CouchDbClient dbClient(@NotNull CouchDbProperties properties,
                                   @Nullable @Autowired(required = false) List<IdGenerator<?>> idGenerators,
-                                  @NotNull CouchDbContext dbContext) {
+                                  @NotNull @Lazy CouchDbContext dbContext) {
         Assert.notNull(properties, "Properties must not be null.");
         return CouchDbClient.builder().properties(properties).idGenerators(idGenerators).dbContext(dbContext).build();
     }

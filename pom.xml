@@ -5,7 +5,7 @@
 
     <groupId>com.groocraft</groupId>
     <artifactId>couch-slacker</artifactId>
-    <version>2.3.0</version>
+    <version>2.3.1</version>
     <name>Couch Slacker</name>
     <description>Connector and Spring Data implementation for CouchDB</description>
     <url>https://github.com/majlanky/couch-slacker/tree/master</url>
@@ -31,7 +31,7 @@
         <connection>scm:git:git://github.com/majlanky/couch-slacker.git</connection>
         <developerConnection>scm:git:ssh://github.com:majlanky/couch-slacker.git</developerConnection>
         <url>https://github.com/majlanky/couch-slacker/tree/master</url>
-        <tag>v2.3.0</tag>
+        <tag>v2.3.1</tag>
     </scm>
 
     <licenses>
