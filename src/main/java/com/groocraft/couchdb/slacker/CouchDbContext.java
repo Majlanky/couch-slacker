@@ -16,103 +16,47 @@
 
 package com.groocraft.couchdb.slacker;
 
-import com.groocraft.couchdb.slacker.annotation.Document;
 import com.groocraft.couchdb.slacker.configuration.CouchDbProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.boot.autoconfigure.domain.EntityScanPackages;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.util.Assert;
 
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 
 /**
- * Class which provides feature of database name context switching. There is {@link #DEFAULT} context in which entities are mapped by annotations. Other
- * contexts can be add by configuration ({@link CouchDbProperties#setMapping(Map)}), {@link #add(DocumentDescriptor)} or
- * {@link #add(String, DocumentDescriptor)}. If a context added during a runtime, schema must be prepared or created by
- * {@link com.groocraft.couchdb.slacker.repository.CouchDBSchemaProcessor#processSchema(List, SchemaOperation)}.
+ * Inteface which provides feature of database name context switching
  *
  * @author Majlanky
  * @see com.groocraft.couchdb.slacker.configuration.CouchDbProperties
  */
 @Slf4j
 @ThreadSafe
-public class CouchDbContext {
+public abstract class CouchDbContext {
 
     public static final String DEFAULT = "default";
 
-    private static final ThreadLocal<String> contextName = ThreadLocal.withInitial(() -> DEFAULT);
+    private static final ThreadLocal<String> contextName = ThreadLocal.withInitial(() -> CouchDbContext.DEFAULT);
     private final Map<String, Map<Class<?>, EntityMetadata>> entityMetadata = new HashMap<>();
+    private final CouchDbProperties couchDbProperties;
 
     /**
-     * @param properties         must not be {@literal null}
-     * @param context            must not be {@literal null}
-     * @param entityScanPackages can be {@literal null} when no {@link org.springframework.boot.autoconfigure.domain.EntityScan} used.
-     * @throws ClassNotFoundException in case configuration {@link CouchDbProperties#getMapping()} contains non-existing class
+     * @param couchDbProperties must not be {@literal null}
      */
-    public CouchDbContext(@NotNull CouchDbProperties properties,
-                          @NotNull ApplicationContext context,
-                          @Nullable @Autowired(required = false) EntityScanPackages entityScanPackages) throws ClassNotFoundException {
-        Assert.notNull(context, "Application context must not be null");
-        Assert.notNull(properties, "Properties must not be null");
-        ClassPathScanningCandidateComponentProvider provider = new ClassPathScanningCandidateComponentProvider(false);
-        provider.addIncludeFilter(new AnnotationTypeFilter(Document.class));
-        List<String> configurationPackages =
-                context.getBeansWithAnnotation(Configuration.class).values().stream().map(o -> o.getClass().getPackage().getName()).collect(Collectors.toList());
-        List<Class<?>> entityClasses = new LinkedList<>();
-        for (String pack : entityScanPackages == null ? configurationPackages : entityScanPackages.getPackageNames()) {
-            for (BeanDefinition definition : provider.findCandidateComponents(pack)) {
-                entityClasses.add(Class.forName(definition.getBeanClassName()));
-            }
-        }
-
-        register(entityClasses, properties);
+    protected CouchDbContext(@NotNull CouchDbProperties couchDbProperties) {
+        Assert.notNull(couchDbProperties, "CouchDbProperties must not be null");
+        this.couchDbProperties = couchDbProperties;
+        entityMetadata.put(DEFAULT, new HashMap<>());
+        couchDbProperties.getMapping().keySet().forEach(s -> entityMetadata.put(s, new HashMap<>()));
     }
 
     /**
-     * Method created {@link EntityMetadata} for all given {@code entityClass} and link it to the {@link #DEFAULT} context. From the given {@code properties}
-     * the {@link CouchDbProperties#getMapping()} if not empty and creates configured context with the given configuration.
-     *
-     * @param entityClasses all known classes annotated by {@link Document}. Must not be {@literal null}
-     * @param properties    must not be {@literal null}
+     * @return {@link CouchDbProperties}
      */
-    private void register(@NotNull List<Class<?>> entityClasses, @NotNull CouchDbProperties properties) {
-        if (entityClasses.isEmpty()) {
-            log.warn("No entities mapping found");
-        } else {
-            entityClasses.forEach(c -> log.info("Found entity mapping class {}", c.getName()));
-        }
-
-        Map<String, Class<?>> mapped = new HashMap<>();
-        for (Class<?> clazz : entityClasses) {
-            log.info("Registering class {} into {} context", clazz.getName(), DEFAULT);
-            mapped.put(clazz.getName(), clazz);
-            add(DocumentDescriptor.of(clazz));
-        }
-
-        log.info("{} database contexts found in configuration", properties.getMapping().size());
-
-        for (String name : properties.getMapping().keySet()) {
-            log.info("Registering entity mapping for context {}", name);
-            for (CouchDbProperties.Document d : properties.getMapping().get(name)) {
-                Class<?> entityClass = mapped.get(d.getEntityClass());
-                Assert.notNull(entityClass, "Configured class " + d.getEntityClass() + " does not exist or is not annotated by Document");
-                add(name, DocumentDescriptor.of(entityClass, d.getDatabase()));
-                log.info("Class {} will be stored in {} database in {} context", d.getEntityClass(), d.getDatabase(), name);
-            }
-        }
+    protected @NotNull CouchDbProperties getCouchDbProperties() {
+        return couchDbProperties;
     }
 
     /**
@@ -125,13 +69,13 @@ public class CouchDbContext {
     }
 
     /**
-     * Method adds the given description to the {@link #DEFAULT} context.
+     * Method adds the given description to the {@link CouchDbContext#DEFAULT} context.
      *
-     * @param descriptor of entity to be added to {@link #DEFAULT} context.
+     * @param descriptor of entity to be added to {@link CouchDbContext#DEFAULT} context.
      * @return created {@link EntityMetadata} instance of the given {@code descriptor}
      */
-    public @NotNull EntityMetadata add(@NotNull DocumentDescriptor descriptor) {
-        return add(DEFAULT, descriptor);
+    protected @NotNull EntityMetadata add(@NotNull DocumentDescriptor descriptor) {
+        return add(CouchDbContext.DEFAULT, descriptor);
     }
 
     /**
@@ -141,7 +85,7 @@ public class CouchDbContext {
      * @param name       of context to what description is added to
      * @return created {@link EntityMetadata} instance of the given {@code descriptor}
      */
-    public EntityMetadata add(String name, DocumentDescriptor descriptor) {
+    protected EntityMetadata add(String name, DocumentDescriptor descriptor) {
         EntityMetadata metadata = new EntityMetadata(descriptor);
         entityMetadata.computeIfAbsent(name, k -> new HashMap<>()).put(descriptor.getEntityClass(), metadata);
         return metadata;
@@ -162,11 +106,21 @@ public class CouchDbContext {
      * Methods returns {@link EntityMetadata} for the given class.
      *
      * @param clazz of wanted entity. Must not be {@literal null}
-     * @return non-null {@link EntityMetadata} for the given class. If the entity is not extended in the actual context, result from {@link #DEFAULT} context
-     * is used.
+     * @return non-null {@link EntityMetadata} for the given class. If the entity is not extended in the actual context, result from
+     * {@link CouchDbContext#DEFAULT} context is used.
      */
     public @NotNull EntityMetadata get(@NotNull Class<?> clazz) {
         return entityMetadata.get(contextName.get()).get(clazz);
+    }
+
+    /**
+     * Tests if the context contains {@link EntityMetadata} for the given class.
+     *
+     * @param clazz must not be {@literal null}
+     * @return true if the context contains metadata for the given class, false otherwise.
+     */
+    public boolean contains(@NotNull Class<?> clazz) {
+        return entityMetadata.get(contextName.get()).containsKey(clazz);
     }
 
     /**

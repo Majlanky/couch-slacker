@@ -16,8 +16,8 @@
 
 package com.groocraft.couchdb.slacker.annotation;
 
-import com.groocraft.couchdb.slacker.CouchDbContext;
 import com.groocraft.couchdb.slacker.CouchDbInitializer;
+import com.groocraft.couchdb.slacker.SpringCouchDbContext;
 import com.groocraft.couchdb.slacker.repository.CouchDBSchemaProcessor;
 import com.groocraft.couchdb.slacker.repository.CouchDbRepositoriesRegistrar;
 import com.groocraft.couchdb.slacker.repository.CouchDbRepositoryFactoryBean;
@@ -38,7 +38,7 @@ import java.lang.annotation.Target;
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-@Import({CouchDbRepositoriesRegistrar.class, CouchDbInitializer.class, CouchDbContext.class, CouchDBSchemaProcessor.class})
+@Import({CouchDbRepositoriesRegistrar.class, CouchDbInitializer.class, SpringCouchDbContext.class, CouchDBSchemaProcessor.class})
 @SuppressWarnings("unsused")
 public @interface EnableCouchDbRepositories {
 

@@ -17,8 +17,8 @@
 package com.groocraft.couchdb.slacker.configuration;
 
 import com.groocraft.couchdb.slacker.CouchDbClient;
-import com.groocraft.couchdb.slacker.CouchDbContext;
 import com.groocraft.couchdb.slacker.IdGenerator;
+import com.groocraft.couchdb.slacker.SpringCouchDbContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,7 +47,7 @@ public class CouchSlackerConfiguration {
     @Bean(destroyMethod = "close")
     public CouchDbClient dbClient(@NotNull CouchDbProperties properties,
                                   @Nullable @Autowired(required = false) List<IdGenerator<?>> idGenerators,
-                                  @NotNull @Lazy CouchDbContext dbContext) {
+                                  @NotNull @Lazy SpringCouchDbContext dbContext) {
         Assert.notNull(properties, "Properties must not be null.");
         return CouchDbClient.builder().properties(properties).idGenerators(idGenerators).dbContext(dbContext).build();
     }

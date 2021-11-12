@@ -152,7 +152,10 @@ public class CouchDbClientBuilder {
      * @return {@link CouchDbClient}
      */
     public @NotNull CouchDbClient build() {
-        Assert.notNull(dbContext, "CouchDbContext must be set to build client up");
+        Assert.notNull(properties, "Properties must be set to build client up");
+        if (dbContext == null) {
+            dbContext = new SimpleCouchDbContext(properties);
+        }
         if (objectMapper == null) {
             objectMapper = new ObjectMapper();
         }

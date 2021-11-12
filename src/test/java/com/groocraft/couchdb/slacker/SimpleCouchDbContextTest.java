@@ -31,11 +31,10 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class CouchDbContextTest {
+class SimpleCouchDbContextTest {
 
     @Mock
     CouchDbProperties properties;
@@ -49,25 +48,20 @@ class CouchDbContextTest {
     CouchDbContext context;
 
     @Test
-    void testDefault() throws ClassNotFoundException {
-        when(properties.getMapping()).thenReturn(Collections.emptyMap());
-        Map<String, Object> beans = new HashMap<>();
-        beans.put("testDocumentBean", new TestDocument());
-        when(applicationContext.getBeansWithAnnotation(any())).thenReturn(beans);
-        CouchDbContext context = new CouchDbContext(properties, applicationContext, null);
+    void testDefault() {
+        CouchDbContext context = new SimpleCouchDbContext(properties);
         assertEquals("test", context.get(TestDocument.class).getDatabaseName(),
                 "In the default context without any overlaying configuration values from Document annotation must be returned");
     }
 
     @Test
-    void testSwitching() throws ClassNotFoundException {
+    void testSwitching() {
         Map<String, List<CouchDbProperties.Document>> mapping = new HashMap<>();
         mapping.put("test", Collections.singletonList(new CouchDbProperties.Document(TestDocument.class.getName(), "anotherTest")));
         when(properties.getMapping()).thenReturn(mapping);
-        Map<String, Object> beans = new HashMap<>();
-        beans.put("testDocumentBean", new TestDocument());
-        when(applicationContext.getBeansWithAnnotation(any())).thenReturn(beans);
-        CouchDbContext context = new CouchDbContext(properties, applicationContext, null);
+
+        CouchDbContext context = new SimpleCouchDbContext(properties);
+
         assertEquals("test", context.get(TestDocument.class).getDatabaseName(),
                 "In the default context without any overlaying configuration values from Document annotation must be returned");
         context.set("test");
@@ -77,27 +71,25 @@ class CouchDbContextTest {
     }
 
     @Test
-    void testDefaultOverriding() throws ClassNotFoundException {
+    void testDefaultOverriding() {
         Map<String, List<CouchDbProperties.Document>> mapping = new HashMap<>();
         mapping.put("default", Collections.singletonList(new CouchDbProperties.Document(TestDocument.class.getName(), "anotherTest")));
         when(properties.getMapping()).thenReturn(mapping);
         Map<String, Object> beans = new HashMap<>();
-        beans.put("testDocumentBean", new TestDocument());
-        when(applicationContext.getBeansWithAnnotation(any())).thenReturn(beans);
-        CouchDbContext context = new CouchDbContext(properties, applicationContext, null);
+
+        CouchDbContext context = new SimpleCouchDbContext(properties);
         assertEquals("anotherTest", context.get(TestDocument.class).getDatabaseName(),
                 "If the default context is override by overlaying configuration, the configured value must be returned");
     }
 
     @Test
-    void testDoInSwitching() throws ClassNotFoundException {
+    void testDoInSwitching() {
         Map<String, List<CouchDbProperties.Document>> mapping = new HashMap<>();
         mapping.put("test", Collections.singletonList(new CouchDbProperties.Document(TestDocument.class.getName(), "anotherTest")));
         when(properties.getMapping()).thenReturn(mapping);
-        Map<String, Object> beans = new HashMap<>();
-        beans.put("testDocumentBean", new TestDocument());
-        when(applicationContext.getBeansWithAnnotation(any())).thenReturn(beans);
-        CouchDbContext context = new CouchDbContext(properties, applicationContext, null);
+
+        CouchDbContext context = new SimpleCouchDbContext(properties);
+
         assertEquals("test", context.get(TestDocument.class).getDatabaseName(),
                 "In the default context without any overlaying configuration values from Document annotation must be returned");
         AtomicReference<String> contextualDbName = new AtomicReference<>();
