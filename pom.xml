@@ -62,7 +62,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>8</java.version>
         <jackson.version>2.12.1</jackson.version>
-        <spring.data.commons.version>2.3.6.RELEASE</spring.data.commons.version>
+        <spring.data.commons.version>2.6.2</spring.data.commons.version>
         <mockito.version>3.2.4</mockito.version>
         <jupiter.version>5.7.0</jupiter.version>
         <spring.version>5.2.12.RELEASE</spring.version>
