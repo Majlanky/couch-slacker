@@ -45,8 +45,8 @@ This README contains only basic information about project. For more or detailed 
 First of all we have to add Maven dependency
 ```xml
 <dependency>
-   <groupId>com.groocraft.dev-ops</groupId>
-   <artifactId>couch-slacker</artifactId>
+    <groupId>com.groocraft</groupId>
+    <artifactId>couch-slacker</artifactId>
   <version>${version}</version>
 </dependency>
 ```
