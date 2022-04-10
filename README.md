@@ -4,11 +4,12 @@
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=com.groocraft%3Acouch-slacker&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=com.groocraft%3Acouch-slacker)
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=com.groocraft%3Acouch-slacker&metric=security_rating)](https://sonarcloud.io/dashboard?id=com.groocraft%3Acouch-slacker)
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=com.groocraft%3Acouch-slacker&metric=reliability_rating)](https://sonarcloud.io/dashboard?id=com.groocraft%3Acouch-slacker)
+[![Known Vulnerabilities](https://snyk.io/test/github/majlanky/couch-slacker/badge.svg)](https://snyk.io/test/github/majlanky/couch-slacker)  
 ![](https://img.shields.io/badge/compatibility-JDK8%20and%20higher-purple)
 
-Couch Slacker project started in 2020. Basic idea and motivation was to create [Spring Data](https://spring.io/projects/spring-data) support for 
+Couch Slacker project started in 2020. Basic idea and motivation was to create [Spring Data](https://spring.io/projects/spring-data) support for
 [CouchDB](https://couchdb.apache.org/) which is awesome and light document database. We felt in love with it because of easy clustering, nice API and good
- documentation. [Spring Data](https://spring.io/projects/spring-data) is an awesome tool how to make development faster. So we decided to join it together.
+documentation. [Spring Data](https://spring.io/projects/spring-data) is an awesome tool how to make development faster. So we decided to join it together.
 
 #### Why to use Couch Slacker?
 Differently from other projects, Couch Slacker not only Spring Data like library. It is true [Spring Data](https://spring.io/projects/spring-data) 
