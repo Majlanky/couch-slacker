@@ -5,12 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.groocraft.couchdb.slacker.structure.AllDocumentResponse;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class AllDocsIdDeserializerTest {
 
     @Test
-    public void test() throws JsonProcessingException {
+    void test() throws JsonProcessingException {
         String json = "{\"total_rows\":2,\"offset\":0,\"rows\":[{\"id\":\"a\",\"key\":\"a\",\"value\":{\"rev\":\"revA\"}},{\"id\":\"b\",\"key\":\"b\",\"value\":{\"rev\":\"revB\"}}]}";
         ObjectMapper mapper = new ObjectMapper();
         AllDocumentResponse response = mapper.readValue(json, AllDocumentResponse.class);

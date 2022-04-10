@@ -14,7 +14,7 @@ class CouchDbEntityInformationTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void testFind(){
+    void testFind() {
         Reader<String> idReader = Mockito.mock(Reader.class);
         Reader<String> revisionReader = Mockito.mock(Reader.class);
         EntityMetadata metadata = Mockito.mock(EntityMetadata.class);

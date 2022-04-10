@@ -49,7 +49,7 @@ class ThrowingInterceptorTest {
 
     @ParameterizedTest
     @ValueSource(ints = {HttpStatus.SC_OK, HttpStatus.SC_CREATED, HttpStatus.SC_ACCEPTED, HttpStatus.SC_NOT_MODIFIED})
-    public void testOkResponses(int status) {
+    void testOkResponses(int status) {
         assertDoesNotThrow(() -> {
             when(response.getStatusLine()).thenReturn(statusLine);
             when(statusLine.getStatusCode()).thenReturn(status);
@@ -59,7 +59,7 @@ class ThrowingInterceptorTest {
 
     @ParameterizedTest
     @MethodSource("getNonOkHttpStatuses")
-    public void testNotOkResponse(int status) {
+    void testNotOkResponse(int status) {
         assertThrows(CouchDbException.class, () -> {
             when(response.getStatusLine()).thenReturn(statusLine);
             when(statusLine.getStatusCode()).thenReturn(status);

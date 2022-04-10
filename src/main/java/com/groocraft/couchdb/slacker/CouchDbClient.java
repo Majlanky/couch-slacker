@@ -142,6 +142,7 @@ public class CouchDbClient {
      * @param objectMapper       object mapper used for all json serializations
      * @param dbContext must not be {@literal null}
      */
+    @SuppressWarnings("squid:S107")
     CouchDbClient(@NotNull HttpClient httpClient,
                   @NotNull HttpHost httpHost,
                   @NotNull HttpContext httpContext,
@@ -449,7 +450,8 @@ public class CouchDbClient {
                 LazyLog.of(() -> StreamSupport.stream(ids.spliterator(), false).count()),
                 getDatabaseName(clazz),
                 LazyLog.of(() -> String.join(", ", ids)));
-        BulkGetResponse<EntityT> response = post(getURI(baseURI, getDatabaseName(clazz), "_bulk_get"), localMapper.writeValueAsString(new BulkGetRequest(ids)),
+        BulkGetResponse<EntityT> response = post(getURI(baseURI, getDatabaseName(clazz), "_bulk_get"),
+                localMapper.writeValueAsString(new BulkGetRequest(ids)),
                 r -> localMapper.readValue(r.getEntity().getContent(), localMapper.getTypeFactory().constructParametricType(BulkGetResponse.class, clazz)));
         log.info("Bulk read of {} ids result contains {} documents", LazyLog.of(() -> StreamSupport.stream(ids.spliterator(), false).count()),
                 response.getDocs().size());

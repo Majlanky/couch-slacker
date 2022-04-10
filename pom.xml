@@ -61,21 +61,23 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>8</java.version>
-        <jackson.version>2.12.1</jackson.version>
-        <spring.data.commons.version>2.3.6.RELEASE</spring.data.commons.version>
+        <jackson.version>2.13.2</jackson.version>
+        <jackson.databind.version>2.13.2.2</jackson.databind.version>
+        <spring.data.commons.version>2.6.3</spring.data.commons.version>
         <mockito.version>3.2.4</mockito.version>
-        <jupiter.version>5.7.0</jupiter.version>
-        <spring.version>5.2.12.RELEASE</spring.version>
-        <spring.boot.version>2.3.8.RELEASE</spring.boot.version>
-        <lombok.version>1.18.16</lombok.version>
+        <jupiter.version>5.8.2</jupiter.version>
+        <spring.version>5.3.18</spring.version>
+        <spring.boot.version>2.6.6</spring.boot.version>
+        <lombok.version>1.18.22</lombok.version>
         <http.client.version>4.5.13</http.client.version>
-        <common.io.version>2.7</common.io.version>
-        <logback.version>1.2.3</logback.version>
-        <snake.yaml.version>1.27</snake.yaml.version>
-        <jmh.version>1.21</jmh.version>
-        <find.bug.version>3.0.1u2</find.bug.version>
-        <jetbrain.annoration.version>19.0.0</jetbrain.annoration.version>
-        <hibernate.validator.version>6.1.6.Final</hibernate.validator.version>
+        <commons.codec.version>1.15</commons.codec.version> <!--Can be removed when the one contained in http client is safe-->
+        <common.io.version>2.11.0</common.io.version>
+        <logback.version>1.2.11</logback.version>
+        <snake.yaml.version>1.30</snake.yaml.version>
+        <jmh.version>1.35</jmh.version>
+        <find.bug.version>3.0.1</find.bug.version>
+        <jetbrain.annotation.version>23.0.0</jetbrain.annotation.version>
+        <hibernate.validator.version>6.2.3.Final</hibernate.validator.version>
     </properties>
 
     <dependencies>
@@ -115,11 +117,23 @@
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
             <version>${http.client.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-codec</groupId>
+                    <artifactId>commons-codec</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <version>${commons.codec.version}</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>${lombok.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -134,7 +148,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>${jackson.version}</version>
+            <version>${jackson.databind.version}</version>
         </dependency>
         <dependency>
             <groupId>org.hibernate.validator</groupId>
@@ -229,7 +243,7 @@
         <dependency>
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
-            <version>${jetbrain.annoration.version}</version>
+            <version>${jetbrain.annotation.version}</version>
         </dependency>
 
     </dependencies>

@@ -168,6 +168,15 @@ public class SimpleCouchDbRepository<EntityT> implements PagingAndSortingReposit
         }
     }
 
+    @Override
+    public void deleteAllById(Iterable<? extends String> ids) {
+        try {
+            client.deleteAll(client.readAll((Iterable<String>) ids, clazz), clazz);
+        } catch (IOException e) {
+            throw new CouchDbRuntimeException("Unable to delete all by id", e);
+        }
+    }
+
     /**
      * {@inheritDoc}
      */

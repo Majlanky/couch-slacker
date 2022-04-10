@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class BulkGetSerializerTest {
 
     @Test
-    public void test() throws JsonProcessingException {
+    void test() throws JsonProcessingException {
         EntityMetadata metadata = new EntityMetadata(DocumentDescriptor.of(TestDocument.class));
         ObjectMapper localMapper = new ObjectMapper();
         SimpleModule module = new SimpleModule();

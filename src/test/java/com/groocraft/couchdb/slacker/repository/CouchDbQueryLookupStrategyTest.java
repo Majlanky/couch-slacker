@@ -9,6 +9,7 @@ import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.util.TypeInformation;
 
 import java.lang.reflect.Method;
 import java.util.Collections;
@@ -34,9 +35,13 @@ class CouchDbQueryLookupStrategyTest {
         CouchDbProperties properties = mock(CouchDbProperties.class);
         when(properties.getBulkMaxSize()).thenReturn(100);
         CouchDbQueryLookupStrategy strategy = new CouchDbQueryLookupStrategy(client, properties);
+        TypeInformation<?> typeInformation = mock(TypeInformation.class);
 
+        doReturn(typeInformation).when(repositoryMetadata).getReturnType(method);
+        doReturn(TestDocument.class).when(typeInformation).getType();
         doReturn(TestDocument.class).when(repositoryMetadata).getDomainType();
         doReturn(TestDocument.class).when(repositoryMetadata).getReturnedDomainClass(method);
+
         when(namedQueries.hasQuery(any())).thenReturn(false);
 
         assertEquals(CouchDbParsingQuery.class, strategy.resolveQuery(method, repositoryMetadata, projectionFactory, namedQueries).getClass(), "Method " +
@@ -55,7 +60,10 @@ class CouchDbQueryLookupStrategyTest {
         CouchDbClient client = mock(CouchDbClient.class);
         CouchDbProperties properties = mock(CouchDbProperties.class);
         CouchDbQueryLookupStrategy strategy = new CouchDbQueryLookupStrategy(client, properties);
+        TypeInformation<?> typeInformation = mock(TypeInformation.class);
 
+        doReturn(typeInformation).when(repositoryMetadata).getReturnType(method);
+        doReturn(TestDocument.class).when(typeInformation).getType();
         doReturn(TestDocument.class).when(repositoryMetadata).getDomainType();
         doReturn(TestDocument.class).when(repositoryMetadata).getReturnedDomainClass(method);
         when(namedQueries.hasQuery(any())).thenReturn(false);

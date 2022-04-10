@@ -1,7 +1,9 @@
 ---
 
 spring:
-  profiles: test-view-strategy
+  config:
+    activate:
+      on-profile: test-view-strategy
 couchdb:
   client:
     url: http://localhost:10000/
@@ -16,7 +18,9 @@ couchdb:
 ---
 
 spring:
-  profiles: test-mango-strategy
+  config:
+    activate:
+      on-profile: test-mango-strategy
 couchdb:
   client:
     url: http://localhost:10000/
@@ -31,7 +35,9 @@ couchdb:
 ---
 
 spring:
-  profiles: schema-test
+  config:
+    activate:
+      on-profile: schema-test
 couchdb:
   client:
     url: http://localhost:10000/
@@ -45,7 +51,9 @@ couchdb:
 ---
 
 spring:
-  profiles: viewed-test
+  config:
+    activate:
+      on-profile: viewed-test
 couchdb:
   client:
     url: http://localhost:10000/
@@ -59,7 +67,9 @@ couchdb:
 ---
 
 spring:
-  profiles: test-cluster-initialization
+  config:
+    activate:
+      on-profile: test-cluster-initialization
 couchdb:
   client:
     url: http://localhost:11000/
@@ -80,7 +90,9 @@ couchdb:
 ---
 
 spring:
-  profiles: mapping-test
+  config:
+    activate:
+      on-profile: mapping-test
 couchdb:
   client:
     url: http://localhost:10000/

@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.only;
@@ -147,6 +148,22 @@ class SimpleCouchDbRepositoryTest {
         repository.deleteById("unique");
         verify(client).deleteById("unique", TestDocument.class);
         CouchDbRuntimeException ex = assertThrows(CouchDbRuntimeException.class, () -> repository.deleteById("unique"), "All exceptions thrown by client must be reported");
+        assertEquals("error", ex.getCause().getMessage(), "Repository must pass original cause of exceptional state");
+    }
+
+    @Test
+    void testDeleteAllById() throws IOException {
+        List<String> ids = Arrays.asList("id1", "id2", "id3");
+        TestDocument document = new TestDocument();
+        when(client.readAll(anyList(), any(Class.class)))
+                .thenReturn(Collections.singletonList(document))
+                .thenThrow(new IOException("error"));
+        when(client.deleteAll(anyList(), any(Class.class))).thenAnswer(i -> i.getArgument(0));
+        repository.deleteAllById(ids);
+        verify(client).readAll(ids, TestDocument.class);
+        verify(client).deleteAll(Collections.singletonList(document), TestDocument.class);
+        CouchDbRuntimeException ex = assertThrows(CouchDbRuntimeException.class, () -> repository.deleteAllById(ids),
+                "All exceptions thrown by client must be reported");
         assertEquals("error", ex.getCause().getMessage(), "Repository must pass original cause of exceptional state");
     }
 

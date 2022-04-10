@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class BulkGetDeserializerTest {
 
     @Test
-    public void test() throws JsonProcessingException {
+    void test() throws JsonProcessingException {
         String json = "{\"results\": [{\"id\": \"a\", \"docs\": [{\"ok\":{\"_id\":\"a\",\"_rev\":\"revA\",\"value\":\"valueA\",\"value2\":\"value2a\"}}]},{\"id\": \"b\", \"docs\": [{\"ok\":{\"_id\":\"b\",\"_rev\":\"revB\",\"value\":\"valueB\",\"value2\":\"value2b\"}}]}]}";
         ObjectMapper mapper = new ObjectMapper();
         SimpleModule module = new SimpleModule();

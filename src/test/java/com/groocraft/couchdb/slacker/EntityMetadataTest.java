@@ -114,19 +114,21 @@ class EntityMetadataTest {
 
     @Test()
     void testMissingId() {
-        assertThrows(IllegalStateException.class, () -> new EntityMetadata(DocumentDescriptor.of(NoIdTestDocument.class)),
+        DocumentDescriptor descriptor = DocumentDescriptor.of(NoIdTestDocument.class);
+        assertThrows(IllegalStateException.class, () -> new EntityMetadata(descriptor),
                 "Absence of _id attribute must be reported by exception");
     }
 
     @Test()
     void testMissingRevision() {
-        assertThrows(IllegalStateException.class, () -> new EntityMetadata(DocumentDescriptor.of(NoRevisionTestDocument.class)),
+        DocumentDescriptor descriptor = DocumentDescriptor.of(NoRevisionTestDocument.class);
+        assertThrows(IllegalStateException.class, () -> new EntityMetadata(descriptor),
                 "Absence of _rev attribute must be reported by exception");
     }
 
     @Test
     void testMissingDatabase() {
-        assertThrows(IllegalArgumentException.class, () -> new EntityMetadata(DocumentDescriptor.of(NoDocumentTestDocument.class)));
+        assertThrows(IllegalArgumentException.class, () -> DocumentDescriptor.of(NoDocumentTestDocument.class));
     }
 
     @Test
