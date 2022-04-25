@@ -24,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
+import java.util.StringJoiner;
 
 /**
  * Ancestor of all CouchDB document pojo classes. There is not need to use this class as an ancestor for every pojo class, but it is more easier than define
@@ -36,11 +37,11 @@ public class DocumentBase {
 
     @JsonProperty("_id")
     @JsonInclude(Include.NON_NULL)
-    private String id;
+    protected String id;
 
     @JsonProperty("_rev")
     @JsonInclude(Include.NON_NULL)
-    private String revision;
+    protected String revision;
 
     public DocumentBase() {
     }
@@ -82,5 +83,13 @@ public class DocumentBase {
     @Override
     public int hashCode() {
         return Objects.hash(id, revision);
+    }
+
+    @Override
+    public String toString() {
+        return new StringJoiner(", ", DocumentBase.class.getSimpleName() + "[", "]")
+                .add("id='" + id + "'")
+                .add("revision='" + revision + "'")
+                .toString();
     }
 }
