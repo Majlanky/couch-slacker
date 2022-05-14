@@ -79,7 +79,7 @@
         <java.version>8</java.version>
         <jackson.version>2.13.2</jackson.version>
         <jackson.databind.version>2.13.2.2</jackson.databind.version>
-        <spring.data.commons.version>2.6.3</spring.data.commons.version>
+        <spring.data.commons.version>2.7.0</spring.data.commons.version>
         <mockito.version>3.2.4</mockito.version>
         <jupiter.version>5.8.2</jupiter.version>
         <spring.version>5.3.18</spring.version>
