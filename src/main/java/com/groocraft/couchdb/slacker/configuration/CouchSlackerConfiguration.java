@@ -43,6 +43,7 @@ public class CouchSlackerConfiguration {
      * @param properties   of Couch Slacker. Must not be {@literal null}
      * @param idGenerators all configured beans of {@link IdGenerator} class. Can be {@literal null}
      * @param dbContext    must not be {@literal null}
+     * @param objectMapper used for (de)serialization of all communication. Can be {@literal null}
      * @return {@link CouchDbClient} with the given properties
      */
     @Bean(destroyMethod = "close")

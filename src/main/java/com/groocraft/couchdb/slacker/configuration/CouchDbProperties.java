@@ -19,15 +19,15 @@ package com.groocraft.couchdb.slacker.configuration;
 import com.groocraft.couchdb.slacker.CouchDbInitializationStrategy;
 import com.groocraft.couchdb.slacker.QueryStrategy;
 import com.groocraft.couchdb.slacker.SchemaOperation;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotEmpty;
 import org.hibernate.validator.constraints.URL;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.validation.annotation.Validated;
 
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotEmpty;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
