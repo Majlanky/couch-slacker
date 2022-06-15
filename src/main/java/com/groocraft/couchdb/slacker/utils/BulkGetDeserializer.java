@@ -34,13 +34,17 @@ import java.util.List;
 public class BulkGetDeserializer<EntityT> extends JsonDeserializer<List<EntityT>> {
 
     private final Class<EntityT> clazz;
+    private final ObjectMapper mapper;
 
     /**
-     * @param clazz of entities in bulk get. Must not be {@literal null}
+     * @param clazz  of entities in bulk get. Must not be {@literal null}
+     * @param mapper must not be {@literal null}
      */
-    public BulkGetDeserializer(@NotNull Class<EntityT> clazz) {
+    public BulkGetDeserializer(@NotNull Class<EntityT> clazz, @NotNull ObjectMapper mapper) {
         Assert.notNull(clazz, "Clazz must not be null");
+        Assert.notNull(mapper, "Object mapper must not be null");
         this.clazz = clazz;
+        this.mapper = mapper;
     }
 
     /**
@@ -49,7 +53,6 @@ public class BulkGetDeserializer<EntityT> extends JsonDeserializer<List<EntityT>
     @Override
     public List<EntityT> deserialize(JsonParser p, DeserializationContext ctx) throws IOException {
         List<EntityT> data = new LinkedList<>();
-        ObjectMapper mapper = new ObjectMapper();
         JsonNode root = p.getCodec().readTree(p);
         for (int i = 0; i < root.size(); i++) {
             JsonNode object = root.get(i).get("docs").get(0).get("ok");

@@ -16,6 +16,7 @@
 
 package com.groocraft.couchdb.slacker.configuration;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.groocraft.couchdb.slacker.CouchDbClient;
 import com.groocraft.couchdb.slacker.IdGenerator;
 import com.groocraft.couchdb.slacker.SpringCouchDbContext;
@@ -47,9 +48,10 @@ public class CouchSlackerConfiguration {
     @Bean(destroyMethod = "close")
     public CouchDbClient dbClient(@NotNull CouchDbProperties properties,
                                   @Nullable @Autowired(required = false) List<IdGenerator<?>> idGenerators,
-                                  @NotNull @Lazy SpringCouchDbContext dbContext) {
+                                  @NotNull @Lazy SpringCouchDbContext dbContext,
+                                  @Nullable @Autowired(required = false) ObjectMapper objectMapper) {
         Assert.notNull(properties, "Properties must not be null.");
-        return CouchDbClient.builder().properties(properties).idGenerators(idGenerators).dbContext(dbContext).build();
+        return CouchDbClient.builder().properties(properties).idGenerators(idGenerators).dbContext(dbContext).objectMapper(objectMapper).build();
     }
 
 }

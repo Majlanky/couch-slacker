@@ -24,7 +24,7 @@ import org.springframework.util.Assert;
 import java.io.IOException;
 
 /**
- * @param <EntityT> Type of entity which should be save with type
+ * @param <EntityT> Type of entity which should be saved with type
  * @author Majlanky
  */
 public class ViewedDocumentSerializer<EntityT> extends WrappingSerializer<EntityT> {

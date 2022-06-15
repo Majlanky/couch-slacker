@@ -64,7 +64,7 @@ public class CouchDbDirectQuery implements RepositoryQuery {
         this.client = client;
         this.queryMethod = queryMethod;
         this.entityClass = entityClass;
-        this.mapper = new ObjectMapper();
+        this.mapper = client.getMapperCopy();
         this.query = query;
     }
 

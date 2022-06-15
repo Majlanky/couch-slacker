@@ -29,8 +29,9 @@ import org.springframework.util.Assert;
 import java.io.IOException;
 
 /**
- * There is more places where application needs to extends the serialized data by one ore more field. This is parent for all {@link JsonSerializer}s with the
+ * There is more places where application needs to extend the serialized data by one or more field. This is parent for all {@link JsonSerializer}s with the
  * feature.
+ *
  * @param <EntityT> type of entity which is processed
  * @author Majlanky
  */

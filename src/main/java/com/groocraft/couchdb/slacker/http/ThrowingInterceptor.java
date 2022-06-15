@@ -37,6 +37,8 @@ import java.util.Map;
  */
 public class ThrowingInterceptor implements HttpResponseInterceptor {
 
+    private final ObjectMapper mapper = new ObjectMapper();
+
     /**
      * {@inheritDoc}
      */
@@ -54,7 +56,6 @@ public class ThrowingInterceptor implements HttpResponseInterceptor {
                 RequestLine requestLine = clientContext.getRequest().getRequestLine();
                 String reason = response.getStatusLine().getReasonPhrase();
                 if (response.getEntity() != null) {
-                    ObjectMapper mapper = new ObjectMapper();
                     Map<String, String> wholeBody = mapper.readValue(response.getEntity().getContent(), mapper.getTypeFactory().constructMapType(Map.class,
                             String.class, String.class));
                     reason = wholeBody.get("error") + " : " + wholeBody.get("reason");

@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.util.Assert;
 
 import java.io.IOException;
@@ -38,13 +39,17 @@ import java.util.List;
 public class FoundDocumentDeserializer<EntityT> extends JsonDeserializer<List<EntityT>> {
 
     private final Class<EntityT> clazz;
+    private final ObjectMapper mapper;
 
     /**
-     * @param clazz must not be {@literal null}
+     * @param clazz  must not be {@literal null}
+     * @param mapper must not be {@literal null}
      */
-    public FoundDocumentDeserializer(Class<EntityT> clazz) {
+    public FoundDocumentDeserializer(@NotNull Class<EntityT> clazz, @NotNull ObjectMapper mapper) {
         Assert.notNull(clazz, "Clazz must not be null");
+        Assert.notNull(mapper, "Object mapper must not be null");
         this.clazz = clazz;
+        this.mapper = mapper;
     }
 
     /**
@@ -53,6 +58,6 @@ public class FoundDocumentDeserializer<EntityT> extends JsonDeserializer<List<En
     @Override
     public List<EntityT> deserialize(JsonParser p, DeserializationContext ctx) throws IOException {
         JsonNode node = p.getCodec().readTree(p);
-        return new ObjectMapper().readValue(node.toString(), ctx.getTypeFactory().constructCollectionType(List.class, clazz));
+        return mapper.readValue(node.toString(), ctx.getTypeFactory().constructCollectionType(List.class, clazz));
     }
 }

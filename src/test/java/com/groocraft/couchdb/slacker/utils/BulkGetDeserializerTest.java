@@ -34,7 +34,7 @@ class BulkGetDeserializerTest {
         String json = "{\"results\": [{\"id\": \"a\", \"docs\": [{\"ok\":{\"_id\":\"a\",\"_rev\":\"revA\",\"value\":\"valueA\",\"value2\":\"value2a\"}}]},{\"id\": \"b\", \"docs\": [{\"ok\":{\"_id\":\"b\",\"_rev\":\"revB\",\"value\":\"valueB\",\"value2\":\"value2b\"}}]}]}";
         ObjectMapper mapper = new ObjectMapper();
         SimpleModule module = new SimpleModule();
-        module.addDeserializer(List.class, new BulkGetDeserializer<>(TestDocument.class));
+        module.addDeserializer(List.class, new BulkGetDeserializer<>(TestDocument.class, new ObjectMapper()));
         mapper.registerModule(module);
         BulkGetResponse<TestDocument> response = mapper.readValue(json, mapper.getTypeFactory().constructParametricType(BulkGetResponse.class,
                 TestDocument.class));

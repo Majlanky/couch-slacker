@@ -140,7 +140,7 @@ public class CouchDbClient {
      * @param bulkMaxSize        maximal size of bulk operations
      * @param queryStrategy      default query strategy for find method
      * @param objectMapper       object mapper used for all json serializations
-     * @param dbContext must not be {@literal null}
+     * @param dbContext          must not be {@literal null}
      */
     @SuppressWarnings("squid:S107")
     CouchDbClient(@NotNull HttpClient httpClient,
@@ -279,7 +279,6 @@ public class CouchDbClient {
     @SuppressWarnings({"unchecked"})
     public <EntityT> @NotNull EntityT save(@NotNull EntityT entity) throws IOException {
         EntityMetadata entityMetadata = getEntityMetadata(entity.getClass());
-        ObjectMapper localMapper = mapper;
         String id = entityMetadata.getIdReader().read(entity);
         log.debug("Saving document {} with id {} and revision {} to database {}", entity, id,
                 LazyLog.of(() -> entityMetadata.getRevisionReader().read(entity)), entityMetadata.getDatabaseName());
@@ -287,12 +286,8 @@ public class CouchDbClient {
             id = generateId(entity, (Class<EntityT>) entity.getClass());
             log.debug("New ID {} generated for saved document", id);
         }
-        if (entityMetadata.isViewed()) {
-            localMapper = new ObjectMapper();
-            SimpleModule module = new SimpleModule();
-            module.addSerializer(new ViewedDocumentSerializer<>(entity.getClass(), entityMetadata.getTypeField(), entityMetadata.getType()));
-            localMapper.registerModule(module);
-        }
+
+        ObjectMapper localMapper = resolveMapper(entityMetadata, entity.getClass());
 
         DocumentPutResponse response = put(getURI(baseURI, entityMetadata.getDatabaseName(), id), localMapper.writeValueAsString(entity),
                 r -> mapper.readValue(r.getEntity().getContent(),
@@ -318,7 +313,6 @@ public class CouchDbClient {
     @SuppressWarnings({"unchecked"})
     public <EntityT> @NotNull Iterable<EntityT> saveAll(@NotNull Iterable<EntityT> entities, @NotNull Class<?> clazz) throws IOException {
         EntityMetadata entityMetadata = getEntityMetadata(clazz);
-        ObjectMapper localMapper = mapper;
         log.debug("Bulk save of {} documents to database {}", LazyLog.of(() -> StreamSupport.stream(entities.spliterator(), false).count()),
                 entityMetadata.getDatabaseName());
         for (EntityT e : entities) {
@@ -330,12 +324,7 @@ public class CouchDbClient {
             }
         }
 
-        if (entityMetadata.isViewed()) {
-            localMapper = new ObjectMapper();
-            SimpleModule module = new SimpleModule();
-            module.addSerializer(new ViewedDocumentSerializer<>(clazz, entityMetadata.getTypeField(), entityMetadata.getType()));
-            localMapper.registerModule(module);
-        }
+        ObjectMapper localMapper = resolveMapper(entityMetadata, clazz);
 
         List<DocumentPutResponse> responses = post(getURI(baseURI, entityMetadata.getDatabaseName(), "_bulk_docs"),
                 localMapper.writeValueAsString(new BulkRequest<>(entities)), r -> mapper.readValue(r.getEntity().getContent(),
@@ -347,11 +336,30 @@ public class CouchDbClient {
                 entityMetadata.getRevisionWriter().write(e, response.getRev());
                 entityMetadata.getIdWriter().write(e, response.getId());
             } else {
-                log.warn("Document {} with id: {} and rev: {} saving failed with reason {}", e, response.getId(), response.getRev(), response.getError());
+                log.warn("Document {} with id: {} and rev: {} saving failed with error {} and reason {}", e, response.getId(), response.getRev(),
+                        response.getError(), response.getReason());
             }
 
         }
         return entities;
+    }
+
+    /**
+     * Viewed entities needs special treatment during the serialization hence special serializer must be used.
+     *
+     * @param metadata of the entity. Must not be {@literal null}
+     * @param clazz    of the entity. Must not be {@literal null}
+     * @return the mapper or a mapper which is copy of the global one but with customized serialization adding the type field.
+     */
+    private @NotNull ObjectMapper resolveMapper(@NotNull EntityMetadata metadata, @NotNull Class<?> clazz) {
+        if (metadata.isViewed()) {
+            ObjectMapper localMapper = mapper.copy();
+            SimpleModule module = new SimpleModule();
+            module.addSerializer(new ViewedDocumentSerializer<>(clazz, metadata.getTypeField(), metadata.getType()));
+            localMapper.registerModule(module);
+            return localMapper;
+        }
+        return mapper;
     }
 
     /**
@@ -442,9 +450,9 @@ public class CouchDbClient {
      * @throws IOException if http request is not successful or json processing fail
      */
     public <EntityT> @NotNull List<EntityT> readAll(@NotNull Iterable<String> ids, @NotNull Class<EntityT> clazz) throws IOException {
-        ObjectMapper localMapper = new ObjectMapper();
+        ObjectMapper localMapper = mapper.copy();
         SimpleModule module = new SimpleModule();
-        module.addDeserializer(List.class, new BulkGetDeserializer<>(clazz));
+        module.addDeserializer(List.class, new BulkGetDeserializer<>(clazz, mapper));
         localMapper.registerModule(module);
         log.debug("Bulk read of {} document from database {} with the following IDs: {}",
                 LazyLog.of(() -> StreamSupport.stream(ids.spliterator(), false).count()),
@@ -684,7 +692,7 @@ public class CouchDbClient {
         EntityMetadata entityMetadata = getEntityMetadata(clazz);
         log.debug("Bulk delete of {} documents from database {}", LazyLog.of(() -> StreamSupport.stream(entities.spliterator(), false).count()),
                 entityMetadata.getDatabaseName());
-        ObjectMapper localMapper = new ObjectMapper();
+        ObjectMapper localMapper = mapper.copy();
         SimpleModule module = new SimpleModule();
         module.addSerializer(entityMetadata.isViewed() ?
                 new DeleteViewedDocumentSerializer<>(clazz, entityMetadata.getTypeField(), entityMetadata.getType()) :
@@ -702,7 +710,8 @@ public class CouchDbClient {
                 entityMetadata.getRevisionWriter().write(e, response.getRev());
                 deleted.add(e);
             } else {
-                log.warn("Document {} with id: {} and rev: {} deleting failed with reason {}", e, response.getId(), response.getRev(), response.getError());
+                log.warn("Document {} with id: {} and rev: {} deleting failed with error {} and reason {}", e, response.getId(), response.getRev(),
+                        response.getError(), response.getReason());
             }
 
         }
@@ -725,7 +734,7 @@ public class CouchDbClient {
         log.debug("Delete of document with id {} and revision {} from database {}", id, LazyLog.of(() -> entityMetadata.getRevisionReader().read(entity)),
                 entityMetadata.getDatabaseName());
         return delete(getURI(baseURI, Arrays.asList(entityMetadata.getDatabaseName(), id),
-                Collections.singletonList(new BasicNameValuePair("rev", entityMetadata.getRevisionReader().read(entity)))),
+                        Collections.singletonList(new BasicNameValuePair("rev", entityMetadata.getRevisionReader().read(entity)))),
                 r -> entity);
     }
 
@@ -741,9 +750,9 @@ public class CouchDbClient {
      * @see DocumentBase
      */
     public <EntityT> @NotNull Pair<List<EntityT>, String> find(@NotNull String json, @NotNull Class<EntityT> clazz) throws IOException {
-        ObjectMapper localMapper = new ObjectMapper();
+        ObjectMapper localMapper = mapper.copy();
         SimpleModule simpleModule = new SimpleModule();
-        simpleModule.addDeserializer(List.class, new FoundDocumentDeserializer<>(clazz));
+        simpleModule.addDeserializer(List.class, new FoundDocumentDeserializer<>(clazz, mapper));
         log.debug("Executing Mango query {}", json);
         localMapper.registerModule(simpleModule);
         DocumentFindResponse<EntityT> response = post(getURI(baseURI, getDatabaseName(clazz), "_find"), json, r -> localMapper.readValue(r.getEntity().getContent(),
@@ -1311,6 +1320,13 @@ public class CouchDbClient {
             request.abort();
             throw e;
         }
+    }
+
+    /**
+     * @return copy of the mapper which is used for entity and all messages serialization
+     */
+    public @NotNull ObjectMapper getMapperCopy() {
+        return mapper.copy();
     }
 
     /**

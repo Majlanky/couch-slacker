@@ -77,14 +77,14 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>8</java.version>
-        <jackson.version>2.13.2</jackson.version>
+        <jackson.version>2.13.3</jackson.version>
         <jackson.databind.version>2.13.2.2</jackson.databind.version>
-        <spring.data.commons.version>2.6.3</spring.data.commons.version>
+        <spring.data.commons.version>2.7.0</spring.data.commons.version>
         <mockito.version>3.2.4</mockito.version>
         <jupiter.version>5.8.2</jupiter.version>
-        <spring.version>5.3.18</spring.version>
-        <spring.boot.version>2.6.6</spring.boot.version>
-        <lombok.version>1.18.22</lombok.version>
+        <spring.version>5.3.20</spring.version>
+        <spring.boot.version>2.7.0</spring.boot.version>
+        <lombok.version>1.18.24</lombok.version>
         <http.client.version>4.5.13</http.client.version>
         <commons.codec.version>1.15</commons.codec.version> <!--Can be removed when the one contained in http client is safe-->
         <common.io.version>2.11.0</common.io.version>
@@ -93,7 +93,7 @@
         <jmh.version>1.35</jmh.version>
         <find.bug.version>3.0.1</find.bug.version>
         <jetbrain.annotation.version>23.0.0</jetbrain.annotation.version>
-        <hibernate.validator.version>6.2.3.Final</hibernate.validator.version>
+        <hibernate.validator.version>7.0.4.Final</hibernate.validator.version>
     </properties>
 
     <dependencies>
@@ -277,7 +277,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.0.0-M5</version>
+                <version>3.0.0-M7</version>
                 <configuration>
                     <excludes>
                         <exclude>**/*TestDocumentRepositoryBase.java</exclude>
@@ -288,7 +288,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>3.0.0-M5</version>
+                <version>3.0.0-M7</version>
                 <configuration>
                     <includes>
                         <include>**/*IntegrationTest.java</include>
