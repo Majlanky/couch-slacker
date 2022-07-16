@@ -83,7 +83,7 @@
         <mockito.version>3.2.4</mockito.version>
         <jupiter.version>5.8.2</jupiter.version>
         <spring.version>5.3.20</spring.version>
-        <spring.boot.version>2.7.0</spring.boot.version>
+        <spring.boot.version>2.7.1</spring.boot.version>
         <lombok.version>1.18.24</lombok.version>
         <http.client.version>4.5.13</http.client.version>
         <commons.codec.version>1.15</commons.codec.version> <!--Can be removed when the one contained in http client is safe-->
