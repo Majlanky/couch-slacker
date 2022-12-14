@@ -101,8 +101,10 @@ public class CouchDbParsingQuery<EntityT> extends PageableAndSortableQuery {
                                        @NotNull Sort sort) {
         try {
             Long skip = pageable.isPaged() ? pageable.getOffset() : null;
-            //if there is hard max result in query method, than the max, if not it depends if slice is returned. If so, we need only find out if there is next
-            // slice. In case of page, we need get everything to count total pages.
+            //if there is hard limit for max result in the query method, then we use the max,
+            // if there is no hard limit, then limit depends on return type. If slice is requested,
+            // we need only find out if there is next slice, we will request one more result then.
+            // In case of page, we need get everything to count total pages.
             Integer pageLimit = getQueryMethod().isSliceQuery() ? pageable.getPageSize() + 1 : null;
             Integer limit = partTree.getMaxResults() != null ? partTree.getMaxResults() : pageLimit;
 
@@ -170,13 +172,32 @@ public class CouchDbParsingQuery<EntityT> extends PageableAndSortableQuery {
         }
     }
 
+    /**
+     * If we are wrapping as page, pageable was provided as parameter. In {@link #execute(Object[], Map, Pageable, Sort)} method the limit for
+     * search is applied only for Slicing, so we get all results from pageable offset in this case, and we must cut content of page. It
+     * is because of getting total number.
+     *
+     * @param findResult must not be {@literal null} that should be paged
+     * @param parameters of the call
+     * @return page containing requested amount of results and all page info
+     */
     private @NotNull Page<EntityT> wrapAsPage(@NotNull FindResult<EntityT> findResult, @NotNull Object[] parameters) {
         Pageable pageable = getPageableFrom(parameters);
         List<EntityT> paged = new LinkedList<>();
-        IntStream.range(0, pageable.getPageSize()).forEach(i -> paged.add(findResult.getEntities().get(i)));
+        IntStream.range(0, Math.min(pageable.getPageSize(), findResult.getEntities().size()))
+                .forEach(i -> paged.add(findResult.getEntities().get(i)));
         return new PageImpl<>(paged, pageable, pageable.getOffset() + findResult.getEntities().size());
     }
 
+    /**
+     * If we are slicing, limit was applied already in {@link #execute(Object[], Map, Pageable, Sort)} with adding one more to get the information
+     * that there is something else to return in next slice. So we can easily determine if there is next slice and if it is, we need to
+     * cut the last one out so slice contain only requested amount of results.
+     *
+     * @param findResult must not be {@literal null} that should be paged
+     * @param parameters of the call
+     * @return slice containing requested amount of results and all page info
+     */
     private @NotNull Slice<EntityT> wrapAsSlice(@NotNull FindResult<EntityT> findResult, @NotNull Object[] parameters) {
         Pageable pageable = getPageableFrom(parameters);
         boolean hasNext = findResult.getEntities().size() > pageable.getPageSize();

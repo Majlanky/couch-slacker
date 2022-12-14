@@ -27,7 +27,9 @@ import com.groocraft.couchdb.slacker.structure.FindResult;
 import com.groocraft.couchdb.slacker.test.integration.TestDocument;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.Parameters;
@@ -37,15 +39,18 @@ import org.springframework.data.repository.query.ReturnedType;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.eq;
@@ -341,6 +346,7 @@ class CouchDbParsingQueryTest {
                 thenThrow(new IOException("error"));
         doReturn(TestDocument.class).when(queryMethod).getReturnedObjectType();
         when(queryMethod.getResultProcessor()).thenReturn(resultProcessor);
+        when(queryMethod.isPageQuery()).thenReturn(true);
         when(resultProcessor.getReturnedType()).thenReturn(returnedType);
         doReturn(TestDocument.class).when(returnedType).getDomainType();
         when(pageableParameter.getIndex()).thenReturn(1);
@@ -361,10 +367,61 @@ class CouchDbParsingQueryTest {
         assertEquals("{\"limit\":10,\"skip\":100,\"sort\":[{\"value\":\"asc\"}],\"selector\":{\"$or\":[{\"value\":{\"$eq\":\"test\"}}]}}",
                 new ObjectMapper().writeValueAsString(r),
                 "Request it wrongly initialized");
-        assertDoesNotThrow(() -> (List<TestDocument>) o, "Result must be list of documents");
+        assertDoesNotThrow(() -> (Page<TestDocument>) o, "Result must be list of documents");
         assertNotNull(o, "Returned list must not be null");
-        assertEquals(1, ((List<TestDocument>) o).size(), "Query should not alternate result in this case");
-        assertEquals(result, ((List<TestDocument>) o).get(0), "Query should not alternate result in this case");
+        List<TestDocument> documents = ((Page<TestDocument>) o).stream().collect(Collectors.toList());
+        assertEquals(1, documents.size(), "Query should not alternate result in this case");
+        assertEquals(result, documents.get(0), "Query should not alternate result in this case");
+    }
+
+    @Test
+    @SuppressWarnings({"unchecked", "null"})
+    void testSlicing() throws IOException {
+        TestDocument result = new TestDocument();
+        ArgumentCaptor<DocumentFindRequest> captor = ArgumentCaptor.forClass(DocumentFindRequest.class);
+        CouchDbClient client = mock(CouchDbClient.class);
+        QueryMethod queryMethod = mock(QueryMethod.class);
+        ResultProcessor resultProcessor = mock(ResultProcessor.class);
+        ReturnedType returnedType = mock(ReturnedType.class);
+        Method method = mock(Method.class);
+        Parameter valueParameter = mock(Parameter.class);
+        Parameter pageableParameter = mock(Parameter.class);
+        Parameters<?, ?> parameters = mock(Parameters.class);
+
+        when(queryMethod.getName()).thenReturn("findByValue");
+        when(client.getEntityMetadata(TestDocument.class)).thenReturn(new EntityMetadata(DocumentDescriptor.of(TestDocument.class)));
+        when(client.find(captor.capture(), eq(TestDocument.class))).
+                thenReturn(FindResult.of(new ArrayList<>(Arrays.asList(new TestDocument(), new TestDocument())), Collections.singletonMap(1, ""))).
+                thenThrow(new IOException("error"));
+        doReturn(TestDocument.class).when(queryMethod).getReturnedObjectType();
+        when(queryMethod.getResultProcessor()).thenReturn(resultProcessor);
+        when(queryMethod.isSliceQuery()).thenReturn(true);
+        when(resultProcessor.getReturnedType()).thenReturn(returnedType);
+        doReturn(TestDocument.class).when(returnedType).getDomainType();
+        when(pageableParameter.getIndex()).thenReturn(1);
+        when(pageableParameter.isSpecialParameter()).thenReturn(true);
+        when(valueParameter.getName()).thenReturn(Optional.of("value"));
+        when(valueParameter.getIndex()).thenReturn(0);
+        doReturn(String.class).when(valueParameter).getType();
+        doReturn(Arrays.asList(valueParameter, pageableParameter).iterator()).when(parameters).iterator();
+        doReturn(parameters).when(queryMethod).getParameters();
+        when(parameters.getSortIndex()).thenReturn(-1);
+        when(parameters.getPageableIndex()).thenReturn(1);
+
+        CouchDbParsingQuery<TestDocument> query = new CouchDbParsingQuery<>(client, false, method, queryMethod, TestDocument.class);
+        assertEquals(queryMethod, query.getQueryMethod(), "CouchDbDirectQuery do not remember given queryMethod");
+        Object o = query.execute(new Object[]{"test", PageRequest.of(0, 1, Sort.by("value"))});
+        DocumentFindRequest r = captor.getValue();
+        r.setLimit(10);
+        assertEquals("{\"limit\":10,\"skip\":0,\"sort\":[{\"value\":\"asc\"}],\"selector\":{\"$or\":[{\"value\":{\"$eq\":\"test\"}}]}}",
+                new ObjectMapper().writeValueAsString(r),
+                "Request it wrongly initialized");
+        assertDoesNotThrow(() -> (Slice<TestDocument>) o, "Result must be list of documents");
+        assertNotNull(o, "Returned list must not be null");
+        List<TestDocument> documents = ((Slice<TestDocument>) o).stream().collect(Collectors.toList());
+        assertEquals(1, documents.size(), "Query should not alternate result in this case");
+        assertEquals(result, documents.get(0), "Query should not alternate result in this case");
+        assertTrue(((Slice<TestDocument>) o).hasNext(), "Slice must report that there is anything else to return");
     }
 
     @Test
