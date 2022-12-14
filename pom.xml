@@ -78,18 +78,18 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>8</java.version>
         <jackson.version>2.13.3</jackson.version>
-        <jackson.databind.version>2.13.3</jackson.databind.version>
+        <jackson.databind.version>2.13.4.2</jackson.databind.version>
         <spring.data.commons.version>2.7.0</spring.data.commons.version>
         <mockito.version>3.2.4</mockito.version>
         <jupiter.version>5.8.2</jupiter.version>
-        <spring.version>5.3.20</spring.version>
-        <spring.boot.version>2.7.0</spring.boot.version>
+        <spring.version>5.3.24</spring.version>
+        <spring.boot.version>2.7.6</spring.boot.version>
         <lombok.version>1.18.24</lombok.version>
         <http.client.version>4.5.13</http.client.version>
         <commons.codec.version>1.15</commons.codec.version> <!--Can be removed when the one contained in http client is safe-->
         <common.io.version>2.11.0</common.io.version>
         <logback.version>1.2.11</logback.version>
-        <snake.yaml.version>1.30</snake.yaml.version>
+        <snake.yaml.version>1.33</snake.yaml.version>
         <jmh.version>1.35</jmh.version>
         <find.bug.version>3.0.1</find.bug.version>
         <jetbrain.annotation.version>23.0.0</jetbrain.annotation.version>
