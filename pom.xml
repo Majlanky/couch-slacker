@@ -93,7 +93,7 @@
         <jmh.version>1.35</jmh.version>
         <find.bug.version>3.0.1</find.bug.version>
         <jetbrain.annotation.version>23.0.0</jetbrain.annotation.version>
-        <hibernate.validator.version>7.0.4.Final</hibernate.validator.version>
+        <hibernate.validator.version>7.0.5.Final</hibernate.validator.version>
     </properties>
 
     <dependencies>
